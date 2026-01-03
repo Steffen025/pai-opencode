@@ -551,7 +551,7 @@ All decisions documented in Constitution v3.2.0 Section IX:
 | v0.2 Vanilla Install | ✅ DONE | - |
 | v0.3 Skills Translation | ✅ DONE | - |
 | v0.4 Agent Delegation | ✅ DONE | - |
-| v0.5 Plugin Infrastructure | NOT STARTED | Research in progress |
+| v0.5 Plugin Infrastructure | ✅ COMPLETE | - |
 | v0.6 History System | NOT STARTED | v0.5 (plugins required) |
 | v0.7 Converter Tool | NOT STARTED | v0.3, v0.4 |
 | v0.8 Integration | NOT STARTED | v0.2-v0.7 |
@@ -568,7 +568,7 @@ v0.1 ────┬──→ v0.2 ──┬──→ v0.3 ──→ v0.4 ──
          │           │     ┌───────────────┘
          │           │     │
          │           │     v
-         │           │   v0.5 (Plugin Infrastructure)
+         │           │   v0.5 (Plugin Infrastructure) ✅ COMPLETE
          │           │     │
          │           │     v
          │           │   v0.6 (History System - needs v0.5)
@@ -592,7 +592,8 @@ We committed to posting updates at key milestones. Track progress here:
 | Milestone | Update Required | Status | Posted |
 |-----------|-----------------|--------|--------|
 | v0.1 | Foundation complete, project announced | ✅ DONE | 2026-01-01 |
-| v0.5/v0.6 | History system + Converter tool | ⏳ Pending | - |
+| v0.5 | Plugin Infrastructure complete | ✅ DONE | 2026-01-03 |
+| v0.6 | History system complete | ⏳ Pending | - |
 | v0.9 | Documentation ready | ⏳ Pending | - |
 | v1.0 | **PUBLIC RELEASE** 🎉 | ⏳ Pending | - |
 
@@ -626,6 +627,7 @@ We committed to posting updates at key milestones. Track progress here:
 | **3.2.0** | 2026-01-02 | **SPLIT/INSERT REORGANIZATION** - v0.5/v0.6 milestones reorganized. v0.5 now Plugin Infrastructure, v0.6 now History System (dependency fix). Deferred features documented (Voice, Observability → v1.x). Event name corrections (session.idle, tool.execute.after). |
 | **3.3.0** | 2026-01-02 | **FINAL ROADMAP APPROVAL** - All milestones finalized. Sub-milestones = tracking tool (not separate releases). Split/Insert terminology standardized. Voice/Observability deferred to v1.x. v0.5 scope = 4 core plugins. v0.6 scope = OpenCode sessions only (PAI knowledge layer → v1.x). |
 | **3.4.0** | 2026-01-02 | **HOOK MAPPING COMPLETION** - UserPromptSubmit and PreCompact researched via DeepWiki. UserPromptSubmit portable via `message.updated` filter workaround. PreCompact portable via `experimental.session.compacting`. Both moved from Deferred → REQUIRED (v0.5). v0.5 scope expanded to 8 core plugins. |
+| **4.0.0** | 2026-01-03 | v0.5.0 COMPLETE - Plugin Infrastructure released |
 
 ---
 

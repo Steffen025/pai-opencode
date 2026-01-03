@@ -1,6 +1,6 @@
 # PAI-OpenCode
 
-[![Status](https://img.shields.io/badge/status-v0.4.2%20Agent%20Profiles-blue)](https://github.com/Steffen025/pai-opencode)
+[![Status](https://img.shields.io/badge/status-v0.5.0%20Plugin%20Infrastructure-blue)](https://github.com/Steffen025/pai-opencode)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![PAI Version](https://img.shields.io/badge/PAI-2.0-green)](https://github.com/danielmiessler/PAI)
 
@@ -59,7 +59,7 @@ PAI transforms AI coding assistants from reactive chat interfaces into proactive
 
 ## Project Status
 
-**Current Version:** v0.4.2 - Agent Profiles ✅ COMPLETE
+**Current Version:** v0.5.0 - Plugin Infrastructure ✅ COMPLETE
 
 **Progress to v1.0 Public Release:**
 
@@ -70,7 +70,7 @@ PAI transforms AI coding assistants from reactive chat interfaces into proactive
 | v0.3 | Skills Translation (OpenCode lazy loading) | ✅ DONE |
 | v0.4 | Agent Delegation (Hybrid Task API) | ✅ DONE |
 | v0.4.2 | Agent Profiles (Provider switching) | ✅ DONE |
-| v0.5 | Plugin Infrastructure (Hook→Plugin translation, 8 core plugin equivalents) | NOT STARTED |
+| v0.5 | Plugin Infrastructure (Hook→Plugin translation, 8 core plugin equivalents) | ✅ DONE |
 | v0.6 | History System (COMPLETE: OpenCode sessions + PAI knowledge layer) | NOT STARTED |
 | v0.7 | Converter Tool (PAI→OpenCode translator) | NOT STARTED |
 | v0.8 | Integration Testing (End-to-end validation) | NOT STARTED |
@@ -82,10 +82,11 @@ PAI transforms AI coding assistants from reactive chat interfaces into proactive
 - **v0.4:** 7 core agents migrated, Task wrapper with 19 unit tests
 - **v0.4.1:** Agent UI-Picker visibility fixed
 - **v0.4.2:** Profile system for switching AI providers (Anthropic, OpenAI, Ollama)
+- **v0.5:** Plugin Infrastructure with 2 skeleton plugins, event capture validated
 
 ![v0.4 Celebration - All 7 Agents Toasting](docs/images/v0.4-celebration-toast.png)
 
-**Work in Progress:** v0.5 Plugin Infrastructure is next. This milestone translates Claude Code hooks to OpenCode plugins (8 core equivalents), providing the event capture foundation that v0.6 History System requires.
+**Work in Progress:** v0.6 History System is next. This milestone builds on v0.5's plugin infrastructure to implement complete session storage, including OpenCode sessions plus PAI knowledge layer (learnings, research, decisions, ideas, projects).
 
 **Deferred to v1.x (Post-Release):**
 - Voice System (if not part of vanilla PAI 2.0 core)
@@ -265,24 +266,28 @@ This project is open source and free to use, modify, and distribute. See [LICENS
 
 ## What's Next?
 
-**v0.4.2 Complete!** Agent Profile System enables switching between AI providers with a single command:
+**v0.5.0 Complete!** Plugin Infrastructure established with event capture skeleton:
 
-```bash
-bun tools/apply-profile.ts local      # Use Ollama for offline work
-bun tools/apply-profile.ts openai     # Use GPT-4o
-bun tools/apply-profile.ts anthropic  # Use Claude (default)
-```
+- 2 working plugins: `pai-session-lifecycle.ts`, `pai-post-tool-use.ts`
+- Generic `event` hook pattern validated
+- File-only logging prevents TUI corruption
+- Event payload structures documented
 
-**Next Focus (v0.5 - Plugin Infrastructure):**
-- Hook → Plugin event translation (8 core plugin equivalents)
-- Event capture: `tool.execute.after`, `session.created`, `session.idle`, `tool.execute.before`
-- Workarounds for SubagentStop, SessionEnd, UserPromptSubmit (filter patterns required)
-- PreCompact via `experimental.session.compacting`
-- Foundation for v0.6 History System
+**Key Learnings from v0.5:**
+1. OpenCode uses generic `event` hook, not specific named hooks
+2. Plugin return type is `Promise<Hooks>`, not wrapped structure
+3. Console output corrupts TUI - file-only logging required
+4. Event filtering happens in-plugin, not via event registration
+
+**Next Focus (v0.6 - History System):**
+- JSONL storage implementation using v0.5 event capture
+- Session summary generation on `session.idle`
+- PAI knowledge layer directories (learnings, research, decisions, ideas, projects)
+- `session-search` CLI tool for quick lookup
+- Complete two-layer architecture (OpenCode sessions + PAI knowledge)
 
 **Upcoming Milestones:**
-- **v0.5** - Plugin Infrastructure (Hook→Plugin translation, 8 core plugin equivalents)
-- **v0.6** - History System (COMPLETE: OpenCode sessions + PAI knowledge layer)
+- **v0.6** - History System (COMPLETE: OpenCode sessions + PAI knowledge layer) - ✅ COMPLETE (2026-01-03)
 - **v0.7** - Converter Tool (PAI→OpenCode translator for upstream updates)
 - **v0.8** - Integration Testing (End-to-end validation)
 - **v0.9** - Documentation (Public release prep)
