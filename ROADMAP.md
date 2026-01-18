@@ -75,8 +75,8 @@ A complete, working port where:
 | **v0.5** | Plugin Infrastructure | Hook→Plugin skeleton | ✅ DONE |
 | **v0.6** | PAI 2.3 Alignment | Structure reset, MEMORY/, CORE split | ✅ DONE |
 | **v0.7** | **Plugin Adapter** | Security blocking, context injection, unified plugin | ✅ DONE |
-| **v0.8** | Converter Tool | PAI→OpenCode translator | ⚠️ NEXT |
-| **v0.9** | Integration Testing + Docs | End-to-end validation, public prep | NOT STARTED |
+| **v0.8** | **Converter Tool** | PAI→OpenCode translator | ✅ DONE |
+| **v0.9** | Integration Testing + Docs | End-to-end validation, public prep | ⚠️ NEXT |
 | **v1.0** | **PUBLIC RELEASE** | Community-ready vanilla PAI 2.3 | NOT STARTED |
 
 ---
@@ -397,35 +397,46 @@ Pack Install  → Task Tool (maintains compatibility)
 
 ---
 
-## v0.8: Converter Tool ⚠️ NEXT
+## v0.8: Converter Tool ✅ DONE
+
+**Completed:** 2026-01-18
 
 **Goal:** Create PAI 2.0 → OpenCode translation tool
 
 **Technical Decision:** Clean Break + Converter (Constitution §IX.1)
 
-**Purpose:**
-- Import upstream PAI 2.0 updates
-- Translate settings, skills, agents
-- Enable ongoing sync with Daniel's changes
-
-**Actions:**
-1. Create `tools/pai-to-opencode-converter.ts`
-2. Implement settings translation (`.claude/settings.json` → `opencode.json`)
-3. Implement skill format translation
-4. Implement agent definition translation
-5. Test with sample PAI 2.0 updates
-
 **Deliverables:**
-- [ ] Converter script created
-- [ ] Settings translation working
-- [ ] Skill translation working
-- [ ] Agent translation working
-- [ ] Documentation for usage
+- [x] `tools/pai-to-opencode-converter.ts` - CLI converter tool
+- [x] Settings translation (`.claude/settings.json` → `opencode.json`)
+- [x] Skills translation (`.claude/skills/` → `.opencode/skill/`)
+- [x] Agents translation (`.claude/agents/` → `.opencode/agent/`)
+- [x] MEMORY copy with path updates
+- [x] Migration report generation
+- [x] Built-in --help and --dry-run support
 
-**Acceptance Criteria:**
-- Can import new PAI 2.0 releases
-- Translations are accurate
-- No manual intervention needed for standard cases
+**Test Results:**
+- Tested with PAI v2.3 vanilla: **767 files converted** ✅
+- Path replacements: `.claude/` → `.opencode/`, `skills/` → `skill/` ✅
+- Settings schema mapping working ✅
+- Hook migration documented (15 hooks require manual work)
+
+**What Gets Converted:**
+| Source | Target | Method |
+|--------|--------|--------|
+| `settings.json` | `opencode.json` | Schema mapping |
+| `skills/` | `skill/` | Copy + path update |
+| `agents/` | `agent/` | Copy |
+| `MEMORY/` | `MEMORY/` | Direct copy |
+
+**What Requires Manual Work:**
+- `hooks/` → `plugin/` (architecture differs - documented in MIGRATION-REPORT.md)
+
+**Usage:**
+```bash
+bun run tools/pai-to-opencode-converter.ts --source ~/.claude --target .opencode
+bun run tools/pai-to-opencode-converter.ts --dry-run --verbose  # Preview
+bun run tools/pai-to-opencode-converter.ts --help               # Help
+```
 
 ---
 

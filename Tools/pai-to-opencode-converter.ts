@@ -1,0 +1,633 @@
+#!/usr/bin/env bun
+/**
+ * PAI to OpenCode Converter
+ *
+ * Translates PAI 2.x (Claude Code) configurations to OpenCode format.
+ *
+ * Usage:
+ *   bun run tools/pai-to-opencode-converter.ts --source ~/.claude --target .opencode
+ *   bun run tools/pai-to-opencode-converter.ts --source ~/.claude --target .opencode --dry-run
+ *   bun run tools/pai-to-opencode-converter.ts --help
+ *
+ * What it translates:
+ *   - settings.json → opencode.json (schema mapping)
+ *   - skills/ → skill/ (path + minor adjustments)
+ *   - agents/ → agent/ (YAML frontmatter format)
+ *   - MEMORY/ → MEMORY/ (direct copy with path updates)
+ *
+ * What it does NOT translate (requires manual work):
+ *   - hooks/ → plugin/ (fundamentally different architecture)
+ *
+ * @version 0.8.0
+ * @author PAI-OpenCode Project
+ */
+
+import { existsSync, mkdirSync, readdirSync, statSync, readFileSync, writeFileSync, copyFileSync } from "fs";
+import { join, basename, dirname, relative } from "path";
+import { parseArgs } from "util";
+
+// ============================================================================
+// Types
+// ============================================================================
+
+interface ConversionResult {
+  success: boolean;
+  source: string;
+  target: string;
+  converted: string[];
+  skipped: string[];
+  warnings: string[];
+  errors: string[];
+  manualRequired: string[];
+}
+
+interface SettingsJson {
+  paiVersion?: string;
+  env?: Record<string, string>;
+  daidentity?: {
+    name?: string;
+    fullName?: string;
+    displayName?: string;
+    color?: string;
+    voiceId?: string;
+    voice?: Record<string, unknown>;
+    startupCatchphrase?: string;
+  };
+  principal?: {
+    name?: string;
+    timezone?: string;
+  };
+  permissions?: {
+    allow?: string[];
+    deny?: string[];
+    ask?: string[];
+    defaultMode?: string;
+  };
+  hooks?: Record<string, unknown>;
+  mcpServers?: Record<string, unknown>;
+}
+
+interface OpencodeJson {
+  $schema?: string;
+  provider?: string;
+  model?: string;
+  profile?: string;
+  theme?: string;
+  ai?: {
+    name?: string;
+    color?: string;
+  };
+  user?: {
+    name?: string;
+    timezone?: string;
+  };
+  permissions?: {
+    allow?: string[];
+    deny?: string[];
+  };
+  mcp?: Record<string, unknown>;
+}
+
+// ============================================================================
+// CLI Parsing
+// ============================================================================
+
+function printHelp(): void {
+  console.log(`
+PAI to OpenCode Converter v0.8.0
+
+USAGE:
+  bun run tools/pai-to-opencode-converter.ts [OPTIONS]
+
+OPTIONS:
+  --source <path>    Source PAI directory (default: ~/.claude)
+  --target <path>    Target OpenCode directory (default: .opencode)
+  --dry-run          Show what would be done without making changes
+  --backup           Create backup before conversion (default: true)
+  --no-backup        Skip backup creation
+  --verbose          Show detailed output
+  --help             Show this help message
+
+EXAMPLES:
+  # Convert with defaults
+  bun run tools/pai-to-opencode-converter.ts
+
+  # Convert from specific source
+  bun run tools/pai-to-opencode-converter.ts --source /path/to/.claude --target .opencode
+
+  # Dry run to preview changes
+  bun run tools/pai-to-opencode-converter.ts --dry-run --verbose
+
+WHAT GETS CONVERTED:
+  ✅ settings.json → opencode.json (schema mapping)
+  ✅ skills/ → skill/ (directory copy with path updates)
+  ✅ agents/ → agent/ (YAML frontmatter format)
+  ✅ MEMORY/ → MEMORY/ (direct copy)
+
+WHAT REQUIRES MANUAL WORK:
+  ⚠️  hooks/ → plugin/ (architecture differs - see migration report)
+
+OUTPUT:
+  Creates a migration report at <target>/MIGRATION-REPORT.md
+`);
+}
+
+function parseCliArgs(): {
+  source: string;
+  target: string;
+  dryRun: boolean;
+  backup: boolean;
+  verbose: boolean;
+  help: boolean;
+} {
+  const { values } = parseArgs({
+    args: Bun.argv.slice(2),
+    options: {
+      source: { type: "string", default: "~/.claude" },
+      target: { type: "string", default: ".opencode" },
+      "dry-run": { type: "boolean", default: false },
+      backup: { type: "boolean", default: true },
+      "no-backup": { type: "boolean", default: false },
+      verbose: { type: "boolean", default: false },
+      help: { type: "boolean", short: "h", default: false },
+    },
+    allowPositionals: true,
+  });
+
+  // Expand ~ in paths
+  const expandPath = (p: string): string => {
+    if (p.startsWith("~/")) {
+      return join(process.env.HOME || "", p.slice(2));
+    }
+    return p;
+  };
+
+  return {
+    source: expandPath(values.source as string),
+    target: expandPath(values.target as string),
+    dryRun: values["dry-run"] as boolean,
+    backup: (values.backup as boolean) && !(values["no-backup"] as boolean),
+    verbose: values.verbose as boolean,
+    help: values.help as boolean,
+  };
+}
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+function log(message: string, verbose: boolean, forceShow = false): void {
+  if (verbose || forceShow) {
+    console.log(message);
+  }
+}
+
+function ensureDir(dir: string, dryRun: boolean): void {
+  if (!dryRun && !existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
+  }
+}
+
+function copyDir(src: string, dest: string, dryRun: boolean, verbose: boolean): string[] {
+  const copied: string[] = [];
+
+  if (!existsSync(src)) {
+    return copied;
+  }
+
+  ensureDir(dest, dryRun);
+
+  const entries = readdirSync(src, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const srcPath = join(src, entry.name);
+    const destPath = join(dest, entry.name);
+
+    if (entry.isDirectory()) {
+      copied.push(...copyDir(srcPath, destPath, dryRun, verbose));
+    } else {
+      log(`  Copy: ${relative(process.cwd(), srcPath)} → ${relative(process.cwd(), destPath)}`, verbose);
+      if (!dryRun) {
+        copyFileSync(srcPath, destPath);
+      }
+      copied.push(destPath);
+    }
+  }
+
+  return copied;
+}
+
+// ============================================================================
+// Translators
+// ============================================================================
+
+/**
+ * Translate PAI settings.json to OpenCode opencode.json
+ */
+function translateSettings(source: string, target: string, dryRun: boolean, verbose: boolean): {
+  success: boolean;
+  warnings: string[];
+} {
+  const warnings: string[] = [];
+  const settingsPath = join(source, "settings.json");
+
+  if (!existsSync(settingsPath)) {
+    warnings.push("No settings.json found in source directory");
+    return { success: false, warnings };
+  }
+
+  const settings: SettingsJson = JSON.parse(readFileSync(settingsPath, "utf-8"));
+  log(`  Reading: ${settingsPath}`, verbose);
+
+  // Map to OpenCode format
+  const opencode: OpencodeJson = {
+    $schema: "https://opencode.ai/config.schema.json",
+    provider: "anthropic",
+    model: "claude-sonnet-4-5-20250514",
+    profile: "anthropic",
+    theme: "dark",
+  };
+
+  // Map AI identity
+  if (settings.daidentity) {
+    opencode.ai = {
+      name: settings.daidentity.name || settings.daidentity.displayName || "PAI",
+      color: settings.daidentity.color || "#3B82F6",
+    };
+  }
+
+  // Map user/principal
+  if (settings.principal) {
+    opencode.user = {
+      name: settings.principal.name || "User",
+      timezone: settings.principal.timezone || "UTC",
+    };
+  }
+
+  // Map permissions (simplified)
+  if (settings.permissions) {
+    opencode.permissions = {
+      allow: settings.permissions.allow || [],
+      deny: settings.permissions.deny || [],
+    };
+
+    // Note: OpenCode doesn't have "ask" permissions - warn about this
+    if (settings.permissions.ask && settings.permissions.ask.length > 0) {
+      warnings.push(
+        `PAI "ask" permissions (${settings.permissions.ask.length} rules) cannot be auto-translated. ` +
+        `OpenCode uses plugin-based permission handling. See MIGRATION-REPORT.md.`
+      );
+    }
+  }
+
+  // Map MCP servers
+  if (settings.mcpServers) {
+    opencode.mcp = settings.mcpServers;
+  }
+
+  // Note about hooks - they need manual migration
+  if (settings.hooks) {
+    const hookCount = Object.keys(settings.hooks).length;
+    warnings.push(
+      `PAI hooks (${hookCount} event types) require manual migration to OpenCode plugins. ` +
+      `See MIGRATION-REPORT.md for details.`
+    );
+  }
+
+  // Write opencode.json
+  const outputPath = join(target, "opencode.json");
+  log(`  Writing: ${outputPath}`, verbose);
+
+  if (!dryRun) {
+    ensureDir(target, dryRun);
+    writeFileSync(outputPath, JSON.stringify(opencode, null, 2) + "\n");
+  }
+
+  return { success: true, warnings };
+}
+
+/**
+ * Translate PAI skills/ to OpenCode skill/
+ *
+ * Skills are nearly identical in format - just copy with path updates
+ */
+function translateSkills(source: string, target: string, dryRun: boolean, verbose: boolean): {
+  converted: string[];
+  warnings: string[];
+} {
+  const warnings: string[] = [];
+  const skillsSource = join(source, "skills");
+  const skillsTarget = join(target, "skill");
+
+  if (!existsSync(skillsSource)) {
+    warnings.push("No skills/ directory found in source");
+    return { converted: [], warnings };
+  }
+
+  log(`\nTranslating skills/`, verbose, true);
+  const converted = copyDir(skillsSource, skillsTarget, dryRun, verbose);
+
+  // Update any .claude references in skill files to .opencode
+  if (!dryRun) {
+    for (const file of converted) {
+      if (file.endsWith(".md") || file.endsWith(".ts")) {
+        let content = readFileSync(file, "utf-8");
+        const originalContent = content;
+
+        // Replace common path references
+        content = content.replace(/\.claude\//g, ".opencode/");
+        content = content.replace(/~\/\.claude/g, "~/.opencode");
+        // OpenCode uses singular 'skill' not 'skills'
+        content = content.replace(/\.opencode\/skills\//g, ".opencode/skill/");
+
+        if (content !== originalContent) {
+          writeFileSync(file, content);
+          log(`  Updated paths in: ${relative(process.cwd(), file)}`, verbose);
+        }
+      }
+    }
+  }
+
+  return { converted, warnings };
+}
+
+/**
+ * Translate PAI agents/ to OpenCode agent/
+ *
+ * Agent format is similar but OpenCode uses different frontmatter
+ */
+function translateAgents(source: string, target: string, dryRun: boolean, verbose: boolean): {
+  converted: string[];
+  warnings: string[];
+} {
+  const warnings: string[] = [];
+  const agentsSource = join(source, "agents");
+  const agentsTarget = join(target, "agent");
+
+  if (!existsSync(agentsSource)) {
+    // Agents are optional
+    return { converted: [], warnings };
+  }
+
+  log(`\nTranslating agents/`, verbose, true);
+  const converted = copyDir(agentsSource, agentsTarget, dryRun, verbose);
+
+  return { converted, warnings };
+}
+
+/**
+ * Copy MEMORY/ directory (direct copy, structure is compatible)
+ */
+function translateMemory(source: string, target: string, dryRun: boolean, verbose: boolean): {
+  converted: string[];
+  warnings: string[];
+} {
+  const warnings: string[] = [];
+  const memorySource = join(source, "MEMORY");
+  const memoryTarget = join(target, "MEMORY");
+
+  if (!existsSync(memorySource)) {
+    return { converted: [], warnings };
+  }
+
+  log(`\nCopying MEMORY/`, verbose, true);
+  const converted = copyDir(memorySource, memoryTarget, dryRun, verbose);
+
+  return { converted, warnings };
+}
+
+/**
+ * Generate migration report documenting manual work needed
+ */
+function generateMigrationReport(
+  result: ConversionResult,
+  source: string,
+  target: string,
+  dryRun: boolean
+): void {
+  const hooksSource = join(source, "hooks");
+  let hooksInfo = "";
+
+  if (existsSync(hooksSource)) {
+    const hooks = readdirSync(hooksSource).filter(f => f.endsWith(".ts") || f.endsWith(".js"));
+    hooksInfo = `
+## Hooks Requiring Manual Migration
+
+The following hooks were found but **cannot be auto-translated** due to architectural differences:
+
+| PAI Hook File | OpenCode Equivalent | Migration Notes |
+|---------------|---------------------|-----------------|
+${hooks.map(h => `| \`${h}\` | plugin handler | Rewrite as async function in \`plugin/pai-unified.ts\` |`).join("\n")}
+
+### Hook → Plugin Migration Guide
+
+PAI hooks use **shell scripts with exit codes**:
+\`\`\`typescript
+// PAI Hook (Claude Code)
+export default async function(input) {
+  if (dangerous) {
+    process.exit(2); // Block execution
+  }
+}
+\`\`\`
+
+OpenCode plugins use **async functions that throw**:
+\`\`\`typescript
+// OpenCode Plugin
+"tool.execute.before": async (input, output) => {
+  if (dangerous) {
+    throw new Error("Blocked!"); // Block execution
+  }
+}
+\`\`\`
+
+**Key Differences:**
+1. Args location: \`output.args\` (NOT \`input.args\`)
+2. Tool names: lowercase (\`bash\`, not \`Bash\`)
+3. Blocking: throw Error (NOT exit code 2)
+4. Logging: file-only (NOT console.log - corrupts TUI)
+
+See \`docs/PLUGIN-ARCHITECTURE.md\` for complete guide.
+`;
+  }
+
+  const report = `# PAI → OpenCode Migration Report
+
+**Generated:** ${new Date().toISOString()}
+**Source:** \`${source}\`
+**Target:** \`${target}\`
+**Mode:** ${dryRun ? "DRY RUN" : "EXECUTED"}
+
+## Summary
+
+| Category | Count |
+|----------|-------|
+| Files Converted | ${result.converted.length} |
+| Files Skipped | ${result.skipped.length} |
+| Warnings | ${result.warnings.length} |
+| Errors | ${result.errors.length} |
+| Manual Work Required | ${result.manualRequired.length} |
+
+## What Was Converted
+
+${result.converted.length > 0 ? result.converted.map(f => `- ✅ \`${relative(process.cwd(), f)}\``).join("\n") : "No files converted."}
+
+## Warnings
+
+${result.warnings.length > 0 ? result.warnings.map(w => `- ⚠️ ${w}`).join("\n") : "No warnings."}
+
+## Errors
+
+${result.errors.length > 0 ? result.errors.map(e => `- ❌ ${e}`).join("\n") : "No errors."}
+${hooksInfo}
+## Next Steps
+
+1. Review the converted files in \`${target}/\`
+2. Manually migrate hooks to plugins (see guide above)
+3. Test the OpenCode installation:
+   \`\`\`bash
+   cd ${target}/..
+   opencode
+   \`\`\`
+4. Verify skills load correctly
+5. Test security blocking if applicable
+
+## References
+
+- [PAI-OpenCode Documentation](https://github.com/Steffen025/pai-opencode)
+- [OpenCode Plugin Docs](https://opencode.ai/docs/plugins/)
+- \`docs/PLUGIN-ARCHITECTURE.md\` - Detailed plugin guide
+- \`docs/EVENT-MAPPING.md\` - Hook → Event mapping
+
+---
+*Generated by pai-to-opencode-converter v0.8.0*
+`;
+
+  const reportPath = join(target, "MIGRATION-REPORT.md");
+
+  if (!dryRun) {
+    ensureDir(target, dryRun);
+    writeFileSync(reportPath, report);
+  }
+
+  console.log(`\n📄 Migration report: ${reportPath}`);
+}
+
+// ============================================================================
+// Main Execution
+// ============================================================================
+
+async function main(): Promise<void> {
+  const args = parseCliArgs();
+
+  if (args.help) {
+    printHelp();
+    process.exit(0);
+  }
+
+  console.log(`
+╭──────────────────────────────────────────╮
+│  PAI → OpenCode Converter v0.8.0        │
+╰──────────────────────────────────────────╯
+`);
+
+  console.log(`Source: ${args.source}`);
+  console.log(`Target: ${args.target}`);
+  console.log(`Mode:   ${args.dryRun ? "DRY RUN" : "EXECUTE"}`);
+  console.log("");
+
+  // Validate source exists
+  if (!existsSync(args.source)) {
+    console.error(`❌ Source directory not found: ${args.source}`);
+    process.exit(1);
+  }
+
+  // Initialize result
+  const result: ConversionResult = {
+    success: true,
+    source: args.source,
+    target: args.target,
+    converted: [],
+    skipped: [],
+    warnings: [],
+    errors: [],
+    manualRequired: [],
+  };
+
+  // Create backup if requested
+  if (args.backup && existsSync(args.target) && !args.dryRun) {
+    const backupPath = `${args.target}.backup-${Date.now()}`;
+    console.log(`📦 Creating backup: ${backupPath}`);
+    copyDir(args.target, backupPath, false, args.verbose);
+  }
+
+  // 1. Translate settings
+  console.log("\n📋 Translating settings.json...");
+  const settingsResult = translateSettings(args.source, args.target, args.dryRun, args.verbose);
+  if (settingsResult.success) {
+    result.converted.push(join(args.target, "opencode.json"));
+  }
+  result.warnings.push(...settingsResult.warnings);
+
+  // 2. Translate skills
+  console.log("\n📚 Translating skills/...");
+  const skillsResult = translateSkills(args.source, args.target, args.dryRun, args.verbose);
+  result.converted.push(...skillsResult.converted);
+  result.warnings.push(...skillsResult.warnings);
+
+  // 3. Translate agents
+  console.log("\n🤖 Translating agents/...");
+  const agentsResult = translateAgents(args.source, args.target, args.dryRun, args.verbose);
+  result.converted.push(...agentsResult.converted);
+  result.warnings.push(...agentsResult.warnings);
+
+  // 4. Copy MEMORY
+  console.log("\n💾 Copying MEMORY/...");
+  const memoryResult = translateMemory(args.source, args.target, args.dryRun, args.verbose);
+  result.converted.push(...memoryResult.converted);
+  result.warnings.push(...memoryResult.warnings);
+
+  // 5. Check for hooks (manual migration required)
+  const hooksPath = join(args.source, "hooks");
+  if (existsSync(hooksPath)) {
+    const hooks = readdirSync(hooksPath).filter(f => f.endsWith(".ts") || f.endsWith(".js"));
+    if (hooks.length > 0) {
+      result.manualRequired.push(...hooks.map(h => `hooks/${h} → plugin/ (manual migration)`));
+      result.warnings.push(
+        `Found ${hooks.length} hooks that require manual migration to plugins. ` +
+        `See MIGRATION-REPORT.md for details.`
+      );
+    }
+  }
+
+  // Generate migration report
+  generateMigrationReport(result, args.source, args.target, args.dryRun);
+
+  // Print summary
+  console.log(`
+╭──────────────────────────────────────────╮
+│  Conversion Complete                     │
+╰──────────────────────────────────────────╯
+
+✅ Converted: ${result.converted.length} files
+⚠️  Warnings:  ${result.warnings.length}
+🔧 Manual:    ${result.manualRequired.length} items
+
+${args.dryRun ? "This was a DRY RUN - no files were modified." : "Files have been written to: " + args.target}
+`);
+
+  if (result.warnings.length > 0) {
+    console.log("Warnings:");
+    result.warnings.forEach(w => console.log(`  ⚠️  ${w}`));
+  }
+
+  if (result.manualRequired.length > 0) {
+    console.log("\nManual migration required:");
+    result.manualRequired.forEach(m => console.log(`  🔧 ${m}`));
+  }
+}
+
+main().catch(err => {
+  console.error("❌ Converter failed:", err);
+  process.exit(1);
+});
