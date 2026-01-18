@@ -76,7 +76,7 @@ A complete, working port where:
 | **v0.6** | PAI 2.3 Alignment | Structure reset, MEMORY/, CORE split | ✅ DONE |
 | **v0.7** | **Plugin Adapter** | Security blocking, context injection, unified plugin | ✅ DONE |
 | **v0.8** | **Converter Tool** | PAI→OpenCode translator | ✅ DONE |
-| **v0.9** | Integration Testing + Docs | End-to-end validation, public prep | ⚠️ NEXT |
+| **v0.9** | Integration Testing + Docs | End-to-end validation, public prep | NOT STARTED |
 | **v1.0** | **PUBLIC RELEASE** | Community-ready vanilla PAI 2.3 | NOT STARTED |
 
 ---
@@ -417,15 +417,29 @@ Pack Install  → Task Tool (maintains compatibility)
 **Test Results:**
 - Tested with PAI v2.3 vanilla: **767 files converted** ✅
 - Path replacements: `.claude/` → `.opencode/`, `skills/` → `skill/` ✅
-- Settings schema mapping working ✅
-- Hook migration documented (15 hooks require manual work)
+- Settings schema mapping to OpenCode format ✅
+- YAML frontmatter quoting for special chars ✅
+- Agent color conversion (named → hex) ✅
+- **OpenCode integration test PASSED** ✅
+  - OpenCode startup successful
+  - All 20 skills recognized and loadable
+  - Config validation passed
+
+**Fixes Applied During Integration Testing:**
+| Issue | Fix |
+|-------|-----|
+| `opencode.json` schema wrong | Rewrote to match OpenCode schema (`model: provider/id`) |
+| `opencode.json` in wrong location | Fixed to output at project root |
+| Agent colors (named vs hex) | Added color conversion (`cyan` → `#00FFFF`) |
+| YAML parsing errors | Auto-quote descriptions with special chars |
+| PAI-specific fields | Remove `voiceId`, `permissions` from agents |
 
 **What Gets Converted:**
 | Source | Target | Method |
 |--------|--------|--------|
 | `settings.json` | `opencode.json` | Schema mapping |
-| `skills/` | `skill/` | Copy + path update |
-| `agents/` | `agent/` | Copy |
+| `skills/` | `skill/` | Copy + path update + YAML sanitize |
+| `agents/` | `agent/` | Copy + color conversion + field removal |
 | `MEMORY/` | `MEMORY/` | Direct copy |
 
 **What Requires Manual Work:**
@@ -575,11 +589,11 @@ All decisions documented in Constitution v3.2.0 Section IX:
 | v0.2 Vanilla Install | ✅ DONE | - |
 | v0.3 Skills Translation | ✅ DONE | - |
 | v0.4 Agent Delegation | ✅ DONE | - |
-| v0.5 Plugin Infrastructure | ✅ COMPLETE | - |
-| v0.6 History System | ⚠️ IN PROGRESS (Fixing) | TUI corruption + segfault bugs |
-| v0.7 Converter Tool | NOT STARTED | v0.3, v0.4 |
-| v0.8 Integration | NOT STARTED | v0.2-v0.7 |
-| v0.9 Documentation | NOT STARTED | v0.8 |
+| v0.5 Plugin Infrastructure | ✅ DONE | - |
+| v0.6 PAI 2.3 Alignment | ✅ DONE | - |
+| v0.7 Plugin Adapter | ✅ DONE | - |
+| v0.8 Converter Tool | ✅ DONE | - |
+| v0.9 Integration + Docs | NOT STARTED | v0.8 |
 | v1.0 Release | NOT STARTED | v0.9 |
 
 ### Dependency Graph

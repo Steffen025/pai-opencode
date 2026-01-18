@@ -69,23 +69,23 @@ interface SettingsJson {
 
 interface OpencodeJson {
   $schema?: string;
-  provider?: string;
-  model?: string;
-  profile?: string;
   theme?: string;
-  ai?: {
-    name?: string;
-    color?: string;
-  };
-  user?: {
-    name?: string;
-    timezone?: string;
-  };
-  permissions?: {
-    allow?: string[];
-    deny?: string[];
-  };
+  model?: string;
+  small_model?: string;
+  username?: string;
+  default_agent?: string;
+  plugin?: string[];
+  snapshot?: boolean;
+  share?: string;
+  autoupdate?: boolean | "notify";
+  logLevel?: string;
   mcp?: Record<string, unknown>;
+  agent?: Record<string, {
+    model?: string;
+    prompt?: string;
+    description?: string;
+    color?: string;
+  }>;
 }
 
 // ============================================================================
@@ -239,50 +239,35 @@ function translateSettings(source: string, target: string, dryRun: boolean, verb
   const settings: SettingsJson = JSON.parse(readFileSync(settingsPath, "utf-8"));
   log(`  Reading: ${settingsPath}`, verbose);
 
-  // Map to OpenCode format
+  // Map to OpenCode format - OpenCode uses a different schema than PAI
+  // See: https://opencode.ai/config.json for schema reference
   const opencode: OpencodeJson = {
-    $schema: "https://opencode.ai/config.schema.json",
-    provider: "anthropic",
-    model: "claude-sonnet-4-5-20250514",
-    profile: "anthropic",
+    $schema: "https://opencode.ai/config.json",
     theme: "dark",
+    model: "anthropic/claude-sonnet-4-5",  // OpenCode uses provider/model format
+    snapshot: true,
   };
 
-  // Map AI identity
-  if (settings.daidentity) {
-    opencode.ai = {
-      name: settings.daidentity.name || settings.daidentity.displayName || "PAI",
-      color: settings.daidentity.color || "#3B82F6",
-    };
-  }
-
-  // Map user/principal
-  if (settings.principal) {
-    opencode.user = {
-      name: settings.principal.name || "User",
-      timezone: settings.principal.timezone || "UTC",
-    };
-  }
-
-  // Map permissions (simplified)
-  if (settings.permissions) {
-    opencode.permissions = {
-      allow: settings.permissions.allow || [],
-      deny: settings.permissions.deny || [],
-    };
-
-    // Note: OpenCode doesn't have "ask" permissions - warn about this
-    if (settings.permissions.ask && settings.permissions.ask.length > 0) {
-      warnings.push(
-        `PAI "ask" permissions (${settings.permissions.ask.length} rules) cannot be auto-translated. ` +
-        `OpenCode uses plugin-based permission handling. See MIGRATION-REPORT.md.`
-      );
-    }
+  // Map username from principal.name or daidentity.name
+  if (settings.principal?.name) {
+    opencode.username = settings.principal.name;
   }
 
   // Map MCP servers
   if (settings.mcpServers) {
     opencode.mcp = settings.mcpServers;
+    warnings.push(
+      "MCP servers copied but may need adjustment. " +
+      "OpenCode MCP format may differ slightly from Claude Code."
+    );
+  }
+
+  // Note about permissions - OpenCode handles them differently (via plugins)
+  if (settings.permissions) {
+    warnings.push(
+      `PAI permissions (allow/deny/ask) cannot be auto-translated. ` +
+      `OpenCode uses plugin-based permission handling. See MIGRATION-REPORT.md.`
+    );
   }
 
   // Note about hooks - they need manual migration
@@ -294,12 +279,30 @@ function translateSettings(source: string, target: string, dryRun: boolean, verb
     );
   }
 
-  // Write opencode.json
-  const outputPath = join(target, "opencode.json");
+  // Note about AI identity - OpenCode doesn't have this concept in config
+  if (settings.daidentity) {
+    warnings.push(
+      `PAI daidentity (AI name, color, voice) is not supported in OpenCode config. ` +
+      `This can be implemented via CORE skill customization.`
+    );
+  }
+
+  // Write opencode.json - should go to project ROOT, not inside .opencode
+  // If target ends with .opencode, put opencode.json in parent directory
+  let configDir = target;
+  if (target.endsWith(".opencode") || target.endsWith(".opencode/")) {
+    configDir = dirname(target);
+    // Handle case where target is literally ".opencode" (relative path)
+    if (configDir === ".") {
+      configDir = process.cwd();
+    }
+  }
+
+  const outputPath = join(configDir, "opencode.json");
   log(`  Writing: ${outputPath}`, verbose);
 
   if (!dryRun) {
-    ensureDir(target, dryRun);
+    ensureDir(configDir, dryRun);
     writeFileSync(outputPath, JSON.stringify(opencode, null, 2) + "\n");
   }
 
@@ -340,6 +343,29 @@ function translateSkills(source: string, target: string, dryRun: boolean, verbos
         // OpenCode uses singular 'skill' not 'skills'
         content = content.replace(/\.opencode\/skills\//g, ".opencode/skill/");
 
+        // Fix YAML frontmatter: quote description fields that contain special chars
+        // This prevents YAML parsing errors with colons, quotes, etc.
+        if (file.endsWith(".md")) {
+          content = content.replace(
+            /^(description:\s*)(.+)$/gm,
+            (match, prefix, desc) => {
+              // If already quoted, leave it alone
+              if ((desc.startsWith('"') && desc.endsWith('"')) ||
+                  (desc.startsWith("'") && desc.endsWith("'"))) {
+                return match;
+              }
+              // If contains special YAML chars (colon, quote, etc.), wrap in quotes
+              if (desc.includes(':') || desc.includes("'") || desc.includes('"') ||
+                  desc.includes('#') || desc.includes('|') || desc.includes('>')) {
+                // Escape internal double quotes and wrap
+                const escaped = desc.replace(/"/g, '\\"');
+                return `${prefix}"${escaped}"`;
+              }
+              return match;
+            }
+          );
+        }
+
         if (content !== originalContent) {
           writeFileSync(file, content);
           log(`  Updated paths in: ${relative(process.cwd(), file)}`, verbose);
@@ -351,10 +377,65 @@ function translateSkills(source: string, target: string, dryRun: boolean, verbos
   return { converted, warnings };
 }
 
+// Named color to hex mapping for agent color conversion
+const COLOR_NAME_TO_HEX: Record<string, string> = {
+  // Basic colors
+  red: "#FF0000",
+  green: "#00FF00",
+  blue: "#0000FF",
+  cyan: "#00FFFF",
+  magenta: "#FF00FF",
+  yellow: "#FFFF00",
+  black: "#000000",
+  white: "#FFFFFF",
+  // Extended colors
+  orange: "#FFA500",
+  purple: "#800080",
+  pink: "#FFC0CB",
+  gray: "#808080",
+  grey: "#808080",
+  lime: "#00FF00",
+  navy: "#000080",
+  teal: "#008080",
+  olive: "#808000",
+  maroon: "#800000",
+  silver: "#C0C0C0",
+  aqua: "#00FFFF",
+  fuchsia: "#FF00FF",
+  coral: "#FF7F50",
+  gold: "#FFD700",
+  indigo: "#4B0082",
+  violet: "#EE82EE",
+  turquoise: "#40E0D0",
+  salmon: "#FA8072",
+  crimson: "#DC143C",
+};
+
+/**
+ * Convert named color to hex format
+ * OpenCode requires hex format #RRGGBB for agent colors
+ */
+function convertColorToHex(color: string): string {
+  // If already hex format, return as-is
+  if (color.startsWith("#") && color.length === 7) {
+    return color;
+  }
+  // If it's a short hex like #FFF, expand it
+  if (color.startsWith("#") && color.length === 4) {
+    return `#${color[1]}${color[1]}${color[2]}${color[2]}${color[3]}${color[3]}`;
+  }
+  // Convert named color to hex
+  const normalized = color.toLowerCase().trim();
+  return COLOR_NAME_TO_HEX[normalized] || "#808080"; // Default to gray if unknown
+}
+
 /**
  * Translate PAI agents/ to OpenCode agent/
  *
- * Agent format is similar but OpenCode uses different frontmatter
+ * Agent format is similar but OpenCode uses different frontmatter.
+ * Key differences:
+ * - OpenCode requires hex colors (#RRGGBB), not named colors
+ * - voiceId and permissions fields may not be supported
  */
 function translateAgents(source: string, target: string, dryRun: boolean, verbose: boolean): {
   converted: string[];
@@ -371,6 +452,53 @@ function translateAgents(source: string, target: string, dryRun: boolean, verbos
 
   log(`\nTranslating agents/`, verbose, true);
   const converted = copyDir(agentsSource, agentsTarget, dryRun, verbose);
+
+  // Post-process agent files to convert named colors to hex
+  if (!dryRun) {
+    for (const file of converted) {
+      if (file.endsWith(".md")) {
+        let content = readFileSync(file, "utf-8");
+        const originalContent = content;
+
+        // Find and replace color field in YAML frontmatter
+        // Matches: color: cyan or color: "cyan" etc.
+        content = content.replace(
+          /^(color:\s*)([a-zA-Z]+)(\s*)$/gm,
+          (match, prefix, colorName, suffix) => {
+            const hexColor = convertColorToHex(colorName);
+            log(`  Color converted: ${colorName} → ${hexColor} in ${basename(file)}`, verbose);
+            return `${prefix}"${hexColor}"${suffix}`;
+          }
+        );
+
+        // Also handle quoted named colors
+        content = content.replace(
+          /^(color:\s*["'])([a-zA-Z]+)(["']\s*)$/gm,
+          (match, prefix, colorName, suffix) => {
+            const hexColor = convertColorToHex(colorName);
+            log(`  Color converted: ${colorName} → ${hexColor} in ${basename(file)}`, verbose);
+            return `${prefix.replace(/["']$/, '"')}${hexColor}"`;
+          }
+        );
+
+        // Remove unsupported fields that OpenCode doesn't recognize
+        // voiceId is PAI-specific
+        content = content.replace(/^voiceId:.*$/gm, "# voiceId removed (PAI-specific)");
+
+        // PAI permissions format differs from OpenCode
+        // Remove entire permissions block in frontmatter
+        content = content.replace(
+          /^permissions:\s*\n(\s+.*\n)*/gm,
+          "# permissions removed (use OpenCode plugins instead)\n"
+        );
+
+        if (content !== originalContent) {
+          writeFileSync(file, content);
+          log(`  Transformed: ${relative(process.cwd(), file)}`, verbose);
+        }
+      }
+    }
+  }
 
   return { converted, warnings };
 }
