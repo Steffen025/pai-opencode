@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-01-18
+
+### Added
+- **Plugin Adapter Foundation:** Unified plugin architecture for PAI-to-OpenCode translation
+- `pai-unified.ts` - Single unified plugin combining all PAI hook functionality
+- `lib/file-logger.ts` - TUI-safe file-only logging (NEVER uses console.log)
+- `handlers/context-loader.ts` - Loads CORE skill context for chat injection
+- `handlers/security-validator.ts` - Security validation with block/confirm/allow actions
+- `adapters/types.ts` - Shared TypeScript interfaces for plugin handlers
+- `tsconfig.json` - TypeScript configuration for plugin development
+
+### Plugin Hook Mappings
+| PAI Hook | OpenCode Plugin Hook | Function |
+|----------|---------------------|----------|
+| SessionStart | `experimental.chat.system.transform` | Context injection |
+| PreToolUse exit(2) | `permission.ask` | Security blocking |
+| PreToolUse | `tool.execute.before` | Args modification |
+| PostToolUse | `tool.execute.after` | Learning capture |
+| Stop | `event` | Session lifecycle |
+
+### Fixed
+- **TUI Corruption:** All logging now uses file-only logging to `/tmp/pai-opencode-debug.log`
+- **Type Safety:** Full TypeScript support with OpenCode plugin type definitions
+
+### Deprecated
+- Moved old plugins to `plugin/_deprecated/`:
+  - `pai-post-tool-use.ts` (replaced by unified plugin)
+  - `pai-session-lifecycle.ts` (replaced by unified plugin)
+
+### Constitution
+- Updated to v1.2.0 with Plugin Adapter Architecture documentation
+- Hook System section expanded with OpenCode mappings
+- TUI-safe Logging documented as Technical Constraint
+- Phase Planning updated (Phase 2 = DONE, Phase 3 = Plugin Adapter)
+
+### Technical Details
+- Plugin structure follows unified pattern for easier maintenance
+- Security validator supports dangerous (block) and warning (confirm) patterns
+- Context loader supports SKILL.md, SYSTEM/, and USER/TELOS/ loading
+- All handlers are async and error-resilient (fail-open for security)
+
 ## [0.6.0] - 2026-01-18
 
 ### Breaking Changes
