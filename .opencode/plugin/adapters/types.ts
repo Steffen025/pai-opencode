@@ -132,9 +132,10 @@ export const PAI_TO_OPENCODE_HOOKS = {
  */
 export const DANGEROUS_PATTERNS = [
   // Destructive file operations
-  /rm\s+-rf\s+\//,
-  /rm\s+-rf\s+~\//,
-  /rm\s+-rf\s+\*/,
+  /rm\s+-rf\s+\/(?!tmp)/,  // rm -rf / (root) but allow /tmp
+  /rm\s+-rf\s+~\//,        // rm -rf ~/ (home)
+  /rm\s+-rf\s+\*/,         // rm -rf * (wildcard)
+  /rm\s+-rf\s+\.\./,       // rm -rf .. (parent traversal - any path starting with ..)
   /mkfs\./,
   /dd\s+if=.*of=\/dev\//,
 

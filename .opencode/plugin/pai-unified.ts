@@ -66,6 +66,9 @@ export const PaiUnified: Plugin = async (ctx) => {
      */
     "permission.ask": async (input, output) => {
       try {
+        fileLog(`>>> PERMISSION.ASK CALLED <<<`, "info");
+        fileLog(`permission.ask input: ${JSON.stringify(input).substring(0, 200)}`, "debug");
+
         // Extract tool info from Permission input
         const tool = (input as any).tool || "unknown";
         const args = (input as any).args || {};
@@ -96,21 +99,37 @@ export const PaiUnified: Plugin = async (ctx) => {
     },
 
     /**
-     * PRE-TOOL EXECUTION (PreToolUse args modification)
+     * PRE-TOOL EXECUTION - SECURITY BLOCKING
      *
-     * Called before tool execution.
-     * Can modify args if needed.
-     * Security blocking happens in permission.ask, not here.
+     * Called before EVERY tool execution.
+     * Can block dangerous commands by THROWING AN ERROR.
+     *
+     * Note: permission.ask is not reliably called for all tools,
+     * so we do security validation here instead.
      */
     "tool.execute.before": async (input, output) => {
-      try {
-        fileLog(`Tool before: ${input.tool}`, "debug");
+      fileLog(`Tool before: ${input.tool}`, "debug");
+      // Args are in OUTPUT, not input! OpenCode API quirk.
+      fileLog(`output.args: ${JSON.stringify(output.args ?? {}).substring(0, 500)}`, "debug");
 
-        // Currently no arg modifications needed
-        // This hook is for future arg manipulation if required
-      } catch (error) {
-        fileLogError("Tool before hook failed", error);
+      // Security validation - throws error to block dangerous commands
+      const result = await validateSecurity({
+        tool: input.tool,
+        args: output.args ?? {},
+      });
+
+      if (result.action === "block") {
+        fileLog(`BLOCKED: ${result.reason}`, "error");
+        // Throwing an error blocks the tool execution
+        throw new Error(`[PAI Security] ${result.message || result.reason}`);
       }
+
+      if (result.action === "confirm") {
+        fileLog(`WARNING: ${result.reason}`, "warn");
+        // For now, log warning but allow - OpenCode will handle its own permission prompt
+      }
+
+      fileLog(`Security check passed for ${input.tool}`, "debug");
     },
 
     /**

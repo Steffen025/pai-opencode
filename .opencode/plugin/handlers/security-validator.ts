@@ -43,13 +43,16 @@ function matchesWarningPattern(command: string): RegExp | null {
  * Extract command from tool input
  */
 function extractCommand(input: PermissionInput | ToolInput): string | null {
-  // Bash tool
-  if (input.tool === "Bash" && typeof input.args?.command === "string") {
+  // Normalize tool name to lowercase for comparison
+  const toolName = input.tool.toLowerCase();
+
+  // Bash tool (handles both "bash" and "Bash")
+  if (toolName === "bash" && typeof input.args?.command === "string") {
     return input.args.command;
   }
 
   // Write tool - check for sensitive paths
-  if (input.tool === "Write" && typeof input.args?.file_path === "string") {
+  if (toolName === "write" && typeof input.args?.file_path === "string") {
     return `write:${input.args.file_path}`;
   }
 
@@ -88,10 +91,12 @@ export async function validateSecurity(
 ): Promise<SecurityResult> {
   try {
     fileLog(`Security check for tool: ${input.tool}`);
+    fileLog(`Args: ${JSON.stringify(input.args ?? {}).substring(0, 300)}`, "debug");
 
     const command = extractCommand(input);
 
     if (!command) {
+      fileLog(`No command extracted from input`, "warn");
       // No command to validate - allow by default
       return {
         action: "allow",
@@ -99,7 +104,7 @@ export async function validateSecurity(
       };
     }
 
-    fileLog(`Checking command: ${command.substring(0, 100)}...`, "debug");
+    fileLog(`Extracted command: ${command}`, "info");
 
     // Check for dangerous patterns (BLOCK)
     const dangerousMatch = matchesDangerousPattern(command);

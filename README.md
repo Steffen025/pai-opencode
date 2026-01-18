@@ -1,6 +1,6 @@
 # PAI-OpenCode
 
-[![Status](https://img.shields.io/badge/status-v0.6.0%20PAI%202.3%20Alignment-blue)](https://github.com/Steffen025/pai-opencode)
+[![Status](https://img.shields.io/badge/status-v0.7.0%20Plugin%20Adapter-blue)](https://github.com/Steffen025/pai-opencode)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![PAI Version](https://img.shields.io/badge/PAI-2.3-green)](https://github.com/danielmiessler/PAI)
 
@@ -59,7 +59,7 @@ PAI transforms AI coding assistants from reactive chat interfaces into proactive
 
 ## Project Status
 
-**Current Version:** v0.6.0 - PAI 2.3 Alignment ✅ COMPLETE
+**Current Version:** v0.7.0 - Plugin Adapter ✅ COMPLETE
 
 **Progress to v1.0 Public Release:**
 
@@ -71,27 +71,28 @@ PAI transforms AI coding assistants from reactive chat interfaces into proactive
 | v0.4 | Agent Delegation (Hybrid Task API) | ✅ DONE |
 | v0.4.2 | Agent Profiles (Provider switching) | ✅ DONE |
 | v0.5 | Plugin Infrastructure (Hook→Plugin translation) | ✅ DONE |
-| v0.6 | **PAI 2.3 Alignment** (Structure reset, MEMORY/, CORE split) | ✅ DONE |
-| v0.7 | Bug Fixes (TUI corruption, Plugin system) | ⚠️ NEXT |
-| v0.8 | Converter Tool (PAI→OpenCode translator) | NOT STARTED |
+| v0.6 | PAI 2.3 Alignment (Structure reset, MEMORY/, CORE split) | ✅ DONE |
+| v0.7 | **Plugin Adapter** (Security blocking, context injection) | ✅ DONE |
+| v0.8 | Converter Tool (PAI→OpenCode translator) | ⚠️ NEXT |
 | v0.9 | Integration Testing + Documentation | NOT STARTED |
 | v1.0 | **PUBLIC RELEASE** (Community-ready vanilla PAI 2.3) | NOT STARTED |
 
 **Recent Achievements:**
+- **v0.7:** Plugin Adapter with security blocking, context injection, all 4 tests passing
 - **v0.6:** PAI 2.3 Alignment - `history/` → `MEMORY/`, CORE SYSTEM/USER split
 - **v0.5:** Plugin Infrastructure with 2 skeleton plugins, event capture validated
 - **v0.4:** 7 core agents migrated, Task wrapper with 19 unit tests
-- **v0.3:** Skills translation with 94.96% token reduction
 
-![v0.4 Celebration - All 7 Agents Toasting](docs/images/v0.4-celebration-toast.png)
+![v0.7 Plugin Adapter - Security Shield](docs/images/v0.7-plugin-adapter.png)
 
-**Work in Progress:** v0.7 Bug Fixes is next. This milestone addresses known issues before continuing with new features.
+**Work in Progress:** v0.8 Converter Tool is next. This will enable importing PAI updates automatically.
 
-**Known Issues (v0.6.0):**
-| Issue | Description | Workaround |
-|-------|-------------|------------|
-| TUI Corruption | Console output from plugins corrupts OpenCode TUI | Use file-only logging |
-| Plugin Events | Event handling needs further development | Skeleton plugins work, full implementation pending |
+**v0.7 Resolved Issues:**
+| Issue | Resolution |
+|-------|------------|
+| TUI Corruption | ✅ Fixed with file-only logging to `/tmp/pai-opencode-debug.log` |
+| Security Blocking | ✅ Working via `tool.execute.before` + throw Error |
+| Context Injection | ✅ Working via `experimental.chat.system.transform` |
 
 **Deferred to v1.x (Post-Release):**
 - Voice System (if not part of vanilla PAI 2.3 core)
@@ -271,37 +272,37 @@ This project is open source and free to use, modify, and distribute. See [LICENS
 
 ## What's Next?
 
-**v0.6.0 Complete!** PAI 2.3 Alignment achieved:
+**v0.7.0 Complete!** Plugin Adapter with all 4 tests passing:
 
-- Repository structure aligned with upstream PAI 2.3
-- `history/` → `MEMORY/` with proper subdirectories
-- CORE skill SYSTEM/USER split implemented
-- OpenCode constraints preserved (singular directory names)
+- ✅ Plugin Load - Unified plugin loads correctly
+- ✅ Context Injection - CORE skill injected at session start
+- ✅ Security Blocking - Dangerous commands blocked (e.g., `rm -rf ../`)
+- ✅ Logging - All events logged to `/tmp/pai-opencode-debug.log`
 
-**New Directory Structure:**
-```
-.opencode/
-├── MEMORY/                 ← PAI 2.3 standard (was: history/)
-│   ├── History/            ← Session transcripts
-│   ├── LEARNING/           ← Captured learnings
-│   ├── Signals/            ← Rating signals
-│   ├── WORK/               ← Active work
-│   └── PAISYSTEMUPDATES/   ← System updates
-├── skill/CORE/             ← SYSTEM/USER split
-│   ├── SYSTEM/             ← Updated on upgrades
-│   └── USER/               ← Never overwritten
-├── plugin/                 ← OpenCode plugins
-└── agent/                  ← Agent definitions
+**Key Technical Discoveries:**
+```typescript
+// OpenCode API quirk: Args are in OUTPUT, not input!
+"tool.execute.before": async (input, output) => {
+  const command = output.args.command; // ← NOT input.args!
+  if (dangerous(command)) {
+    throw new Error("Blocked!"); // ← This stops execution
+  }
+}
 ```
 
-**Next Focus (v0.7 - Bug Fixes):**
-- Fix TUI corruption from plugin console output
-- Complete plugin event handling
-- Stabilize before adding new features
+**Plugin Architecture:**
+```
+.opencode/plugin/
+├── pai-unified.ts          ← Single unified plugin
+├── handlers/
+│   ├── context-loader.ts   ← CORE skill injection
+│   └── security-validator.ts ← Block dangerous commands
+├── adapters/types.ts       ← Shared TypeScript types
+└── lib/file-logger.ts      ← TUI-safe logging
+```
 
 **Upcoming Milestones:**
-- **v0.7** - Bug Fixes (TUI, Plugin system)
-- **v0.8** - Converter Tool (PAI→OpenCode translator)
+- **v0.8** - Converter Tool (PAI→OpenCode translator) ⚠️ NEXT
 - **v0.9** - Integration Testing + Documentation
 - **v1.0** - PUBLIC RELEASE (Community-ready vanilla PAI 2.3)
 

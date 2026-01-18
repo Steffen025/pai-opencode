@@ -17,12 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `handlers/security-validator.ts` - Security validation with block/confirm/allow actions
 - `adapters/types.ts` - Shared TypeScript interfaces for plugin handlers
 - `tsconfig.json` - TypeScript configuration for plugin development
+- `TEST-RESULTS-v0.7.md` - Comprehensive test documentation
 
 ### Plugin Hook Mappings
 | PAI Hook | OpenCode Plugin Hook | Function |
 |----------|---------------------|----------|
 | SessionStart | `experimental.chat.system.transform` | Context injection |
-| PreToolUse exit(2) | `permission.ask` | Security blocking |
+| PreToolUse exit(2) | `tool.execute.before` + throw Error | Security blocking |
 | PreToolUse | `tool.execute.before` | Args modification |
 | PostToolUse | `tool.execute.after` | Learning capture |
 | Stop | `event` | Session lifecycle |
@@ -30,6 +31,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **TUI Corruption:** All logging now uses file-only logging to `/tmp/pai-opencode-debug.log`
 - **Type Safety:** Full TypeScript support with OpenCode plugin type definitions
+- **Security Blocking:** Now works correctly via `tool.execute.before` hook
+- **OpenCode API Discovery:** Args are in `output.args`, not `input.args` (documented)
+- **Tool Name Case Sensitivity:** Normalized to lowercase for reliable matching
+- **Regex Patterns:** Fixed parent traversal pattern (`rm -rf ../`)
+
+### Test Results (All Passing)
+| Test | Status |
+|------|--------|
+| Plugin Load | ✅ PASS |
+| Context Injection | ✅ PASS |
+| Security Blocking | ✅ PASS |
+| Logging | ✅ PASS |
+
+### Key Learnings (OpenCode API)
+1. **Args Location:** In `tool.execute.before`, args are in `output.args`, NOT `input.args`
+2. **Blocking Method:** Throw an Error to block commands (not `permission.ask`)
+3. **Tool Names:** OpenCode passes lowercase (`bash`), not PascalCase (`Bash`)
 
 ### Deprecated
 - Moved old plugins to `plugin/_deprecated/`:
