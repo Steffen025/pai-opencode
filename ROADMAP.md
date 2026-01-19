@@ -3,7 +3,7 @@
 **Version:** 4.0.0
 **Based on:** Constitution v3.2.0, SYNTHESIS.md, PAI 2.3 Vanilla
 **Created:** 2025-12-31
-**Last Updated:** 2026-01-18 (v0.7.0 Plugin Adapter Complete)
+**Last Updated:** 2026-01-19 (v0.9.1 Integration Complete)
 **Author:** Steffen (with PAI assistance)
 
 ---
@@ -76,8 +76,9 @@ A complete, working port where:
 | **v0.6** | PAI 2.3 Alignment | Structure reset, MEMORY/, CORE split | ✅ DONE |
 | **v0.7** | **Plugin Adapter** | Security blocking, context injection, unified plugin | ✅ DONE |
 | **v0.8** | **Converter Tool** | PAI→OpenCode translator | ✅ DONE |
-| **v0.9** | Integration Testing + Docs | End-to-end validation, public prep | NOT STARTED |
-| **v1.0** | **PUBLIC RELEASE** | Community-ready vanilla PAI 2.3 | NOT STARTED |
+| **v0.9** | Integration Testing + Docs | End-to-end validation, public prep | ✅ DONE |
+| **v0.9.1** | Agent Invocation Verification | Task tool vs @syntax discovery | ✅ DONE |
+| **v1.0** | **PUBLIC RELEASE** | Community-ready vanilla PAI 2.3 | ⚠️ NEXT |
 
 ---
 
@@ -593,8 +594,9 @@ All decisions documented in Constitution v3.2.0 Section IX:
 | v0.6 PAI 2.3 Alignment | ✅ DONE | - |
 | v0.7 Plugin Adapter | ✅ DONE | - |
 | v0.8 Converter Tool | ✅ DONE | - |
-| v0.9 Integration + Docs | NOT STARTED | v0.8 |
-| v1.0 Release | NOT STARTED | v0.9 |
+| v0.9 Integration + Docs | ✅ DONE | - |
+| v0.9.1 Agent Invocation | ✅ DONE | - |
+| v1.0 Release | ⚠️ NEXT | v0.9.1 |
 
 ### Dependency Graph
 
@@ -631,9 +633,10 @@ We committed to posting updates at key milestones. Track progress here:
 |-----------|-----------------|--------|--------|
 | v0.1 | Foundation complete, project announced | ✅ DONE | 2026-01-01 |
 | v0.5 | Plugin Infrastructure complete | ✅ DONE | 2026-01-03 |
-| v0.6 | History system complete | ⏳ Pending | - |
-| v0.9 | Documentation ready | ⏳ Pending | - |
-| v1.0 | **PUBLIC RELEASE** 🎉 | ⏳ Pending | - |
+| v0.7 | Plugin Adapter complete | ✅ DONE | 2026-01-18 |
+| v0.8 | Converter Tool complete | ✅ DONE | 2026-01-19 |
+| v0.9.1 | Integration + Agent Invocation discovery | ✅ DONE | 2026-01-19 |
+| v1.0 | **PUBLIC RELEASE** 🎉 | ⚠️ NEXT | - |
 
 **Update Template:**
 ```markdown

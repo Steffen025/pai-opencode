@@ -1,6 +1,6 @@
 # PAI-OpenCode
 
-[![Status](https://img.shields.io/badge/status-v0.7.0%20Plugin%20Adapter-blue)](https://github.com/Steffen025/pai-opencode)
+[![Status](https://img.shields.io/badge/status-v0.9.1%20Integration%20Complete-blue)](https://github.com/Steffen025/pai-opencode)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![PAI Version](https://img.shields.io/badge/PAI-2.3-green)](https://github.com/danielmiessler/PAI)
 
@@ -34,7 +34,7 @@ PAI-OpenCode brings the power of PAI (Personal AI Infrastructure) to the OpenCod
 
 PAI transforms AI coding assistants from reactive chat interfaces into proactive, context-aware systems with memory, specialized expertise, and systematic workflows. It's the difference between talking to a chatbot and collaborating with a team of specialized experts who understand your context, maintain continuity across sessions, and follow disciplined development practices.
 
-![PAI 2.0 Architecture](docs/images/architecture.png)
+![Why PAI Matters - The Transformation](docs/images/why-pai-matters-transformation.png)
 
 ---
 
@@ -59,7 +59,7 @@ PAI transforms AI coding assistants from reactive chat interfaces into proactive
 
 ## Project Status
 
-**Current Version:** v0.8.0 - Converter Tool ✅ COMPLETE
+**Current Version:** v0.9.1 - Integration Complete ✅
 
 **Progress to v1.0 Public Release:**
 
@@ -73,19 +73,36 @@ PAI transforms AI coding assistants from reactive chat interfaces into proactive
 | v0.5 | Plugin Infrastructure (Hook→Plugin translation) | ✅ DONE |
 | v0.6 | PAI 2.3 Alignment (Structure reset, MEMORY/, CORE split) | ✅ DONE |
 | v0.7 | **Plugin Adapter** (Security blocking, context injection) | ✅ DONE |
-| v0.8 | Converter Tool (PAI→OpenCode translator) | ✅ DONE |
-| v0.9 | Integration Testing + Documentation | ⚠️ NEXT |
-| v1.0 | **PUBLIC RELEASE** (Community-ready vanilla PAI 2.3) | NOT STARTED |
+| v0.8 | **Converter Tool** (PAI→OpenCode translator) | ✅ DONE |
+| v0.9 | Integration Testing + Documentation | ✅ DONE |
+| v0.9.1 | Agent Invocation Verification | ✅ DONE |
+| v1.0 | **PUBLIC RELEASE** (Community-ready vanilla PAI 2.3) | ⚠️ NEXT |
 
 **Recent Achievements:**
-- **v0.8:** Converter Tool - PAI→OpenCode translator with dry-run mode, conflict detection
-- **v0.7:** Plugin Adapter with security blocking, context injection, all 4 tests passing
-- **v0.6:** PAI 2.3 Alignment - `history/` → `MEMORY/`, CORE SYSTEM/USER split
-- **v0.5:** Plugin Infrastructure with 2 skeleton plugins, event capture validated
+- **v0.9.1:** Agent Invocation Verification - Critical discovery about Task tool vs @syntax
+- **v0.9:** Integration Testing - All components validated together
+- **v0.8:** Converter Tool - 767 files migrated in 5 seconds
+- **v0.7:** Plugin Adapter with security blocking, context injection
+
+### Milestone Highlights
+
+**v0.9.1 - Agent Invocation Discovery**
+
+![v0.9 All Systems Go](docs/images/v0.9-launchpad-all-systems-go.png)
+
+Critical finding: `Task({subagent_type: "AgentName"})` works for AI-to-Agent delegation, while `@agentname` only works for user input.
+
+**v0.8 - Automatic Migration Converter**
+
+![v0.8 Converter - Translation Layer](docs/images/v0.8-converter-translation-layer.png)
+
+Converts entire PAI 2.x installation to OpenCode in 5 seconds. 767 files, zero manual edits.
+
+**v0.7 - Plugin Adapter**
 
 ![v0.7 Plugin Adapter - Security Shield](docs/images/v0.7-plugin-adapter.png)
 
-**Work in Progress:** v0.9 Integration Testing + Documentation is next. This will validate all components together.
+Security blocking, context injection, all 4 tests passing.
 
 **v0.7 Resolved Issues:**
 | Issue | Resolution |
@@ -294,38 +311,38 @@ This project is open source and free to use, modify, and distribute. See [LICENS
 
 ## What's Next?
 
-**v0.7.0 Complete!** Plugin Adapter with all 4 tests passing:
+**v0.9.1 Complete!** Integration testing done, critical agent invocation discovery documented.
 
-- ✅ Plugin Load - Unified plugin loads correctly
-- ✅ Context Injection - CORE skill injected at session start
-- ✅ Security Blocking - Dangerous commands blocked (e.g., `rm -rf ../`)
-- ✅ Logging - All events logged to `/tmp/pai-opencode-debug.log`
+### Key Discovery: Agent Invocation in OpenCode
 
-**Key Technical Discoveries:**
-```typescript
-// OpenCode API quirk: Args are in OUTPUT, not input!
-"tool.execute.before": async (input, output) => {
-  const command = output.args.command; // ← NOT input.args!
-  if (dangerous(command)) {
-    throw new Error("Blocked!"); // ← This stops execution
-  }
-}
+```
+Task({subagent_type: "Intern"})     → ✅ Clickable session
+Task({subagent_type: "Architect"})  → ✅ Clickable session
+@architect (in AI response)         → ❌ Just text, no agent called
+@architect (user types in input)    → ✅ Works
 ```
 
-**Plugin Architecture:**
+**The insight:** OpenCode has TWO invocation contexts. AI uses `Task({subagent_type})`, users type `@agentname`.
+
+### Project Progress
+
 ```
-.opencode/plugin/
-├── pai-unified.ts          ← Single unified plugin
-├── handlers/
-│   ├── context-loader.ts   ← CORE skill injection
-│   └── security-validator.ts ← Block dangerous commands
-├── adapters/types.ts       ← Shared TypeScript types
-└── lib/file-logger.ts      ← TUI-safe logging
+v0.1 ────→ v0.2 ────→ v0.3 ────→ v0.4 ────→ v0.5
+  ✅        ✅        ✅         ✅         ✅
+
+           ────→ v0.6 ────→ v0.7 ────→ v0.8 ────→ v0.9.1
+                  ✅        ✅         ✅        ✅ (WE ARE HERE)
+
+           ────→ v1.0 PUBLIC RELEASE 🚀
+                  ⚠️ NEXT
 ```
 
-**Upcoming Milestones:**
-- **v0.9** - Integration Testing + Documentation ⚠️ NEXT
+**Upcoming:**
 - **v1.0** - PUBLIC RELEASE (Community-ready vanilla PAI 2.3)
+  - Final documentation review
+  - Repository cleanup
+  - Fresh system installation test
+  - Community announcement
 
 **Future (Post v1.0):**
 - Ollama integration for local models
