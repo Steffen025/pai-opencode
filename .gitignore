@@ -1,1 +1,4 @@
 node_modules/
+
+# Backup folders created by converter/migration tools
+.opencode.backup-*/

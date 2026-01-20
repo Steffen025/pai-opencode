@@ -3,7 +3,7 @@
 **Version:** 4.0.0
 **Based on:** Constitution v3.2.0, SYNTHESIS.md, PAI 2.3 Vanilla
 **Created:** 2025-12-31
-**Last Updated:** 2026-01-19 (v0.9.1 Integration Complete)
+**Last Updated:** 2026-01-20 (v0.9.2 Re-Audit & Corrections)
 **Author:** Steffen (with PAI assistance)
 
 ---
@@ -78,11 +78,34 @@ A complete, working port where:
 | **v0.8** | **Converter Tool** | PAI→OpenCode translator | ✅ DONE |
 | **v0.9** | Integration Testing + Docs | End-to-end validation, public prep | ✅ DONE |
 | **v0.9.1** | Agent Invocation Verification | Task tool vs @syntax discovery | ✅ DONE |
-| **v1.0** | **PUBLIC RELEASE** | Community-ready vanilla PAI 2.3 | ⚠️ NEXT |
+| **v0.9.2** | Re-Audit & Corrections | Repository refs, NPM update, OpenCode findings | ✅ DONE |
+| **v0.9.3** | Plural Directories + chat.message | Singular→Plural rename, UserPromptSubmit hook | ⏳ NEXT |
+| **v1.0** | **PUBLIC RELEASE** | Community-ready vanilla PAI 2.3 | ⏳ PENDING |
 
 ---
 
 ## Post-v1.0: Future Phases
+
+### v1.1: Guided Installer
+
+**Goal:** Provide a guided installation experience similar to Daniel Miessler's PAI installer.
+
+**Current v1.0 Approach:** "Clone = Ready" - the repository IS the installation.
+
+**v1.1 Enhancement:** Interactive installer script that:
+- Guides users through setup
+- Can install into existing projects
+- Configures environment variables
+- Validates installation
+
+| Task | Effort | Priority |
+|------|--------|----------|
+| Interactive install.ts script | STANDARD | HIGH |
+| Environment setup wizard | QUICK | MEDIUM |
+| Installation validation | QUICK | MEDIUM |
+| Upgrade/update mechanism | STANDARD | LOW |
+
+---
 
 ### Phase 2: Local Model Integration (Ollama)
 
@@ -596,7 +619,9 @@ All decisions documented in Constitution v3.2.0 Section IX:
 | v0.8 Converter Tool | ✅ DONE | - |
 | v0.9 Integration + Docs | ✅ DONE | - |
 | v0.9.1 Agent Invocation | ✅ DONE | - |
-| v1.0 Release | ⚠️ NEXT | v0.9.1 |
+| v0.9.2 Re-Audit | ✅ DONE | - |
+| v0.9.3 Plural + chat.message | ⏳ NEXT | - |
+| v1.0 Release | ⏳ PENDING | v0.9.3 |
 
 ### Dependency Graph
 
@@ -636,7 +661,9 @@ We committed to posting updates at key milestones. Track progress here:
 | v0.7 | Plugin Adapter complete | ✅ DONE | 2026-01-18 |
 | v0.8 | Converter Tool complete | ✅ DONE | 2026-01-19 |
 | v0.9.1 | Integration + Agent Invocation discovery | ✅ DONE | 2026-01-19 |
-| v1.0 | **PUBLIC RELEASE** 🎉 | ⚠️ NEXT | - |
+| v0.9.2 | Re-Audit findings & corrections | ✅ DONE | 2026-01-20 |
+| v0.9.3 | Plural directories + chat.message hook | ⏳ NEXT | - |
+| v1.0 | **PUBLIC RELEASE** 🎉 | ⏳ PENDING | - |
 
 **Update Template:**
 ```markdown

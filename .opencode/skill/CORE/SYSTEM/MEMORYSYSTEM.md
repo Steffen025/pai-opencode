@@ -7,7 +7,33 @@
 
 ---
 
-## Architecture
+> [!WARNING] IMPLEMENTATION STATUS: WORK IN PROGRESS
+>
+> **Audit Date:** 2026-01-20
+>
+> This document describes the PLANNED architecture. The following components are **NOT YET IMPLEMENTED** in PAI-OpenCode:
+>
+> | Component | Status | Notes |
+> |-----------|--------|-------|
+> | Directory Structure | ✅ Implemented | MEMORY/, LEARNING/, WORK/ exist |
+> | Context Injection | ✅ Implemented | SKILL.md + SYSTEM/ loaded at SessionStart |
+> | Security Validator | ✅ Implemented | Blocks dangerous commands |
+> | **Hook Integration** | ❌ NOT IMPLEMENTED | See details below |
+> | **Learning Capture** | ❌ NOT IMPLEMENTED | Hooks marked "Future:" in pai-unified.ts |
+> | **Progress Tracking** | ❌ NOT IMPLEMENTED | checkActiveProgress() missing |
+>
+> **Missing Hooks (documented but not implemented):**
+> - AutoWorkCreation.hook.ts
+> - ResponseCapture.hook.ts
+> - RatingCapture.hook.ts (Explicit + Implicit)
+> - WorkCompletionLearning.hook.ts
+> - AgentOutputCapture.hook.ts
+>
+> **Target:** v1.1+ release
+
+---
+
+## Architecture (PLANNED)
 
 **Claude Code's `projects/` is the source of truth. Hooks capture domain-specific events directly. Harvesting tools extract learnings from session transcripts.**
 
@@ -16,15 +42,15 @@ User Request
     ↓
 Claude Code projects/ (native transcript storage - 30-day retention)
     ↓
-Hook Events trigger domain-specific captures:
+Hook Events trigger domain-specific captures:     [❌ NOT YET IMPLEMENTED]
     ├── AutoWorkCreation → WORK/
     ├── ResponseCapture → WORK/, LEARNING/
     ├── RatingCapture → LEARNING/SIGNALS/
     ├── WorkCompletionLearning → LEARNING/
     ├── AgentOutputCapture → RESEARCH/
-    └── SecurityValidator → SECURITY/
+    └── SecurityValidator → SECURITY/            [✅ IMPLEMENTED]
     ↓
-Harvesting (periodic):
+Harvesting (periodic):                            [⚠️ TOOLS EXIST, NOT INTEGRATED]
     ├── SessionHarvester → LEARNING/ (extracts corrections, errors, insights)
     ├── LearningPatternSynthesis → LEARNING/SYNTHESIS/ (aggregates ratings)
     └── Observability reads from projects/

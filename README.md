@@ -1,6 +1,6 @@
 # PAI-OpenCode
 
-[![Status](https://img.shields.io/badge/status-v0.9.1%20Integration%20Complete-blue)](https://github.com/Steffen025/pai-opencode)
+[![Status](https://img.shields.io/badge/status-v1.0.0%20Released-brightgreen)](https://github.com/Steffen025/pai-opencode)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![PAI Version](https://img.shields.io/badge/PAI-2.3-green)](https://github.com/danielmiessler/PAI)
 
@@ -47,7 +47,7 @@ The key difference: **Continuous learning and personal context retention.**
 
 ## What is PAI-OpenCode?
 
-**This project ports PAI to [OpenCode](https://github.com/opencode-ai/opencode)** - a community-driven migration proving that PAI's architecture transcends any single platform.
+**This project ports PAI to [OpenCode](https://github.com/anomalyco/opencode)** - a community-driven migration proving that PAI's architecture transcends any single platform.
 
 We're not just copying files. We're documenting every adaptation, solving platform differences, and creating a blueprint for porting PAI anywhere.
 
@@ -55,8 +55,8 @@ We're not just copying files. We're documenting every adaptation, solving platfo
 
 | Challenge | Our Solution |
 |-----------|--------------|
-| Hooks → Plugins | TypeScript plugin adapter with security blocking |
-| Different lazy loading | Native OpenCode skill loading (94% token reduction) |
+| Hooks → Plugins | Unified TypeScript plugin with security blocking + context injection |
+| Different lazy loading | Native OpenCode skill loading |
 | Agent delegation differences | Hybrid Task API + subagent mapping |
 | Session management | OpenCode-native storage + PAI memory layer |
 
@@ -66,9 +66,9 @@ We're not just copying files. We're documenting every adaptation, solving platfo
 
 ## Project Status
 
-**Current Version:** v0.9.1 - Integration Complete ✅
+**Current Version:** v1.0.0 - Public Release ✅
 
-**Progress to v1.0 Public Release:**
+**Development Progress:**
 
 | Milestone | Description | Status |
 |-----------|-------------|--------|
@@ -83,13 +83,13 @@ We're not just copying files. We're documenting every adaptation, solving platfo
 | v0.8 | **Converter Tool** (PAI→OpenCode translator) | ✅ DONE |
 | v0.9 | Integration Testing + Documentation | ✅ DONE |
 | v0.9.1 | Agent Invocation Verification | ✅ DONE |
-| v1.0 | **PUBLIC RELEASE** (Community-ready vanilla PAI 2.3) | ⚠️ NEXT |
+| v1.0 | **PUBLIC RELEASE** (Community-ready vanilla PAI 2.3) | ✅ DONE |
 
 **Recent Achievements:**
+- **v1.0.0:** PUBLIC RELEASE - Community-ready vanilla PAI 2.3 on OpenCode
 - **v0.9.1:** Agent Invocation Verification - Critical discovery about Task tool vs @syntax
 - **v0.9:** Integration Testing - All components validated together
 - **v0.8:** Converter Tool - 767 files migrated in 5 seconds
-- **v0.7:** Plugin Adapter with security blocking, context injection
 
 ### Milestone Highlights
 
@@ -132,16 +132,15 @@ Security blocking, context injection, all 4 tests passing.
 
 ### What's IN Scope (v1.0)
 
-This project is a **pure vanilla PAI 2.0 port** to OpenCode. We include:
+This project is a **pure vanilla PAI 2.3 port** to OpenCode. We include:
 
-✅ **All PAI 2.0 Core Components:**
+✅ **All PAI 2.3 Core Components:**
 - 8 kai-* packs (kai-core-install, kai-hook-system, etc.)
-- Skills system with progressive disclosure
-- Agent delegation (intern, engineer, architect, designer, pentester)
-- COMPLETE History system (OpenCode sessions + PAI knowledge layer: learnings/, research/, decisions/, ideas/, projects/)
-- Hooks adapted as OpenCode plugins (6 core plugin equivalents)
+- Skills system with progressive disclosure (20+ skills)
+- Agent delegation (13 named agents: Intern, Engineer, Architect, Designer, Pentester, etc.)
+- COMPLETE History system (OpenCode sessions + PAI knowledge layer)
+- Unified Plugin (security blocking + context injection)
 - Constitutional framework and Two Loops architecture
-- Voice system (if part of vanilla PAI 2.0)
 
 ✅ **Platform Adaptation Layer:**
 - Converter tool for importing PAI updates
@@ -186,7 +185,7 @@ PAI-OpenCode makes **6 key technical decisions** documented in our Constitution:
 |----------|----------|-----------|
 | **Configuration** | Clean Break + Converter | Maintain import capability, not backwards compatibility |
 | **Agent Delegation** | Hybrid (Task API + Subagents) | PAI packs use Task tool, simple tasks use OpenCode native |
-| **Skills Loading** | LazyLoad Translation | OpenCode supports native lazy loading (92.5% token reduction) |
+| **Skills Loading** | LazyLoad Translation | OpenCode supports native lazy loading |
 | **Hook System** | DEFERRED (needs research) | Plugins fundamentally different from hooks—requires investigation |
 | **History System** | OpenCode Sessions (v1.0) | Use native session storage for public port |
 | **Directory Structure** | Clean `.opencode/` | Project-level config, not global, with converter for PAI updates |
@@ -201,51 +200,49 @@ PAI-OpenCode makes **6 key technical decisions** documented in our Constitution:
 
 ## Getting Started
 
-**Note:** Installation guide coming in **v0.2** (next milestone).
+### Prerequisites
 
-### Prerequisites (When Available)
+- **OpenCode** installed ([github.com/anomalyco/opencode](https://github.com/anomalyco/opencode))
+- **Bun** runtime ([bun.sh](https://bun.sh))
+- **ANTHROPIC_API_KEY** environment variable set
 
-- OpenCode installed and configured
-- Bun runtime (PAI uses Bun, not Node.js)
-- ANTHROPIC_API_KEY environment variable
+### Installation (Clone = Ready)
 
-### Quick Start (Preview - Not Yet Functional)
+The repository IS a complete PAI 2.3 installation. Just clone and run:
 
 ```bash
-# Clone the repository
+# 1. Clone the repository
 git clone https://github.com/Steffen025/pai-opencode.git
 cd pai-opencode
 
-# Install PAI 2.0 packs
-bun run install-packs.ts
+# 2. Install dependencies
+bun install
 
-# Verify installation
-bun Tools/PaiArchitecture.ts check
+# 3. Start OpenCode with PAI
+opencode
 ```
 
-**Current Status:** Foundation complete (workspace + git + research). Installation workflow in development.
+That's it! PAI 2.3 is now running on OpenCode with:
+- 20+ skills (auto-loaded on triggers)
+- 13 named agents (Intern, Engineer, Architect, Designer, Pentester, etc.)
+- Unified Plugin (security blocking, context injection)
 
-### Converter Quick Start
+### Verify Installation
 
-The PAI→OpenCode converter tool translates PAI 2.x structure to OpenCode format automatically:
+In OpenCode, try these commands:
+- `/skills` - List available skills
+- `/agents` - List available agents
+- Ask: "What skills do you have?" - Should list PAI skills
+
+### For Existing PAI Users (Migration)
+
+If you have an existing PAI installation on Claude Code, use the converter:
 
 ```bash
-# Convert PAI 2.x to OpenCode format
-bun run tools/pai-to-opencode-converter.ts --source ~/.claude --target .opencode
-
-# Preview changes first (recommended)
-bun run tools/pai-to-opencode-converter.ts --dry-run --verbose
-
-# See all options
-bun run tools/pai-to-opencode-converter.ts --help
+bun Tools/pai-to-opencode-converter.ts --source ~/.claude --target .opencode --dry-run
 ```
 
-**Key Features:**
-- Automatic structure translation (skills/, hooks/, config/)
-- Conflict detection and backup creation
-- Dry-run mode for safe previewing
-- Verbose logging for transparency
-- Preserves existing OpenCode files
+See [docs/CONVERTER.md](docs/CONVERTER.md) for detailed migration guide.
 
 ---
 
@@ -316,45 +313,44 @@ This project is open source and free to use, modify, and distribute. See [LICENS
 
 ---
 
-## What's Next?
+## v1.0 Released!
 
-**v0.9.1 Complete!** Integration testing done, critical agent invocation discovery documented.
+**PAI-OpenCode v1.0.0 is now available!** A complete, community-ready port of PAI 2.3 to OpenCode.
+
+### What's Included
+
+- **20+ Skills** with native OpenCode lazy loading
+- **13 Named Agents** with Task API delegation (Intern, Engineer, Architect, etc.)
+- **Unified Plugin** for security blocking and context injection
+- **Converter Tool** for migrating existing PAI installations (767 files in 5 seconds)
+- **Comprehensive Documentation** for getting started
+
+### Known Limitations (OpenCode API)
+
+Some PAI 2.3 features cannot be ported due to OpenCode's architecture:
+
+| Feature | Reason | Impact |
+|---------|--------|--------|
+| User Input Interception | OpenCode has no `UserPromptSubmit` event | Format enforcement, auto-work creation not available |
+| Tab Title Updates | OpenCode tab API not exposed | No dynamic tab titles |
+| Rating Capture | Requires `UserPromptSubmit` | Explicit/implicit rating capture not available |
+
+These are **OpenCode platform limitations**, not implementation gaps. See [docs/HOOK-MAPPING.md](docs/HOOK-MAPPING.md) for full details.
 
 ### Key Discovery: Agent Invocation in OpenCode
 
 ```
-Task({subagent_type: "Intern"})     → ✅ Clickable session
-Task({subagent_type: "Architect"})  → ✅ Clickable session
-@architect (in AI response)         → ❌ Just text, no agent called
-@architect (user types in input)    → ✅ Works
+Task({subagent_type: "Intern"})     → ✅ AI-to-Agent delegation
+Task({subagent_type: "Architect"})  → ✅ AI-to-Agent delegation
+@architect (user types in input)    → ✅ User-to-Agent invocation
 ```
 
-**The insight:** OpenCode has TWO invocation contexts. AI uses `Task({subagent_type})`, users type `@agentname`.
+### Future Roadmap (Post v1.0)
 
-### Project Progress
-
-```
-v0.1 ────→ v0.2 ────→ v0.3 ────→ v0.4 ────→ v0.5
-  ✅        ✅        ✅         ✅         ✅
-
-           ────→ v0.6 ────→ v0.7 ────→ v0.8 ────→ v0.9.1
-                  ✅        ✅         ✅        ✅ (WE ARE HERE)
-
-           ────→ v1.0 PUBLIC RELEASE 🚀
-                  ⚠️ NEXT
-```
-
-**Upcoming:**
-- **v1.0** - PUBLIC RELEASE (Community-ready vanilla PAI 2.3)
-  - Final documentation review
-  - Repository cleanup
-  - Fresh system installation test
-  - Community announcement
-
-**Future (Post v1.0):**
-- Ollama integration for local models
-- Voice system
-- Observability dashboard
+- **Ollama Integration** - Local model support for complete data sovereignty
+- **Voice System** - Audio notifications and feedback
+- **Observability Dashboard** - Performance and usage insights
+- **Additional PAI Packs** - Importable via the Converter tool
 
 **Follow our progress:** Watch this repository or check [ROADMAP.md](ROADMAP.md) for milestone updates.
 

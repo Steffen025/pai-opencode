@@ -584,8 +584,8 @@ Based on the project roadmap and compatibility analysis:
 ### External Resources
 
 - **OpenCode Official Docs:** https://opencode.ai/docs/
-- **DeepWiki Documentation:** https://deepwiki.com/sst/opencode
-- **GitHub Repository:** https://github.com/sst/opencode
+- **DeepWiki Documentation:** https://deepwiki.com/anomalyco/opencode
+- **GitHub Repository:** https://github.com/anomalyco/opencode
 - **OpenCode SDK:** `@opencode-ai/sdk` (npm)
 - **OpenAPI Spec Endpoint:** `http://localhost:4096/doc` (when server running)
 

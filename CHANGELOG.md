@@ -7,6 +7,103 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-01-20
+
+### Critical Discovery - OpenCode Re-Audit
+
+**IMPORTANT:** Previous audits were INVALID because they queried the wrong DeepWiki repository (`opencode-ai/opencode` instead of `anomalyco/opencode`).
+
+### Key Findings
+
+1. **Directory Structure:** OpenCode supports BOTH singular AND plural forms via glob patterns:
+   ```typescript
+   "{plugin,plugins}/*.{ts,js}"   // Both work!
+   "{agent,agents}/**/*.md"       // Both work!
+   "{skill,skills}/**/SKILL.md"   // Both work!
+   ```
+
+2. **Missing Hook Discovered:** `chat.message` hook EXISTS in OpenCode - this is the UserPromptSubmit equivalent we thought was missing!
+
+3. **Repository Clarification:**
+   - `github.com/sst/opencode` → REDIRECTS to → `github.com/anomalyco/opencode`
+   - `opencode-ai/opencode` is a DIFFERENT PROJECT (ignore it!)
+
+### Fixed
+
+- **Repository References:** Corrected 5 files that referenced wrong repository
+  - README.md (2 locations)
+  - docs/HOOK-MAPPING.md (2 locations + added warning)
+  - research/SYNTHESIS.md (2 locations)
+
+### Changed
+
+- **NPM Package:** Updated `@opencode-ai/plugin` from 1.1.20 → 1.1.27
+
+### Planned for v0.9.3
+
+Based on these findings, v0.9.3 will include:
+
+1. **Directory Rename (Singular → Plural):**
+   - `.opencode/agent/` → `.opencode/agents/`
+   - `.opencode/plugin/` → `.opencode/plugins/`
+   - `.opencode/skill/` → `.opencode/skills/`
+
+2. **New Hook Implementation:**
+   - `chat.message` - UserPromptSubmit equivalent for user input interception
+
+This aligns PAI-OpenCode with PAI vanilla naming conventions.
+
+### Documentation
+
+- Full re-audit: `.claude/MEMORY/projects/pai-opencode/RE-AUDIT-2026-01-20.md`
+- Learning: DeepWiki repository verification rules
+
+---
+
+## [1.0.0] - TBD
+
+### Release - PAI-OpenCode v1.0.0 Public Release
+
+**The community port of PAI 2.3 to OpenCode is now publicly available.**
+
+This release marks the completion of all planned milestones (v0.1 - v0.9.1) and delivers a fully functional PAI 2.3 installation on OpenCode.
+
+### Highlights
+
+- **Complete PAI 2.3 Functionality** - All core features ported to OpenCode
+- **20+ Skills** with native lazy loading (94% token reduction vs always-loaded)
+- **7 Named Agents** (Intern, Engineer, Architect, Researcher, Designer, Pentester, Writer)
+- **Plugin Adapter** with security blocking and context injection
+- **Converter Tool** for migrating existing PAI installations (767 files in 5 seconds)
+- **Comprehensive Documentation** for getting started and contributing
+
+### What's Included
+
+| Component | Description |
+|-----------|-------------|
+| Skills System | Native OpenCode lazy loading with progressive disclosure |
+| Agent Delegation | Task API for AI-to-Agent, @syntax for User-to-Agent |
+| Plugin Adapter | Security validation + context injection |
+| Converter Tool | Automated PAI → OpenCode migration |
+| Memory System | PAI 2.3 MEMORY/ structure with History, Learning, Signals |
+
+### Getting Started
+
+```bash
+git clone https://github.com/Steffen025/pai-opencode.git
+cd pai-opencode
+bun install
+opencode
+```
+
+See [README.md](README.md) for complete installation guide.
+
+### Acknowledgments
+
+Thanks to [Daniel Miessler](https://github.com/danielmiessler) for creating PAI and making this port possible.
+
+---
+
 ## [0.9.1] - 2026-01-19
 
 ### Fixed
