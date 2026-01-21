@@ -11,7 +11,7 @@ import { readdir, readFile, writeFile, stat } from "fs/promises";
 import { join, basename } from "path";
 import { parse as parseYaml } from "yaml";
 
-const PAI_DIR = process.env.PAI_DIR || `${process.env.HOME}/.claude`;
+const PAI_DIR = process.env.PAI_DIR || `${process.env.HOME}/.opencode`;
 const UPDATES_DIR = join(PAI_DIR, "MEMORY/PAISYSTEMUPDATES");
 const INDEX_PATH = join(UPDATES_DIR, "index.json");
 const CHANGELOG_PATH = join(UPDATES_DIR, "CHANGELOG.md");

@@ -37,10 +37,10 @@ interface RalphLoopState {
 const STATE_FILE = ".opencode/ralph-loop.local.md";
 
 function getStatePath(): string {
-  // Find project root by looking for .claude directory
+  // Find project root by looking for .opencode directory
   let dir = process.cwd();
   while (dir !== "/") {
-    if (existsSync(join(dir, ".claude"))) {
+    if (existsSync(join(dir, ".opencode"))) {
       return join(dir, STATE_FILE);
     }
     dir = dirname(dir);
@@ -84,7 +84,7 @@ function createStateFile(config: RalphLoopConfig): void {
   const statePath = getStatePath();
   const stateDir = dirname(statePath);
 
-  // Ensure .claude directory exists
+  // Ensure .opencode directory exists
   if (!existsSync(stateDir)) {
     mkdirSync(stateDir, { recursive: true });
   }

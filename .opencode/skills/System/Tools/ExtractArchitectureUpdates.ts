@@ -12,7 +12,7 @@
 import { readFile, writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 
-const PAI_DIR = process.env.PAI_DIR || `${process.env.HOME}/.claude`;
+const PAI_DIR = process.env.PAI_DIR || `${process.env.HOME}/.opencode`;
 const ARCHITECTURE_PATH = join(PAI_DIR, "skills/CORE/SYSTEM/ARCHITECTURE.md");
 const UPDATES_DIR = join(PAI_DIR, "MEMORY/PAISYSTEMUPDATES");
 

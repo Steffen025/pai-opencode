@@ -97,7 +97,7 @@ Solution: `input.tool.toLowerCase()` for comparison.
 
 ### 4. OpenCode Claude Compatibility
 
-OpenCode scans `~/.claude/skills/**/SKILL.md` for Claude Code compatibility.
+OpenCode scans `~/.opencode/skills/**/SKILL.md` for Claude Code compatibility.
 **Never store temp files with SKILL.md in that path** - causes TUI corruption.
 
 ## Files Modified During Testing

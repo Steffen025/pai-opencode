@@ -23,7 +23,7 @@ const DEFAULTS = {
 } as const;
 
 function loadConfig(): Config {
-  const envPath = join(homedir(), '.claude', '.env');
+  const envPath = join(homedir(), '.opencode', '.env');
 
   try {
     const envContent = readFileSync(envPath, 'utf-8');

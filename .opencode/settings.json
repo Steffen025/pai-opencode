@@ -1,0 +1,15 @@
+{
+  "identity": {
+    "assistant_name": "PAI",
+    "user_name": "User"
+  },
+  "environment": {
+    "PAI_DIR": ".opencode",
+    "TIME_ZONE": "Europe/Berlin"
+  },
+  "preferences": {
+    "language": "TypeScript",
+    "package_manager": "bun",
+    "runtime": "bun"
+  }
+}

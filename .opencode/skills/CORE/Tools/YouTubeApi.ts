@@ -37,7 +37,7 @@ const colors = {
 
 // Load environment
 function loadEnv(): Record<string, string> {
-  const envPath = join(homedir(), '.claude', '.env')
+  const envPath = join(homedir(), '.opencode', '.env')
   const env: Record<string, string> = {}
   try {
     const content = readFileSync(envPath, 'utf-8')

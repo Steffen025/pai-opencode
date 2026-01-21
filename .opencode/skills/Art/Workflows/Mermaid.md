@@ -633,7 +633,7 @@ Optional: Sign small in bottom right corner in charcoal (#2D2D2D).
 **Execute with optimal model for text-heavy diagrams:**
 
 ```bash
-bun run ~/.opencode/skills/art/Tools/Generate.ts \
+bun run ~/.opencode/skills/Art/Tools/Generate.ts \
   --model nano-banana-pro \
   --prompt "[YOUR COMPREHENSIVE PROMPT]" \
   --size 2K \

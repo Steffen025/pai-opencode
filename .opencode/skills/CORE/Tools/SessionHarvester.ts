@@ -25,7 +25,7 @@ import { getLearningCategory, isLearningCapture } from "../../../plugins/lib/lea
 // Configuration
 // ============================================================================
 
-const CLAUDE_DIR = path.join(process.env.HOME!, ".claude");
+const CLAUDE_DIR = path.join(process.env.HOME!, ".opencode");
 const USERNAME = process.env.USER || require("os").userInfo().username;
 const PROJECTS_DIR = path.join(CLAUDE_DIR, "projects", `-Users-${USERNAME}--claude`);
 const LEARNING_DIR = path.join(CLAUDE_DIR, "MEMORY", "LEARNING");

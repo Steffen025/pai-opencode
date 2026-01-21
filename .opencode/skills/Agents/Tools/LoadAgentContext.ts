@@ -25,7 +25,7 @@ export class AgentContextLoader {
   private agentsDir: string;
 
   constructor() {
-    this.claudeHome = join(homedir(), ".claude");
+    this.claudeHome = join(homedir(), ".opencode");
     this.agentsDir = join(this.claudeHome, "Skills", "Agents");
   }
 

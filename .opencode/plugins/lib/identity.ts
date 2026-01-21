@@ -10,7 +10,7 @@ import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
 const HOME = process.env.HOME!;
-// OpenCode uses ~/.opencode/ instead of ~/.claude/
+// OpenCode uses ~/.opencode/ instead of ~/.opencode/
 const SETTINGS_PATH = join(HOME, '.opencode/settings.json');
 
 // Default identity (fallback if settings.json doesn't have identity section)

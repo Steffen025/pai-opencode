@@ -272,7 +272,7 @@ Optional: Sign small in bottom right corner in charcoal (#2D2D2D).
 ### Step 5: Execute Generation
 
 ```bash
-bun run ~/.opencode/skills/art/Tools/Generate.ts \
+bun run ~/.opencode/skills/Art/Tools/Generate.ts \
   --model nano-banana-pro \
   --prompt "[YOUR PROMPT]" \
   --size 2K \

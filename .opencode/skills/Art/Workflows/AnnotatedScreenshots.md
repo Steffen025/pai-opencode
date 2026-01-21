@@ -248,7 +248,7 @@ If generating combined image is difficult:
 
 **Option A: Generate combined (if model supports):**
 ```bash
-bun run ~/.opencode/skills/art/Tools/Generate.ts \
+bun run ~/.opencode/skills/Art/Tools/Generate.ts \
   --model nano-banana-pro \
   --reference-image /path/to/screenshot.png \
   --prompt "[ANNOTATION PROMPT]" \

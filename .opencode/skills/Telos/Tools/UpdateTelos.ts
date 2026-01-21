@@ -38,7 +38,7 @@ import { readFileSync, writeFileSync, copyFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { getPrincipal } from '../../../plugins/lib/identity';
 
-const TELOS_DIR = join(process.env.HOME!, '.claude', 'context', 'life', 'telos');
+const TELOS_DIR = join(process.env.HOME!, '.opencode', 'context', 'life', 'telos');
 const BACKUPS_DIR = join(TELOS_DIR, 'backups');
 const UPDATES_FILE = join(TELOS_DIR, 'updates.md');
 

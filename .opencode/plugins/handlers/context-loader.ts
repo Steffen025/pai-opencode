@@ -15,7 +15,7 @@ import type { ContextResult } from "../adapters/types";
 /**
  * Get the OpenCode directory path
  *
- * In OpenCode, config lives in .opencode/ (not .claude/)
+ * In OpenCode, config lives in .opencode/ (not .opencode/)
  */
 function getOpenCodeDir(): string {
   // Try current working directory first
@@ -92,8 +92,8 @@ export async function loadContext(): Promise<ContextResult> {
     if (existsSync(systemDir)) {
       const systemFiles = [
         "SkillSystem.md",
-        "AgentArchitecture.md",
-        "HookSystem.md",
+        "PAIAGENTSYSTEM.md",
+        "THEHOOKSYSTEM.md",
       ];
 
       for (const file of systemFiles) {

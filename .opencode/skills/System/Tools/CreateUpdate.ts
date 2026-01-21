@@ -20,7 +20,7 @@ import { writeFile, mkdir, readFile } from "fs/promises";
 import { join } from "path";
 import { parseArgs } from "util";
 
-const PAI_DIR = process.env.PAI_DIR || `${process.env.HOME}/.claude`;
+const PAI_DIR = process.env.PAI_DIR || `${process.env.HOME}/.opencode`;
 const UPDATES_DIR = join(PAI_DIR, "MEMORY/PAISYSTEMUPDATES");
 const INDEX_PATH = join(UPDATES_DIR, "INDEX.md");
 

@@ -35,7 +35,7 @@ Before EVERY push: `git remote -v` must show `.claude.git` NOT `PAI.git`
 ```bash
 # MUST be in ~/.opencode (or $PAI_DIR)
 cd ~/.opencode && pwd
-# Expected output: $HOME/.claude (your home directory + .claude)
+# Expected output: $HOME/.opencode (your home directory + .opencode)
 
 # MUST show the PRIVATE repo
 git remote -v
