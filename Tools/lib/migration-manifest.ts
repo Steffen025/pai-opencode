@@ -5,6 +5,28 @@ import { join, basename, dirname } from "path";
 // Types
 // ============================================================================
 
+/**
+ * PAI Version identifier
+ * - "1.x": Legacy PAI (no skills/, no MEMORY/)
+ * - "2.0": Early PAI 2.0 (has skills/, history/ but no MEMORY/)
+ * - "2.1": PAI 2.1+ (has MEMORY/, USER/SYSTEM separation)
+ * - "2.2": PAI 2.2 (has MEMORY/, USER/SYSTEM, enhanced skills)
+ * - "2.3": PAI 2.3 (has Packs/ directory)
+ * - "unknown": Cannot determine version
+ */
+export type PAIVersion = "1.x" | "2.0" | "2.1" | "2.2" | "2.3" | "unknown";
+
+/**
+ * Version detection result with confidence and evidence
+ */
+export interface VersionDetectionResult {
+  version: PAIVersion;
+  confidence: "high" | "medium" | "low";
+  evidence: string[];
+  migrationSupport: "full" | "partial" | "none";
+  migrationNotes: string[];
+}
+
 export interface SourceDetection {
   path: string;
   type: "pai-claudecode";
@@ -367,4 +389,222 @@ export function validateManifestStructure(manifest: MigrationManifest): {
     valid: errors.length === 0,
     errors,
   };
+}
+
+// ============================================================================
+// Version Detection
+// ============================================================================
+
+/**
+ * Detect the PAI version of a source directory
+ *
+ * Uses heuristics based on directory structure:
+ * - No skills/ → PAI 1.x or not PAI
+ * - Has history/ but no MEMORY/ → PAI 2.0
+ * - Has MEMORY/ but no USER/ separation → PAI 2.0 late
+ * - Has USER/ and SYSTEM/ separation → PAI 2.1+
+ * - Has Packs/ directory → PAI 2.3
+ * - Has paiVersion in settings.json → Explicit version
+ */
+export function detectPAIVersion(sourcePath: string): VersionDetectionResult {
+  const evidence: string[] = [];
+  const migrationNotes: string[] = [];
+
+  // Check for skills/ directory (PAI 2.0+)
+  const hasSkills = existsSync(join(sourcePath, "skills"));
+  if (!hasSkills) {
+    evidence.push("No skills/ directory found");
+    return {
+      version: "1.x",
+      confidence: "high",
+      evidence,
+      migrationSupport: "none",
+      migrationNotes: [
+        "PAI 1.x is NOT supported for automatic migration",
+        "Complete architectural rewrite between 1.x and 2.x",
+        "Recommendation: Start fresh with PAI 2.3 / OpenCode"
+      ]
+    };
+  }
+  evidence.push("skills/ directory exists");
+
+  // Check for MEMORY/ vs history/
+  const hasMemory = existsSync(join(sourcePath, "MEMORY"));
+  const hasHistory = existsSync(join(sourcePath, "history"));
+
+  if (hasHistory && !hasMemory) {
+    evidence.push("history/ exists, MEMORY/ missing → PAI 2.0 early");
+    return {
+      version: "2.0",
+      confidence: "high",
+      evidence,
+      migrationSupport: "partial",
+      migrationNotes: [
+        "PAI 2.0 requires pre-migration to 2.1+ format",
+        "USER/SYSTEM separation doesn't exist yet",
+        "Recommendation: Run pai-2.0-to-2.1-migrator first, then use selective import"
+      ]
+    };
+  }
+
+  if (hasMemory) {
+    evidence.push("MEMORY/ directory exists");
+  }
+
+  // Check for USER/SYSTEM separation (PAI 2.1+)
+  const hasUserDir = existsSync(join(sourcePath, "skills/CORE/USER"));
+  const hasSystemDir = existsSync(join(sourcePath, "skills/CORE/SYSTEM"));
+
+  if (!hasUserDir && !hasSystemDir) {
+    evidence.push("No USER/SYSTEM separation in skills/CORE/");
+    return {
+      version: "2.0",
+      confidence: "medium",
+      evidence,
+      migrationSupport: "partial",
+      migrationNotes: [
+        "PAI 2.0 detected (late version with MEMORY but no USER/SYSTEM split)",
+        "Selective import will work but USER files need manual identification",
+        "Recommendation: Consider full migration or manual content extraction"
+      ]
+    };
+  }
+
+  if (hasUserDir) {
+    evidence.push("skills/CORE/USER/ exists → PAI 2.1+");
+  }
+  if (hasSystemDir) {
+    evidence.push("skills/CORE/SYSTEM/ exists → PAI 2.1+");
+  }
+
+  // Check for Packs/ (PAI 2.3)
+  const hasPacks = existsSync(join(sourcePath, "Packs"));
+  if (hasPacks) {
+    evidence.push("Packs/ directory exists → PAI 2.3");
+    return {
+      version: "2.3",
+      confidence: "high",
+      evidence,
+      migrationSupport: "full",
+      migrationNotes: [
+        "PAI 2.3 detected - full migration support",
+        "Selective import will preserve USER content and MEMORY",
+        "SYSTEM files will be skipped (OpenCode 2.3 version used)"
+      ]
+    };
+  }
+
+  // Check settings.json for explicit version
+  const settingsPath = join(sourcePath, "settings.json");
+  if (existsSync(settingsPath)) {
+    try {
+      const settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
+      if (settings.paiVersion) {
+        const v = settings.paiVersion;
+        evidence.push(`paiVersion in settings.json: ${v}`);
+
+        if (v.startsWith("2.3")) {
+          return {
+            version: "2.3",
+            confidence: "high",
+            evidence,
+            migrationSupport: "full",
+            migrationNotes: ["Explicit PAI 2.3 version detected"]
+          };
+        }
+        if (v.startsWith("2.2")) {
+          return {
+            version: "2.2",
+            confidence: "high",
+            evidence,
+            migrationSupport: "full",
+            migrationNotes: ["PAI 2.2 - full support via selective import"]
+          };
+        }
+        if (v.startsWith("2.1")) {
+          return {
+            version: "2.1",
+            confidence: "high",
+            evidence,
+            migrationSupport: "full",
+            migrationNotes: ["PAI 2.1 - full support via selective import"]
+          };
+        }
+        if (v.startsWith("2.0")) {
+          return {
+            version: "2.0",
+            confidence: "high",
+            evidence,
+            migrationSupport: "partial",
+            migrationNotes: ["PAI 2.0 - partial support, may need pre-migration"]
+          };
+        }
+      }
+    } catch {
+      // Ignore JSON parse errors
+    }
+  }
+
+  // Default to 2.1 if has USER/SYSTEM separation but no Packs or explicit version
+  return {
+    version: hasUserDir ? "2.1" : "2.0",
+    confidence: "medium",
+    evidence,
+    migrationSupport: hasUserDir ? "full" : "partial",
+    migrationNotes: hasUserDir
+      ? ["PAI 2.1+ detected - full selective import support"]
+      : ["PAI 2.0 detected - consider pre-migration for best results"]
+  };
+}
+
+/**
+ * Check if a source is compatible with selective migration
+ */
+export function isSelectiveMigrationSupported(sourcePath: string): {
+  supported: boolean;
+  version: PAIVersion;
+  reason: string;
+} {
+  const detection = detectPAIVersion(sourcePath);
+
+  if (detection.migrationSupport === "none") {
+    return {
+      supported: false,
+      version: detection.version,
+      reason: `PAI ${detection.version} is not supported. ${detection.migrationNotes[0]}`
+    };
+  }
+
+  if (detection.migrationSupport === "partial") {
+    return {
+      supported: true,
+      version: detection.version,
+      reason: `PAI ${detection.version} has partial support. ${detection.migrationNotes[0]}`
+    };
+  }
+
+  return {
+    supported: true,
+    version: detection.version,
+    reason: `PAI ${detection.version} has full selective import support.`
+  };
+}
+
+/**
+ * Get user-friendly version info for display
+ */
+export function formatVersionInfo(result: VersionDetectionResult): string {
+  const lines: string[] = [];
+
+  lines.push(`📦 PAI Version: ${result.version}`);
+  lines.push(`   Confidence: ${result.confidence}`);
+  lines.push(`   Migration Support: ${result.migrationSupport.toUpperCase()}`);
+  lines.push("");
+  lines.push("Evidence:");
+  result.evidence.forEach(e => lines.push(`   • ${e}`));
+  lines.push("");
+  lines.push("Notes:");
+  result.migrationNotes.forEach(n => lines.push(`   • ${n}`));
+
+  return lines.join("\n");
 }

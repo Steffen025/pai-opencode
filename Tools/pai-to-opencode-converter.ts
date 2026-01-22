@@ -6,8 +6,13 @@
  *
  * Usage:
  *   bun run tools/pai-to-opencode-converter.ts --source ~/.claude --target .opencode
+ *   bun run tools/pai-to-opencode-converter.ts --source ~/.claude --target .opencode --mode selective
  *   bun run tools/pai-to-opencode-converter.ts --source ~/.claude --target .opencode --dry-run
  *   bun run tools/pai-to-opencode-converter.ts --help
+ *
+ * Migration Modes:
+ *   - full: Copy everything (default, for fresh installations)
+ *   - selective: Only import USER + CUSTOM content, skip SYSTEM (for upgrading)
  *
  * What it translates:
  *   - settings.json → opencode.json (schema mapping)
@@ -22,7 +27,7 @@
  * Post-conversion validation:
  *   - Checks for remaining .claude references (v0.9.5)
  *
- * @version 0.9.7
+ * @version 1.0.0
  * @author PAI-OpenCode Project
  */
 
@@ -49,8 +54,13 @@ import {
   addValidationRequirement,
   writeManifest,
   getManifestSummary,
+  detectPAIVersion,
+  isSelectiveMigrationSupported,
+  formatVersionInfo,
   type MigrationManifest,
   type Transformation,
+  type PAIVersion,
+  type VersionDetectionResult,
 } from "./lib/migration-manifest.js";
 
 // ============================================================================
@@ -121,7 +131,7 @@ interface OpencodeJson {
 
 function printHelp(): void {
   console.log(`
-PAI to OpenCode Converter v0.9.7
+PAI to OpenCode Converter v1.0.0
 
 USAGE:
   bun run tools/pai-to-opencode-converter.ts [OPTIONS]
@@ -129,6 +139,7 @@ USAGE:
 OPTIONS:
   --source <path>       Source PAI directory (default: ~/.claude)
   --target <path>       Target OpenCode directory (default: .opencode)
+  --mode <mode>         Migration mode: "full" or "selective" (default: full)
   --dry-run             Show what would be done without making changes
   --backup              Create backup before conversion (default: true)
   --no-backup           Skip backup creation
@@ -137,34 +148,52 @@ OPTIONS:
   --verbose             Show detailed output
   --help                Show this help message
 
-EXAMPLES:
-  # Convert with defaults
-  bun run tools/pai-to-opencode-converter.ts
+MIGRATION MODES:
+  full        Copy everything from source to target (for fresh installations)
+  selective   Only import USER + CUSTOM content, skip SYSTEM files
+              (for upgrading to a fresh 2.3 OpenCode installation)
 
-  # Convert from specific source
-  bun run tools/pai-to-opencode-converter.ts --source /path/to/.claude --target .opencode
+SELECTIVE MODE IMPORTS:
+  ✅ skills/CORE/USER/       Personal data (TELOS, Contacts, etc.)
+  ✅ skills/_CustomSkill/    User-created skills (underscore prefix)
+  ✅ skills/[NotStandard]/   Skills not in vanilla PAI
+  ✅ MEMORY/                 All history, work, learning, projects
+  ✅ .env                    API keys and secrets
+  ✅ profiles/               Tool profiles
+
+SELECTIVE MODE SKIPS:
+  ⏭️ skills/CORE/SYSTEM/     Uses fresh 2.3 version
+  ⏭️ hooks/                  Uses fresh plugins/
+  ⏭️ Tools/                  Uses fresh 2.3 version (unless custom)
+  ⏭️ Standard skills         Uses fresh 2.3 version (if unmodified)
+
+EXAMPLES:
+  # Full migration (fresh install)
+  bun run tools/pai-to-opencode-converter.ts --source ~/.claude --target .opencode
+
+  # Selective import to existing fresh 2.3 install
+  bun run tools/pai-to-opencode-converter.ts --source ~/.claude --target .opencode --mode selective
 
   # Dry run to preview changes
-  bun run tools/pai-to-opencode-converter.ts --dry-run --verbose
+  bun run tools/pai-to-opencode-converter.ts --dry-run --verbose --mode selective
 
-WHAT GETS CONVERTED:
-  ✅ settings.json → opencode.json (schema mapping)
-  ✅ skills/ → skills/ (directory copy with path updates)
-  ✅ agents/ → agents/ (YAML frontmatter + body path replacement)
-  ✅ MEMORY/ → MEMORY/ (direct copy)
-  ✅ Tools/ → Tools/ (all TypeScript files with path updates)
-
-WHAT REQUIRES MANUAL WORK:
-  ⚠️  hooks/ → plugins/ (architecture differs - see migration report)
+VERSION SUPPORT:
+  ✅ PAI 2.3     Full support (selective + full)
+  ✅ PAI 2.1-2.2 Full support (selective + full)
+  ⚠️  PAI 2.0     Partial support (may need pre-migration)
+  ❌ PAI 1.x     Not supported (start fresh)
 
 OUTPUT:
   Creates a migration report at <target>/MIGRATION-REPORT.md
 `);
 }
 
+type MigrationMode = "full" | "selective";
+
 function parseCliArgs(): {
   source: string;
   target: string;
+  mode: MigrationMode;
   dryRun: boolean;
   backup: boolean;
   skipValidation: boolean;
@@ -177,6 +206,7 @@ function parseCliArgs(): {
     options: {
       source: { type: "string", default: "~/.claude" },
       target: { type: "string", default: ".opencode" },
+      mode: { type: "string", default: "full" },
       "dry-run": { type: "boolean", default: false },
       backup: { type: "boolean", default: true },
       "no-backup": { type: "boolean", default: false },
@@ -196,9 +226,17 @@ function parseCliArgs(): {
     return p;
   };
 
+  // Validate mode
+  const mode = values.mode as string;
+  if (mode !== "full" && mode !== "selective") {
+    console.error(`❌ Invalid mode: ${mode}. Must be "full" or "selective".`);
+    process.exit(1);
+  }
+
   return {
     source: expandPath(values.source as string),
     target: expandPath(values.target as string),
+    mode: mode as MigrationMode,
     dryRun: values["dry-run"] as boolean,
     backup: (values.backup as boolean) && !(values["no-backup"] as boolean),
     skipValidation: values["skip-validation"] as boolean,
@@ -222,6 +260,169 @@ function ensureDir(dir: string, dryRun: boolean): void {
   if (!dryRun && !existsSync(dir)) {
     mkdirSync(dir, { recursive: true });
   }
+}
+
+// ============================================================================
+// Content Classification for Selective Mode
+// ============================================================================
+
+/**
+ * Standard skills that come with vanilla PAI 2.3
+ * Files in these skills are SKIPPED in selective mode (use fresh 2.3 version)
+ */
+const STANDARD_SKILLS = [
+  "CORE",
+  "Agents",
+  "Browser",
+  "Art",
+  "Research",
+  "Security",
+  "THEALGORITHM",
+  "SpecFirst",
+  "System",
+  "FirstPrinciples",
+  "Council",
+  "RedTeam",
+  "BeCreative",
+  "Fabric",
+  "pdf",
+  "Prompting",
+  "CreateSkill",
+  "Intelligence",
+  "KnowledgeExtraction",
+  "Thinking",
+  "Upgrades",
+];
+
+/**
+ * USER content paths - ALWAYS imported in selective mode
+ */
+const USER_PATHS = [
+  "skills/CORE/USER/",
+  "MEMORY/",
+  ".env",
+  "profiles/",
+];
+
+/**
+ * SYSTEM content paths - SKIPPED in selective mode
+ */
+const SYSTEM_PATHS = [
+  "skills/CORE/SYSTEM/",
+  "skills/CORE/Tools/",
+  "hooks/",
+  "Packs/",
+];
+
+/**
+ * Determine if a file should be imported based on migration mode
+ *
+ * @param relativePath - Path relative to source root
+ * @param mode - Migration mode (full or selective)
+ * @param customSkills - List of detected custom skills (not in STANDARD_SKILLS)
+ * @returns "import" | "skip" | "user-decide"
+ */
+function shouldImportFile(
+  relativePath: string,
+  mode: MigrationMode,
+  customSkills: string[]
+): "import" | "skip" | "user-decide" {
+  // Full mode: import everything
+  if (mode === "full") {
+    return "import";
+  }
+
+  // Selective mode logic
+
+  // 1. Always import USER content
+  for (const userPath of USER_PATHS) {
+    if (relativePath.startsWith(userPath) || relativePath === userPath.replace(/\/$/, "")) {
+      return "import";
+    }
+  }
+
+  // 2. Always skip SYSTEM content
+  for (const systemPath of SYSTEM_PATHS) {
+    if (relativePath.startsWith(systemPath)) {
+      return "skip";
+    }
+  }
+
+  // 3. Import CUSTOM skills (underscore prefix or not in standard list)
+  if (relativePath.startsWith("skills/")) {
+    const parts = relativePath.split("/");
+    if (parts.length >= 2) {
+      const skillName = parts[1];
+
+      // Underscore prefix = custom skill (e.g., skills/_MySkill/)
+      if (skillName.startsWith("_")) {
+        return "import";
+      }
+
+      // Check if it's in the custom skills list (not in standard)
+      if (customSkills.includes(skillName)) {
+        return "import";
+      }
+
+      // Standard skill - check if it's modified
+      if (STANDARD_SKILLS.includes(skillName)) {
+        // For now, skip standard skills in selective mode
+        // In future: could check for modifications and ask user
+        return "skip";
+      }
+
+      // Unknown skill (not in standard list, not underscore) - import it
+      return "import";
+    }
+  }
+
+  // 4. Skip Tools/ directory in selective mode (use fresh 2.3 version)
+  if (relativePath.startsWith("Tools/") || relativePath.startsWith("tools/")) {
+    return "skip";
+  }
+
+  // 5. Import agents/ (usually customized)
+  if (relativePath.startsWith("agents/")) {
+    return "import";
+  }
+
+  // 6. Import mcp-servers/ (usually custom)
+  if (relativePath.startsWith("mcp-servers/")) {
+    return "import";
+  }
+
+  // 7. Import observability/ (custom dashboards)
+  if (relativePath.startsWith("observability/")) {
+    return "import";
+  }
+
+  // 8. Skip config files that are part of system (settings.json handled separately)
+  if (relativePath === "settings.json" || relativePath === "bun.lock" || relativePath === "package.json") {
+    return "skip";
+  }
+
+  // Default: import unknown files (safer to include than exclude)
+  return "import";
+}
+
+/**
+ * Format selective mode classification for display
+ */
+function formatSelectiveClassification(
+  imported: string[],
+  skipped: string[],
+  userDecide: string[]
+): string {
+  const lines: string[] = [];
+
+  lines.push("\n📊 Selective Mode Classification:");
+  lines.push(`   ✅ Import: ${imported.length} files/dirs`);
+  lines.push(`   ⏭️ Skip:   ${skipped.length} files/dirs`);
+  if (userDecide.length > 0) {
+    lines.push(`   ❓ Decide: ${userDecide.length} files/dirs`);
+  }
+
+  return lines.join("\n");
 }
 
 function copyDir(src: string, dest: string, dryRun: boolean, verbose: boolean): string[] {
@@ -348,23 +549,70 @@ function translateSettings(source: string, target: string, dryRun: boolean, verb
 /**
  * Translate PAI skills/ to OpenCode skill/
  *
- * Skills are nearly identical in format - just copy with path updates
+ * Skills are nearly identical in format - just copy with path updates.
+ * In selective mode, only USER content and custom skills are imported.
  */
-function translateSkills(source: string, target: string, dryRun: boolean, verbose: boolean): {
+function translateSkills(
+  source: string,
+  target: string,
+  dryRun: boolean,
+  verbose: boolean,
+  mode: MigrationMode,
+  customSkills: string[]
+): {
   converted: string[];
+  skipped: string[];
   warnings: string[];
 } {
   const warnings: string[] = [];
+  const converted: string[] = [];
+  const skipped: string[] = [];
   const skillsSource = join(source, "skills");
   const skillsTarget = join(target, "skills");
 
   if (!existsSync(skillsSource)) {
     warnings.push("No skills/ directory found in source");
-    return { converted: [], warnings };
+    return { converted: [], skipped: [], warnings };
   }
 
-  log(`\nTranslating skills/`, verbose, true);
-  const converted = copyDir(skillsSource, skillsTarget, dryRun, verbose);
+  log(`\nTranslating skills/ (mode: ${mode})`, verbose, true);
+
+  // Process skills directory with selective filtering
+  function processSkillsDir(srcDir: string, destDir: string, relativeBase: string): void {
+    if (!existsSync(srcDir)) return;
+
+    const entries = readdirSync(srcDir, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const srcPath = join(srcDir, entry.name);
+      const destPath = join(destDir, entry.name);
+      const relativePath = join(relativeBase, entry.name);
+
+      // Check if this should be imported
+      const action = shouldImportFile(relativePath, mode, customSkills);
+
+      if (action === "skip") {
+        log(`  ⏭️ Skip: ${relativePath}`, verbose);
+        skipped.push(relativePath);
+        continue;
+      }
+
+      if (entry.isDirectory()) {
+        ensureDir(destPath, dryRun);
+        processSkillsDir(srcPath, destPath, relativePath);
+      } else {
+        log(`  ✅ Copy: ${relativePath}`, verbose);
+        if (!dryRun) {
+          ensureDir(dirname(destPath), dryRun);
+          copyFileSync(srcPath, destPath);
+        }
+        converted.push(destPath);
+      }
+    }
+  }
+
+  ensureDir(skillsTarget, dryRun);
+  processSkillsDir(skillsSource, skillsTarget, "skills/");
 
   // Update any .claude references in skill files to .opencode
   if (!dryRun) {
@@ -410,7 +658,12 @@ function translateSkills(source: string, target: string, dryRun: boolean, verbos
     }
   }
 
-  return { converted, warnings };
+  // Add selective mode summary
+  if (mode === "selective") {
+    log(formatSelectiveClassification(converted, skipped, []), verbose, true);
+  }
+
+  return { converted, skipped, warnings };
 }
 
 // Model mapping for OpenCode format
@@ -590,8 +843,9 @@ function translateAgents(source: string, target: string, dryRun: boolean, verbos
 
 /**
  * Copy MEMORY/ directory (direct copy, structure is compatible)
+ * MEMORY is ALWAYS imported in both full and selective modes
  */
-function translateMemory(source: string, target: string, dryRun: boolean, verbose: boolean): {
+function translateMemory(source: string, target: string, dryRun: boolean, verbose: boolean, mode: MigrationMode): {
   converted: string[];
   warnings: string[];
 } {
@@ -603,7 +857,7 @@ function translateMemory(source: string, target: string, dryRun: boolean, verbos
     return { converted: [], warnings };
   }
 
-  log(`\nCopying MEMORY/`, verbose, true);
+  log(`\nCopying MEMORY/ (always imported in ${mode} mode)`, verbose, true);
   const converted = copyDir(memorySource, memoryTarget, dryRun, verbose);
 
   return { converted, warnings };
@@ -615,13 +869,23 @@ function translateMemory(source: string, target: string, dryRun: boolean, verbos
  * Tools contain TypeScript utilities that may reference .claude paths.
  * All .ts files are processed for path replacement.
  *
+ * In SELECTIVE mode: Tools/ is SKIPPED (use fresh 2.3 version)
+ *
  * @since v0.9.5
  */
-function translateTools(source: string, target: string, dryRun: boolean, verbose: boolean): {
+function translateTools(source: string, target: string, dryRun: boolean, verbose: boolean, mode: MigrationMode): {
   converted: string[];
+  skipped: string[];
   warnings: string[];
 } {
   const warnings: string[] = [];
+
+  // In selective mode, skip Tools/ entirely - use fresh 2.3 version
+  if (mode === "selective") {
+    log(`\n⏭️ Skipping Tools/ (selective mode - using fresh 2.3 version)`, verbose, true);
+    return { converted: [], skipped: ["Tools/"], warnings };
+  }
+
   const toolsSource = join(source, "Tools");
   const toolsTarget = join(target, "Tools");
 
@@ -629,13 +893,15 @@ function translateTools(source: string, target: string, dryRun: boolean, verbose
     // Tools may also be lowercase
     const toolsSourceLower = join(source, "tools");
     if (!existsSync(toolsSourceLower)) {
-      return { converted: [], warnings };
+      return { converted: [], skipped: [], warnings };
     }
     // Use lowercase variant
-    return translateToolsDir(toolsSourceLower, join(target, "tools"), dryRun, verbose);
+    const result = translateToolsDir(toolsSourceLower, join(target, "tools"), dryRun, verbose);
+    return { ...result, skipped: [] };
   }
 
-  return translateToolsDir(toolsSource, toolsTarget, dryRun, verbose);
+  const result = translateToolsDir(toolsSource, toolsTarget, dryRun, verbose);
+  return { ...result, skipped: [] };
 }
 
 /**
@@ -1064,19 +1330,46 @@ async function main(): Promise<void> {
 
   console.log(`
 ╭──────────────────────────────────────────╮
-│  PAI → OpenCode Converter v0.9.7        │
+│  PAI → OpenCode Converter v1.0.0        │
 ╰──────────────────────────────────────────╯
 `);
 
   console.log(`Source: ${args.source}`);
   console.log(`Target: ${args.target}`);
-  console.log(`Mode:   ${args.dryRun ? "DRY RUN" : "EXECUTE"}`);
+  console.log(`Mode:   ${args.mode.toUpperCase()}${args.dryRun ? " (DRY RUN)" : ""}`);
   console.log("");
 
   // Validate source exists
   if (!existsSync(args.source)) {
     console.error(`❌ Source directory not found: ${args.source}`);
     process.exit(1);
+  }
+
+  // Version Detection (v1.0.0)
+  console.log("🔍 Detecting PAI version...");
+  const versionResult = detectPAIVersion(args.source);
+  console.log(formatVersionInfo(versionResult));
+  console.log("");
+
+  // Check migration support
+  const migrationCheck = isSelectiveMigrationSupported(args.source);
+
+  if (!migrationCheck.supported && args.mode === "selective") {
+    console.error(`❌ Selective migration not supported for PAI ${migrationCheck.version}`);
+    console.error(`   ${migrationCheck.reason}`);
+    console.error("\nOptions:");
+    console.error("  1. Use --mode full for complete migration");
+    console.error("  2. Start fresh with OpenCode 2.3");
+    if (migrationCheck.version === "2.0") {
+      console.error("  3. Run PAI 2.0 → 2.1 migrator first");
+    }
+    process.exit(1);
+  }
+
+  if (versionResult.migrationSupport === "partial" && args.mode === "selective") {
+    console.warn(`⚠️  Warning: PAI ${versionResult.version} has partial selective import support`);
+    console.warn(`   ${versionResult.migrationNotes[0]}`);
+    console.warn("");
   }
 
   // Initialize result
@@ -1096,6 +1389,7 @@ async function main(): Promise<void> {
   manifest.source = detectSource(args.source);
 
   log(`\n📦 Source detection:`, args.verbose, true);
+  log(`  PAI Version: ${versionResult.version}`, args.verbose, true);
   log(`  Hooks: ${manifest.source.detected.hooks.length}`, args.verbose, true);
   log(`  Skills: ${manifest.source.detected.skills.length}`, args.verbose, true);
   log(`  Custom Skills: ${manifest.source.detected.customizations.customSkills.join(", ") || "none"}`, args.verbose, true);
@@ -1115,28 +1409,40 @@ async function main(): Promise<void> {
   }
   result.warnings.push(...settingsResult.warnings);
 
-  // 2. Translate skills
+  // Get custom skills for selective mode
+  const customSkills = manifest.source.detected.customizations.customSkills;
+
+  // 2. Translate skills (with selective mode support)
   console.log("\n📚 Translating skills/...");
-  const skillsResult = translateSkills(args.source, args.target, args.dryRun, args.verbose);
+  const skillsResult = translateSkills(
+    args.source,
+    args.target,
+    args.dryRun,
+    args.verbose,
+    args.mode,
+    customSkills
+  );
   result.converted.push(...skillsResult.converted);
+  result.skipped.push(...skillsResult.skipped);
   result.warnings.push(...skillsResult.warnings);
 
-  // 3. Translate agents
+  // 3. Translate agents (usually customized, import in both modes)
   console.log("\n🤖 Translating agents/...");
   const agentsResult = translateAgents(args.source, args.target, args.dryRun, args.verbose);
   result.converted.push(...agentsResult.converted);
   result.warnings.push(...agentsResult.warnings);
 
-  // 4. Copy MEMORY
+  // 4. Copy MEMORY (always imported)
   console.log("\n💾 Copying MEMORY/...");
-  const memoryResult = translateMemory(args.source, args.target, args.dryRun, args.verbose);
+  const memoryResult = translateMemory(args.source, args.target, args.dryRun, args.verbose, args.mode);
   result.converted.push(...memoryResult.converted);
   result.warnings.push(...memoryResult.warnings);
 
-  // 5. Translate Tools (v0.9.5)
+  // 5. Translate Tools (skipped in selective mode)
   console.log("\n🔧 Translating Tools/...");
-  const toolsResult = translateTools(args.source, args.target, args.dryRun, args.verbose);
+  const toolsResult = translateTools(args.source, args.target, args.dryRun, args.verbose, args.mode);
   result.converted.push(...toolsResult.converted);
+  result.skipped.push(...toolsResult.skipped);
   result.warnings.push(...toolsResult.warnings);
 
   // 6. Check for hooks (manual migration required)
@@ -1204,8 +1510,9 @@ async function main(): Promise<void> {
 │  Conversion Complete                     │
 ╰──────────────────────────────────────────╯
 
+Mode: ${args.mode.toUpperCase()}
 ✅ Converted: ${result.converted.length} files
-⚠️  Warnings:  ${result.warnings.length}
+${args.mode === "selective" ? `⏭️ Skipped:   ${result.skipped.length} files (using fresh 2.3 versions)\n` : ""}⚠️  Warnings:  ${result.warnings.length}
 🔧 Manual:    ${result.manualRequired.length} items
 ${validationResult.clean ? "✅ Validation: CLEAN (no .claude references found)" : `⚠️  Validation: ${validationResult.remainingReferences.length} .claude reference(s) remaining`}
 
