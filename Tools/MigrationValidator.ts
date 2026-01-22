@@ -20,6 +20,9 @@ import { getModel } from "../.opencode/plugins/lib/model-config.js";
 import { stat, readdir, readFile } from "fs/promises";
 import { join } from "path";
 
+// Global target directory - set from CLI args
+let TARGET_DIR = ".opencode";
+
 // ═══════════════════════════════════════════════════════════════
 // Types
 // ═══════════════════════════════════════════════════════════════
@@ -267,7 +270,7 @@ async function checkAllTransformationsDone(): Promise<CheckResult> {
 
 async function checkConfigValid(): Promise<CheckResult> {
   try {
-    const configPath = ".opencode/config.json";
+    const configPath = `${TARGET_DIR}/config.json`;
     const content = await readFile(configPath, "utf-8");
     JSON.parse(content);
     return { passed: true, severity: "ok" };
@@ -281,16 +284,16 @@ async function checkConfigValid(): Promise<CheckResult> {
 }
 
 async function checkSkillsDirectoryExists(): Promise<CheckResult> {
-  return checkDirectoryExists(".opencode/skills");
+  return checkDirectoryExists(`${TARGET_DIR}/skills`);
 }
 
 async function checkCoreSkillExists(): Promise<CheckResult> {
-  return checkFileExists(".opencode/skills/CORE/SKILL.md");
+  return checkFileExists(`${TARGET_DIR}/skills/CORE/SKILL.md`);
 }
 
 async function checkNoLegacyMcpServers(): Promise<CheckResult> {
   try {
-    await stat(".opencode/mcp-servers");
+    await stat(`${TARGET_DIR}/mcp-servers`);
     return {
       passed: false,
       message: "Legacy mcp-servers/ directory still exists",
@@ -310,28 +313,28 @@ const DETERMINISTIC_CHECKS: DeterministicCheck[] = [
     id: "STRUCT-001",
     name: "plugins_directory_exists",
     description: "plugins/ Verzeichnis existiert",
-    check: async () => checkDirectoryExists(".opencode/plugins"),
+    check: async () => checkDirectoryExists(`${TARGET_DIR}/plugins`),
     critical: true,
   },
   {
     id: "STRUCT-002",
     name: "no_hooks_directory",
     description: "hooks/ Verzeichnis existiert NICHT (wurde zu plugins/ transformiert)",
-    check: async () => checkDirectoryNotExists(".opencode/hooks"),
+    check: async () => checkDirectoryNotExists(`${TARGET_DIR}/hooks`),
     critical: true,
   },
   {
     id: "STRUCT-003",
     name: "pai_unified_exists",
     description: "pai-unified.ts Plugin existiert",
-    check: async () => checkFileExists(".opencode/plugins/pai-unified.ts"),
+    check: async () => checkFileExists(`${TARGET_DIR}/plugins/pai-unified.ts`),
     critical: true,
   },
   {
     id: "STRUCT-004",
     name: "pai_unified_loadable",
     description: "pai-unified.ts kann von Bun geparst werden",
-    check: async () => checkBunParseable(".opencode/plugins/pai-unified.ts"),
+    check: async () => checkBunParseable(`${TARGET_DIR}/plugins/pai-unified.ts`),
     critical: true,
   },
   {
@@ -359,14 +362,14 @@ const DETERMINISTIC_CHECKS: DeterministicCheck[] = [
     id: "CONTENT-001",
     name: "no_hooks_references",
     description: "Keine 'hooks/' Referenzen in .opencode/ (außer Migration-Docs)",
-    check: async () => checkNoPatternInDir(".opencode", /hooks\//g, ["MIGRATION", "ARCHIVE"]),
+    check: async () => checkNoPatternInDir(TARGET_DIR, /hooks\//g, ["MIGRATION", "ARCHIVE"]),
     critical: false,
   },
   {
     id: "CONTENT-002",
     name: "no_claude_references",
     description: "Keine '.claude/' Referenzen in .opencode/",
-    check: async () => checkNoPatternInDir(".opencode", /\.claude\//g, ["MIGRATION", "ARCHIVE"]),
+    check: async () => checkNoPatternInDir(TARGET_DIR, /\.claude\//g, ["MIGRATION", "ARCHIVE"]),
     critical: false,
   },
   {
@@ -550,7 +553,7 @@ const SELF_TESTS: SelfTestCheck[] = [
     name: "can_load_core_skill",
     test: async () => {
       try {
-        const skillPath = ".opencode/skills/CORE/SKILL.md";
+        const skillPath = `${TARGET_DIR}/skills/CORE/SKILL.md`;
         const content = await readFile(skillPath, "utf-8");
 
         // Check YAML frontmatter
@@ -589,7 +592,7 @@ const SELF_TESTS: SelfTestCheck[] = [
     name: "can_parse_config",
     test: async () => {
       try {
-        const configPath = ".opencode/config.json";
+        const configPath = `${TARGET_DIR}/config.json`;
         const content = await readFile(configPath, "utf-8");
         const config = JSON.parse(content);
 
@@ -620,7 +623,7 @@ const SELF_TESTS: SelfTestCheck[] = [
     name: "plugin_exports_correct_interface",
     test: async () => {
       try {
-        const plugin = await import(join(process.cwd(), ".opencode/plugins/pai-unified.ts"));
+        const plugin = await import(join(process.cwd(), `${TARGET_DIR}/plugins/pai-unified.ts`));
 
         // Check for required exports
         if (typeof plugin.onSessionStart !== "function") {
@@ -846,6 +849,7 @@ async function main() {
     args: Bun.argv.slice(2),
     options: {
       manifest: { type: "string", default: ".opencode/MIGRATION-MANIFEST.json" },
+      target: { type: "string", default: ".opencode" },
       "skip-llm": { type: "boolean", default: false },
       verbose: { type: "boolean", default: false },
       help: { type: "boolean", default: false },
@@ -863,6 +867,7 @@ Usage:
 
 Options:
   --manifest <path>    Path to MIGRATION-MANIFEST.json (default: .opencode/MIGRATION-MANIFEST.json)
+  --target <path>      Target directory to validate (default: .opencode)
   --skip-llm           Skip LLM-assisted checks (Phase B)
   --verbose            Show detailed output
   --help               Show this help
@@ -875,11 +880,15 @@ Exit Codes:
     process.exit(0);
   }
 
+  // Set global target directory from CLI args
+  TARGET_DIR = values.target as string;
+
   console.log("╔═══════════════════════════════════════════════════════════════╗");
   console.log("║           PAI-OpenCode Migration Validator v0.9.7             ║");
   console.log("╚═══════════════════════════════════════════════════════════════╝");
 
   console.log(`\n📋 Manifest: ${values.manifest}`);
+  console.log(`📁 Target: ${TARGET_DIR}`);
 
   // Get model from config
   let model = "unknown";
