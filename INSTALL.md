@@ -22,6 +22,29 @@ The installer will:
 
 ---
 
+## Development / Testing Installation
+
+For testing or development, clone the repository first:
+
+```bash
+# 1. Clone repository
+git clone https://github.com/Steffen025/pai-opencode.git
+cd pai-opencode
+
+# 2. Run installer
+./install.sh
+
+# 3. Restart terminal (loads aliases)
+exec $SHELL
+
+# 4. Launch OpenCode
+opencode
+```
+
+This gives you access to the full repository including test guides in `docs/`.
+
+---
+
 ## Manual Installation
 
 If you prefer to install manually, follow these steps:
