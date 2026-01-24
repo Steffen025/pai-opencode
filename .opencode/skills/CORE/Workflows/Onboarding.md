@@ -4,7 +4,15 @@
 
 ## Purpose
 
-Guide new users through personalizing their PAI-OpenCode installation. This workflow creates the personal context files that make PAI truly yours - similar to Daniel Miessler's PAIInstallWizard but interactive within PAI itself.
+**Stage 2 of PAI-OpenCode Setup** — Deep personalization after the Installation Wizard.
+
+The `PAIOpenCodeWizard.ts` (Stage 1) sets up the basic configuration: provider, name, AI name, timezone. This workflow (Stage 2) goes deeper into your TELOS framework: mission, goals, values, beliefs, challenges.
+
+**Why two stages?**
+- Stage 1 (Wizard): Technical setup, ~2 minutes, runs BEFORE OpenCode
+- Stage 2 (This): Deep personalization, 10-15 minutes, runs INSIDE OpenCode
+
+This workflow creates the personal context files that make PAI truly yours.
 
 ---
 

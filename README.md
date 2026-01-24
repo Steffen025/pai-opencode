@@ -55,22 +55,26 @@ PAI-OpenCode is the complete port of **Daniel Miessler's Personal AI Infrastruct
 git clone https://github.com/Steffen025/pai-opencode.git
 cd pai-opencode
 
-# 2. Install dependencies
-bun install
+# 2. Run the Installation Wizard
+bun run .opencode/PAIOpenCodeWizard.ts
 
 # 3. Start OpenCode
 opencode
 ```
 
-**That's it.** Run `opencode` to start with full PAI infrastructure.
+The wizard will ask you to:
+- Choose your AI provider (Anthropic, OpenAI, Local, ZEN free)
+- Set your name and timezone
+- Name your AI assistant
+- Optionally configure voice
 
-👉 **Full setup guide:** [INSTALL.md](INSTALL.md)
+**Takes ~2 minutes** and creates all necessary configuration files.
 
 ---
 
-## First Run: Personalize Your AI
+## Deep Personalization (Recommended)
 
-After installation, make PAI truly yours by running the **onboarding** workflow. Just paste this prompt into OpenCode:
+After running the wizard, start OpenCode and paste this prompt for full personalization:
 
 ```
 Let's do the onboarding. Guide me through setting up my personal context -
@@ -78,13 +82,17 @@ my name, my goals, my values, and how I want you to behave. Create the TELOS
 and identity files that make this AI mine.
 ```
 
-This interactive wizard will:
-- Ask about your mission, goals, and values
-- Configure your AI assistant's name and personality
-- Set up your technology preferences
-- Create your personal context files in `.opencode/skills/CORE/USER/`
+This **10-15 minute** interactive session will configure your complete TELOS framework:
 
-**Takes 10-15 minutes** and transforms PAI from generic to personalized.
+| What Gets Created | Purpose |
+|-------------------|---------|
+| **Mission & Goals** | Your life purposes and specific objectives |
+| **Challenges & Strategies** | What's blocking you and how to overcome it |
+| **Values & Beliefs** | Core principles that guide decisions |
+| **Narratives** | Your key talking points and messages |
+| **Tech Preferences** | Languages, frameworks, tools you prefer |
+
+**Why TELOS matters:** PAI becomes exponentially more useful when it knows your context. Generic AI gives generic advice. PAI with TELOS gives *you-specific* guidance.
 
 ---
 
@@ -132,7 +140,6 @@ Use any AI provider:
 
 | Document | Description |
 |----------|-------------|
-| [INSTALL.md](INSTALL.md) | Quick installation guide |
 | [docs/WHAT-IS-PAI.md](docs/WHAT-IS-PAI.md) | PAI fundamentals explained |
 | [docs/OPENCODE-FEATURES.md](docs/OPENCODE-FEATURES.md) | OpenCode unique features |
 | [docs/PLUGIN-SYSTEM.md](docs/PLUGIN-SYSTEM.md) | Plugin architecture |
@@ -179,7 +186,7 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ```bash
 git clone https://github.com/Steffen025/pai-opencode.git
-cd pai-opencode && bun install && opencode
+cd pai-opencode && bun run .opencode/PAIOpenCodeWizard.ts && opencode
 ```
 
 **Welcome to Personal AI Infrastructure, your way.**
