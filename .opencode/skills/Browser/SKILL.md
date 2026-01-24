@@ -1,6 +1,6 @@
 ---
 name: Browser
-description: Debug-first browser automation with always-on visibility. Console logs, network requests, and errors captured by default. USE WHEN browser, screenshot, debug web, verify UI, troubleshoot frontend.
+description: Browser automation with debug visibility. USE WHEN browser, screenshot, debug web, verify UI.
 version: 2.0.0
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: Evals
-description: Agent evaluation framework based on Anthropic's best practices. USE WHEN eval, evaluate, test agent, benchmark, verify behavior, regression test, capability test. Includes three grader types (code-based, model-based, human), transcript capture, pass@k/pass^k metrics, and ALGORITHM integration.
+description: Agent evaluation framework. USE WHEN eval, evaluate, test agent, benchmark, verify behavior.
 ---
 
 ## Customization

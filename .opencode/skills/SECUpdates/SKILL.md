@@ -1,6 +1,6 @@
 ---
 name: SECUpdates
-description: Security news aggregation from tldrsec, no.security, and other sources. USE WHEN security news, security updates, what's new in security, breaches, security research, sec updates. SkillSearch('secupdates') for docs.
+description: Security news aggregation. USE WHEN security news, security updates, breaches.
 context: fork
 ---
 

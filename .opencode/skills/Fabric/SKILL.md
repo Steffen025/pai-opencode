@@ -1,6 +1,6 @@
 ---
 name: Fabric
-description: Intelligent prompt pattern system with 240+ specialized patterns for content analysis, extraction, and transformation. USE WHEN user says 'use fabric', 'fabric pattern', 'run fabric', 'update fabric', 'update patterns', 'sync fabric', 'extract wisdom', 'summarize with fabric', 'create threat model', 'analyze with fabric', OR any request to apply Fabric patterns to content.
+description: 240+ prompt patterns for content analysis and transformation. USE WHEN fabric, extract wisdom, summarize, threat model.
 ---
 
 ## Customization

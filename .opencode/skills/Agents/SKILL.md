@@ -1,6 +1,6 @@
 ---
 name: Agents
-description: Dynamic agent composition and management system. USE WHEN user says create custom agents, spin up custom agents, specialized agents, OR asks for agent personalities, available traits, agent voices. Handles custom agent creation, personality assignment, voice mapping, and parallel agent orchestration.
+description: Dynamic agent composition. USE WHEN custom agents, agent personalities, traits, voices.
 ---
 
 # Agents - Custom Agent Composition System

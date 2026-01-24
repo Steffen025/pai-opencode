@@ -1,6 +1,6 @@
 ---
 name: AnnualReports
-description: Annual security report aggregation and analysis. USE WHEN annual reports, security reports, threat reports, industry reports, update reports, analyze reports, vendor reports, threat landscape.
+description: Security report aggregation. USE WHEN annual reports, security reports, threat reports.
 ---
 
 ## Customization

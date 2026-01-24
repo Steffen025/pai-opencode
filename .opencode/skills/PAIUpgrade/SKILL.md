@@ -1,6 +1,6 @@
 ---
 name: PAIUpgrade
-description: "Extract system improvements from content AND monitor external sources (Anthropic ecosystem, YouTube). USE WHEN upgrade, improve system, system upgrade, analyze for improvements, check Anthropic, Anthropic changes, new Claude features, check YouTube, new videos. SkillSearch('upgrade') for docs."
+description: Extract system improvements and monitor Anthropic ecosystem. USE WHEN upgrade, check Anthropic, new Claude features.
 context: fork
 ---
 
