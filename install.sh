@@ -174,7 +174,28 @@ else
     if [[ "$OS" == "Darwin" ]]; then
         if command -v brew &> /dev/null; then
             # Run brew install in foreground (it has its own progress display)
-            brew install go
+            # Capture output to detect permission errors
+            BREW_OUTPUT=$(brew install go 2>&1) || {
+                if echo "$BREW_OUTPUT" | grep -q "not writable"; then
+                    echo
+                    error "Homebrew permission error detected!"
+                    echo
+                    echo -e "  ${YELLOW}Your user doesn't have write access to Homebrew directories.${NC}"
+                    echo -e "  ${YELLOW}This often happens on shared Macs with multiple admin users.${NC}"
+                    echo
+                    echo -e "  ${BOLD}Fix with:${NC}"
+                    echo -e "    ${CYAN}sudo chgrp -R admin /usr/local/Homebrew /usr/local/bin /usr/local/lib${NC}"
+                    echo -e "    ${CYAN}sudo chmod -R g+w /usr/local/Homebrew /usr/local/bin /usr/local/lib${NC}"
+                    echo
+                    echo -e "  Then re-run the installer."
+                    echo
+                    exit 1
+                else
+                    echo "$BREW_OUTPUT"
+                    error "Failed to install Go via Homebrew"
+                fi
+            }
+            echo "$BREW_OUTPUT"
 
             # After Homebrew install, find Go in common locations
             GO_BIN=$(find_go || echo "")
