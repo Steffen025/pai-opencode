@@ -240,7 +240,70 @@ When importing a new PAI version:
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-01-24 | 1.1 | Added Model Configuration section, Agent Type Mapping |
 | 2026-01-24 | 1.0 | Initial mapping guide created |
+
+---
+
+## Model Configuration (CRITICAL)
+
+**Claude Code uses short model names; OpenCode requires full provider/model format:**
+
+| Claude Code | OpenCode |
+|-------------|----------|
+| `haiku` | `anthropic/claude-haiku-4-5` |
+| `sonnet` | `anthropic/claude-sonnet-4-5` |
+| `opus` | `anthropic/claude-opus-4-5` |
+
+### opencode.json Configuration
+
+The `model-config.ts` system supports TWO configuration formats:
+
+**Format 1: PAI-specific (preferred for full control)**
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "anthropic/claude-sonnet-4-5",
+  "pai": {
+    "model_provider": "anthropic"
+  }
+}
+```
+
+**Format 2: Standard OpenCode (auto-detects provider)**
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "anthropic/claude-sonnet-4-5"
+}
+```
+
+### Provider Presets
+
+When a provider is detected, these model mappings are used:
+
+| Purpose | Anthropic | OpenAI | ZEN (Free) |
+|---------|-----------|--------|------------|
+| **default** | claude-sonnet-4-5 | gpt-4o | grok-code |
+| **agents.intern** | claude-haiku-4-5 | gpt-4o-mini | gpt-5-nano |
+| **agents.architect** | claude-sonnet-4-5 | gpt-4o | big-pickle |
+| **agents.engineer** | claude-sonnet-4-5 | gpt-4o | grok-code |
+| **agents.explorer** | claude-sonnet-4-5 | gpt-4o | grok-code |
+| **agents.reviewer** | claude-opus-4-5 | gpt-4o | big-pickle |
+
+### When Porting Workflow Docs
+
+**DO NOT use short model names in OpenCode documentation:**
+```markdown
+# WRONG (Claude Code style)
+model: "haiku"
+
+# RIGHT (OpenCode style)
+model: "anthropic/claude-haiku-4-5"
+
+# BEST (use model-config.ts)
+Use getModel("agents.intern") from plugins/lib/model-config.ts
+```
 
 ---
 

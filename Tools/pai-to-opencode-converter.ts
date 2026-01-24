@@ -557,11 +557,19 @@ function translateSettings(source: string, target: string, dryRun: boolean, verb
 
   // Map to OpenCode format - OpenCode uses a different schema than PAI
   // See: https://opencode.ai/config.json for schema reference
-  const opencode: OpencodeJson = {
+  //
+  // IMPORTANT: We include BOTH the standard OpenCode fields AND the PAI-specific
+  // "pai" section for model-config.ts to properly detect the provider.
+  const opencode: OpencodeJson & { pai?: { model_provider: string } } = {
     $schema: "https://opencode.ai/config.json",
     theme: "dark",
     model: "anthropic/claude-sonnet-4-5",  // OpenCode uses provider/model format
     snapshot: true,
+    // PAI-specific section for model-config.ts to detect provider
+    // This enables proper agent model resolution (intern -> haiku, etc.)
+    pai: {
+      model_provider: "anthropic",
+    },
   };
 
   // Map username from principal.name or daidentity.name

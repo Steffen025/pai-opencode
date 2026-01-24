@@ -208,15 +208,17 @@ Launch ALL 12 agents in a SINGLE Task tool call block for true parallel executio
 ```typescript
 // In a single message, call Task 12 times:
 // NOTE: OpenCode uses "Intern" instead of Claude Code's native "Explore"
-Task({ subagent_type: "Intern", model: "haiku", prompt: "Agent 1: CORE SKILL.md..." })
-Task({ subagent_type: "Intern", model: "haiku", prompt: "Agent 2: Identity System..." })
-Task({ subagent_type: "Intern", model: "haiku", prompt: "Agent 3: Plugin Scripts..." })
+// NOTE: Model names must include provider prefix for OpenCode
+Task({ subagent_type: "Intern", prompt: "Agent 1: CORE SKILL.md..." })
+Task({ subagent_type: "Intern", prompt: "Agent 2: Identity System..." })
+Task({ subagent_type: "Intern", prompt: "Agent 3: Plugin Scripts..." })
 // ... all 12 agents
 ```
 
 **Model Selection:**
-- Use `haiku` for all 12 agents (cost-effective for parallel exploration)
-- Total cost ~12x haiku = still cheaper than 1x opus doing sequential work
+- Intern agents automatically use the cheapest available model (haiku for Anthropic, gpt-4o-mini for OpenAI)
+- Model resolution is handled by `model-config.ts` based on the provider configured in `opencode.json`
+- Total cost ~12x cheap model = still cheaper than 1x expensive model doing sequential work
 
 ---
 

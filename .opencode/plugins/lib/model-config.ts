@@ -89,16 +89,32 @@ export function getProviderPreset(
 /**
  * Read opencode.json configuration
  * Returns null if file doesn't exist or can't be parsed
+ *
+ * IMPORTANT: This function searches multiple locations for opencode.json:
+ * 1. Parent directory of .opencode (standard location)
+ * 2. Current working directory (project root)
+ * 3. Inside .opencode directory (fallback)
  */
 function readOpencodeConfig(): any | null {
   try {
-    // Find opencode.json in parent directory of .opencode
-    const opencodeDir = process.cwd(); // Assumes we're running from .opencode
-    const parentDir = dirname(opencodeDir);
-    const configPath = join(parentDir, "opencode.json");
+    // Try multiple locations for opencode.json
+    const cwd = process.cwd();
+    const possiblePaths = [
+      join(dirname(cwd), "opencode.json"),     // Parent of .opencode
+      join(cwd, "opencode.json"),               // Project root (if cwd is project root)
+      join(cwd, "..", "opencode.json"),         // Up one level
+    ];
 
-    if (!existsSync(configPath)) {
-      fileLog("model-config", `No opencode.json found at ${configPath}, using defaults`);
+    let configPath: string | null = null;
+    for (const path of possiblePaths) {
+      if (existsSync(path)) {
+        configPath = path;
+        break;
+      }
+    }
+
+    if (!configPath) {
+      fileLog("model-config", `No opencode.json found in any of: ${possiblePaths.join(", ")}, using defaults`);
       return null;
     }
 
@@ -114,55 +130,86 @@ function readOpencodeConfig(): any | null {
 }
 
 /**
+ * Detect provider from model name
+ * @example "anthropic/claude-sonnet-4-5" -> "anthropic"
+ * @example "openai/gpt-4o" -> "openai"
+ */
+function detectProviderFromModel(model: string): "zen" | "anthropic" | "openai" | null {
+  if (model.startsWith("anthropic/")) return "anthropic";
+  if (model.startsWith("openai/")) return "openai";
+  if (model.startsWith("opencode/")) return "zen";
+  return null;
+}
+
+/**
  * Get the full model configuration
  * Reads from opencode.json or uses "zen" defaults
+ *
+ * Supports multiple configuration formats:
+ * 1. Explicit PAI config: { "pai": { "model_provider": "anthropic" } }
+ * 2. OpenCode standard: { "model": "anthropic/claude-sonnet-4-5" } - auto-detects provider
+ * 3. No config: falls back to "zen" free models
  */
 export function getModelConfig(): PaiModelConfig {
   const config = readOpencodeConfig();
 
-  // Check for PAI section in config
+  // Check for PAI section in config (preferred method)
   const paiConfig = config?.pai;
 
-  if (!paiConfig || !paiConfig.model_provider) {
-    fileLog("model-config", "No PAI config found, using zen defaults");
+  if (paiConfig?.model_provider) {
+    const provider = paiConfig.model_provider as "zen" | "anthropic" | "openai";
+
+    // Validate provider
+    if (!["zen", "anthropic", "openai"].includes(provider)) {
+      fileLog("model-config", `Invalid provider "${provider}", falling back to zen`);
+      return {
+        model_provider: "zen",
+        models: PROVIDER_PRESETS.zen,
+      };
+    }
+
+    // If user provided custom models, merge with preset
+    const preset = PROVIDER_PRESETS[provider];
+    const customModels = paiConfig.models || {};
+
+    const models: PaiModelConfig["models"] = {
+      default: customModels.default || preset.default,
+      validation: customModels.validation || preset.validation,
+      agents: {
+        intern: customModels.agents?.intern || preset.agents.intern,
+        architect: customModels.agents?.architect || preset.agents.architect,
+        engineer: customModels.agents?.engineer || preset.agents.engineer,
+        explorer: customModels.agents?.explorer || preset.agents.explorer,
+        reviewer: customModels.agents?.reviewer || preset.agents.reviewer,
+      },
+    };
+
+    fileLog("model-config", `Using provider "${provider}" from pai config with models: ${JSON.stringify(models)}`);
+
     return {
-      model_provider: "zen",
-      models: PROVIDER_PRESETS.zen,
+      model_provider: provider,
+      models,
     };
   }
 
-  const provider = paiConfig.model_provider as "zen" | "anthropic" | "openai";
-
-  // Validate provider
-  if (!["zen", "anthropic", "openai"].includes(provider)) {
-    fileLog("model-config", `Invalid provider "${provider}", falling back to zen`);
-    return {
-      model_provider: "zen",
-      models: PROVIDER_PRESETS.zen,
-    };
+  // Fallback: Try to detect provider from "model" field in opencode.json
+  // This supports the standard OpenCode config format: { "model": "anthropic/claude-sonnet-4-5" }
+  if (config?.model) {
+    const detectedProvider = detectProviderFromModel(config.model);
+    if (detectedProvider) {
+      fileLog("model-config", `Auto-detected provider "${detectedProvider}" from model field: ${config.model}`);
+      return {
+        model_provider: detectedProvider,
+        models: PROVIDER_PRESETS[detectedProvider],
+      };
+    }
   }
 
-  // If user provided custom models, merge with preset
-  const preset = PROVIDER_PRESETS[provider];
-  const customModels = paiConfig.models || {};
-
-  const models: PaiModelConfig["models"] = {
-    default: customModels.default || preset.default,
-    validation: customModels.validation || preset.validation,
-    agents: {
-      intern: customModels.agents?.intern || preset.agents.intern,
-      architect: customModels.agents?.architect || preset.agents.architect,
-      engineer: customModels.agents?.engineer || preset.agents.engineer,
-      explorer: customModels.agents?.explorer || preset.agents.explorer,
-      reviewer: customModels.agents?.reviewer || preset.agents.reviewer,
-    },
-  };
-
-  fileLog("model-config", `Using provider "${provider}" with models: ${JSON.stringify(models)}`);
-
+  // Final fallback: zen defaults
+  fileLog("model-config", "No PAI config or model field found, using zen defaults");
   return {
-    model_provider: provider,
-    models,
+    model_provider: "zen",
+    models: PROVIDER_PRESETS.zen,
   };
 }
 
