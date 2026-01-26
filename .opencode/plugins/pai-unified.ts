@@ -35,6 +35,36 @@ import { extractLearningsFromWork } from "./handlers/learning-capture";
 import { fileLog, fileLogError, clearLog } from "./lib/file-logger";
 
 /**
+ * Extract text content from message
+ *
+ * OpenCode v1.1.x can provide message.content as:
+ * - string (simple case)
+ * - array of blocks (structured content)
+ *
+ * This helper handles both cases robustly.
+ */
+function extractTextContent(message: any): string {
+  if (!message?.content) return "";
+
+  // Plain string
+  if (typeof message.content === "string") {
+    return message.content;
+  }
+
+  // Structured blocks/parts (OpenCode v1.1.x pattern)
+  if (Array.isArray(message.content)) {
+    return message.content
+      .filter((block: any) => block.type === "text" || block.text)
+      .map((block: any) => block.text || block.content || "")
+      .join(" ")
+      .trim();
+  }
+
+  // Fallback: stringify
+  return String(message.content);
+}
+
+/**
  * PAI Unified Plugin
  *
  * Exports all hooks in a single plugin for OpenCode.
@@ -188,11 +218,39 @@ export const PaiUnified: Plugin = async (ctx) => {
      *
      * Called when user submits a message.
      * Equivalent to PAI v2.4 AutoWorkCreation + ExplicitRatingCapture hooks.
+     *
+     * CRITICAL FIX (Issue #6): OpenCode v1.1.x provides message in OUTPUT, not INPUT!
+     * - input contains: sessionID, agent, model (metadata only)
+     * - output contains: message (the actual user message), parts
      */
     "chat.message": async (input, output) => {
       try {
-        const role = (input as any).message?.role || "unknown";
-        const content = (input as any).message?.content || "";
+        // DEBUG: Log full structures to diagnose Issue #6
+        fileLog(`[chat.message] input keys: ${Object.keys(input).join(", ")}`, "debug");
+        fileLog(`[chat.message] output keys: ${Object.keys(output).join(", ")}`, "debug");
+        
+        // FIXED: Read from output.message, NOT input.message!
+        // See: https://github.com/Steffen025/pai-opencode/issues/6
+        const msg = (output as any).message;
+
+        // Fallback for backward compatibility with older OpenCode versions
+        const fallbackMsg = (input as any).message;
+        const message = msg || fallbackMsg;
+
+        if (!message) {
+          fileLog("[chat.message] No message found in input or output", "warn");
+          return;
+        }
+
+        // DEBUG: Log message structure
+        fileLog(`[chat.message] message keys: ${Object.keys(message).join(", ")}`, "debug");
+        fileLog(`[chat.message] message.content type: ${typeof message.content}`, "debug");
+        if (message.content) {
+          fileLog(`[chat.message] message.content: ${JSON.stringify(message.content).substring(0, 200)}`, "debug");
+        }
+
+        const role = message.role || "unknown";
+        const content = extractTextContent(message);
 
         // Only process user messages
         if (role !== "user") return;
@@ -298,6 +356,63 @@ export const PaiUnified: Plugin = async (ctx) => {
             }
           } catch (error) {
             fileLogError("Work session completion failed", error);
+          }
+        }
+
+        // === USER MESSAGE HANDLING ===
+        // OpenCode sends message.updated AND message.part.updated events
+        // We need to check BOTH for user messages
+        if (eventType === "message.updated" || eventType === "message.part.updated") {
+          // DEBUG: Log full event structure to find where user message is
+          const eventData = input.event as any;
+          fileLog(`[message.updated] EVENT KEYS: ${Object.keys(eventData || {}).join(", ")}`, "info");
+          fileLog(`[message.updated] properties keys: ${Object.keys(eventData?.properties || {}).join(", ")}`, "info");
+          fileLog(`[message.updated] FULL EVENT: ${JSON.stringify(eventData).substring(0, 500)}`, "debug");
+          
+          // FIXED: message.part.updated uses properties.part, not properties.message
+          // Structure: eventData.properties.part.text (for user messages)
+          const part = eventData?.properties?.part;
+          const message = eventData?.properties?.message;
+          
+          // Extract text from part (message.part.updated) or message (message.updated)
+          let userText: string | null = null;
+          
+          if (part?.type === "text" && typeof part.text === "string") {
+            // This is a text part from message.part.updated
+            userText = part.text;
+            fileLog(`[message.part.updated] Extracted from part.text: "${userText.substring(0, 100)}..."`, "debug");
+          } else if (message?.role === "user") {
+            // This is a full message from message.updated
+            userText = extractTextContent(message);
+            fileLog(`[message.updated] Extracted from message.content: "${userText.substring(0, 100)}..."`, "debug");
+          }
+          
+          // Process user message if we found it
+          if (userText && userText.trim().length > 0) {
+            fileLog(`[USER MESSAGE] Content: "${userText.substring(0, 100)}..."`, "info");
+            
+            // === EXPLICIT RATING CAPTURE ===
+            const rating = detectRating(userText);
+            if (rating) {
+              fileLog(`[RATING DETECTED] Score: ${rating}`, "info");
+              const ratingResult = await captureRating(userText, "user message");
+              if (ratingResult.success && ratingResult.rating) {
+                fileLog(`Rating captured: ${ratingResult.rating.score}/10`, "info");
+              } else {
+                fileLog(`Rating capture failed: ${ratingResult.error}`, "warn");
+              }
+            }
+            
+            // === AUTO-WORK CREATION ===
+            const currentSession = getCurrentSession();
+            if (!currentSession && userText.length > 20) {
+              const workResult = await createWorkSession(userText);
+              if (workResult.success && workResult.session) {
+                fileLog(`Work session started: ${workResult.session.id}`, "info");
+              }
+            } else if (currentSession) {
+              await appendToThread(`**User:** ${userText.substring(0, 200)}...`);
+            }
           }
         }
 

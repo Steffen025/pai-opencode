@@ -113,7 +113,7 @@ Users rate responses by typing a number 1-10:
 - "6: needs improvement" also works
 
 **Storage:**
-- Ratings stored in `MEMORY/SIGNALS/ratings.jsonl`
+- Ratings stored in `MEMORY/LEARNING/SIGNALS/ratings.jsonl`
 - Low ratings (<6) capture to `MEMORY/LEARNING/`
 
 ---
@@ -171,6 +171,22 @@ Users rate responses by typing a number 1-10:
 
 ---
 
+## Options Format (CRITICAL)
+
+**Options MUST use letters, NEVER numbers.**
+
+Numbers 1-10 are RESERVED for the rating system. Using numbers for options causes collision.
+
+| Correct | Wrong |
+|---------|-------|
+| A. First option | 1. First option |
+| B. Second option | 2. Second option |
+| C. Third option | 3. Third option |
+
+**Why:** When user types "3" to select option 3, the rating system captures it as a rating of 3. Letters (A, B, C) are unambiguous.
+
+---
+
 ## Common Failure Modes
 
 1. **Plain text responses** - No format = silent response
@@ -180,6 +196,7 @@ Users rate responses by typing a number 1-10:
 5. **Conversational voice lines** - Use factual summaries, not "Done!" or "Happy to help!"
 6. **Self-rating** - AI must NEVER fill in the RATE line. Leave blank for user to rate.
 7. **Third-person self-reference** - Never say "PAI will..." or "[AI name] has..." — use first person ("I will...", "I fixed...")
+8. **Numbered options** - Use letters A/B/C, never numbers 1/2/3 (collides with rating system)
 
 ---
 

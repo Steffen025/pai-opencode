@@ -64,31 +64,60 @@ const RATING_PATTERNS = [
 /**
  * Detect rating in user message
  *
+ * Multi-line aware: checks ONLY the first line for rating patterns.
+ * Rest of the message is preserved as context/comment.
+ *
+ * Examples:
+ * - "8" → score: 8, comment: ""
+ * - "7\nGut gemacht" → score: 7, comment: "Gut gemacht"
+ * - "9 - excellent\n\nNext task..." → score: 9, comment: "excellent", context: "Next task..."
+ * - "6: needs work" → score: 6, comment: "needs work"
+ *
  * Returns null if no rating detected
  */
 export function detectRating(message: string): RatingEntry | null {
   const trimmed = message.trim();
+  
+  // Split into lines - only check FIRST line for rating
+  const lines = trimmed.split('\n');
+  const firstLine = lines[0].trim();
+  
+  // Skip if first line is too long (likely not a rating)
+  if (firstLine.length > 50) return null;
 
-  // Skip if message is too long (likely not a rating)
-  if (trimmed.length > 200) return null;
-
-  // Skip if message starts with common non-rating patterns
-  if (/^(the|a|an|i|we|it|this|that|please|can|could|would|should|let)/i.test(trimmed)) {
+  // Skip if first line starts with common non-rating patterns
+  if (/^(the|a|an|i|we|it|this|that|please|can|could|would|should|let)/i.test(firstLine)) {
     return null;
   }
 
   for (const pattern of RATING_PATTERNS) {
-    const match = trimmed.match(pattern);
+    const match = firstLine.match(pattern);
     if (match) {
       const score = parseInt(match[1], 10);
 
       // Valid score range: 1-10
       if (score >= 1 && score <= 10) {
+        // Get inline comment from the pattern match (e.g., "9 - excellent")
+        const inlineComment = match[2]?.trim() || "";
+        
+        // Get rest of message (lines after first) as additional context
+        const restOfMessage = lines.slice(1).join('\n').trim();
+        
+        // Comment = inline comment OR first non-empty line of rest
+        // Context = full rest of message (for reference)
+        let comment = inlineComment;
+        if (!comment && restOfMessage) {
+          // Use first line of rest as comment
+          const firstRestLine = restOfMessage.split('\n')[0].trim();
+          comment = firstRestLine;
+        }
+        
         return {
           score,
-          comment: match[2]?.trim() || "",
+          comment,
           timestamp: new Date().toISOString(),
           source: "explicit",
+          context: restOfMessage || undefined,
         };
       }
     }
