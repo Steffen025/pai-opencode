@@ -33,6 +33,14 @@ import {
 } from "./handlers/agent-capture";
 import { extractLearningsFromWork } from "./handlers/learning-capture";
 import { validateISC } from "./handlers/isc-validator";
+import {
+  handleVoiceNotification,
+  extractVoiceCompletion,
+} from "./handlers/voice-notification";
+import { handleUpdateCounts } from "./handlers/update-counts";
+import { handleResponseCapture } from "./handlers/response-capture";
+import { handleImplicitSentiment } from "./handlers/implicit-sentiment";
+import { handleTabState } from "./handlers/tab-state";
 import { fileLog, fileLogError, clearLog } from "./lib/file-logger";
 
 /**
@@ -358,16 +366,26 @@ export const PaiUnified: Plugin = async (ctx) => {
           } catch (error) {
             fileLogError("Work session completion failed", error);
           }
+
+          // UPDATE COUNTS
+          // Update settings.json with fresh system counts
+          try {
+            await handleUpdateCounts();
+          } catch (error) {
+            fileLogError("Update counts failed (non-blocking)", error);
+          }
         }
 
-        // === ASSISTANT MESSAGE HANDLING (ISC VALIDATION) ===
-        // Validate ISC after assistant completes a response
+        // === ASSISTANT MESSAGE HANDLING (ISC VALIDATION + VOICE + CAPTURE) ===
+        // Validate ISC, send voice notification, and capture response
         if (eventType === "message.updated") {
           const eventData = input.event as any;
           const message = eventData?.properties?.message;
           
           if (message?.role === "assistant") {
             const responseText = extractTextContent(message);
+            const sessionId = (input as any).sessionId || "unknown";
+            
             if (responseText.length > 100) {
               // Run ISC validation on non-trivial assistant responses
               try {
@@ -380,6 +398,36 @@ export const PaiUnified: Plugin = async (ctx) => {
                 }
               } catch (error) {
                 fileLogError("[ISC Validation] Failed", error);
+              }
+
+              // === VOICE NOTIFICATION ===
+              // Extract voice completion and send to TTS
+              try {
+                const voiceCompletion = extractVoiceCompletion(responseText);
+                if (voiceCompletion) {
+                  fileLog(`[Voice] Found completion: "${voiceCompletion.substring(0, 50)}..."`, "info");
+                  await handleVoiceNotification(voiceCompletion, sessionId);
+                  
+                  // === TAB STATE UPDATE ===
+                  // Update terminal tab title/color after completion
+                  try {
+                    await handleTabState(voiceCompletion, 'completed');
+                  } catch (error) {
+                    fileLogError("[TabState] Failed to update tab state (non-blocking)", error);
+                  }
+                } else {
+                  fileLog("[Voice] No voice completion found in response", "debug");
+                }
+              } catch (error) {
+                fileLogError("[Voice] Voice notification failed (non-blocking)", error);
+              }
+
+              // === RESPONSE CAPTURE ===
+              // Capture response for work tracking and learning
+              try {
+                await handleResponseCapture(responseText, sessionId);
+              } catch (error) {
+                fileLogError("[Capture] Response capture failed (non-blocking)", error);
               }
             }
           }
@@ -426,6 +474,15 @@ export const PaiUnified: Plugin = async (ctx) => {
                 fileLog(`Rating captured: ${ratingResult.rating.score}/10`, "info");
               } else {
                 fileLog(`Rating capture failed: ${ratingResult.error}`, "warn");
+              }
+            } else {
+              // === IMPLICIT SENTIMENT CAPTURE ===
+              // Only run if NOT an explicit rating
+              try {
+                const sessionId = (input as any).sessionID || 'unknown';
+                await handleImplicitSentiment(userText, sessionId);
+              } catch (error) {
+                fileLogError('[ImplicitSentiment] Failed (non-blocking)', error);
               }
             }
             
