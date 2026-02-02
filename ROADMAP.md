@@ -6,9 +6,34 @@ This roadmap outlines the development path from v1.0 to v2.0 and beyond.
 
 ## Current Release
 
+### v1.1.0 - PAI 2.5 + Voice/Sentiment Handlers (February 2026)
+
+**Status:** ✅ Released
+
+**Major Upgrade:** Full PAI 2.5 Algorithm + 5 new handlers
+
+**What's New in v1.1:**
+- **PAI 2.5 Algorithm** (v0.2.25) - Full 7-phase format with ISC tracking
+- **Voice Notification Handler** - ElevenLabs + Google TTS + macOS say fallback
+- **Implicit Sentiment Handler** - Automatic satisfaction detection from user messages
+- **Tab State Handler** - Kitty terminal tab title/color updates
+- **Update Counts Handler** - Skill/workflow counting at session end
+- **Response Capture Handler** - ISC extraction and learning capture
+
+**Technical Details:**
+- 13 handlers total (up from 8 in v1.0)
+- Build: 21 modules, 85.77 KB
+- Graceful fallbacks for all optional features
+
+**Documentation:**
+- [CHANGELOG.md](CHANGELOG.md) - Full release notes
+- [README.md](README.md) - Updated for v1.1
+
+---
+
 ### v1.0.0 - Core PAI on OpenCode (January 2026)
 
-**Status:** Released
+**Status:** ✅ Released
 
 **What's Included:**
 - Skills system with 29 skills (CORE, Algorithm, Fabric, Research, etc.)
@@ -18,14 +43,6 @@ This roadmap outlines the development path from v1.0 to v2.0 and beyond.
 - Skill search and indexing tools
 - Full TypeScript tooling with Bun runtime
 
-**What Works:**
-- Complete skill loading and orchestration
-- Security validation for dangerous commands
-- Session lifecycle management
-- Multi-phase development workflows (SpecFirst)
-- Agent composition (RedTeam, Council, Challenge)
-- Visual content generation (Art skill)
-
 **Documentation:**
 - [README.md](README.md) - Project overview
 - [INSTALL.md](INSTALL.md) - Installation guide
@@ -34,22 +51,6 @@ This roadmap outlines the development path from v1.0 to v2.0 and beyond.
 ---
 
 ## Upcoming Releases
-
-### v1.1.0 - Voice Notifications (Q1 2026)
-
-**Goal:** Add audio feedback for key events
-
-**Features:**
-- Voice server with TTS support
-- Task completion notifications
-- Error/warning audio alerts
-- Session start/stop announcements
-- Volume control and mute toggle
-
-**Technical Approach:**
-- Bun HTTP server for voice synthesis
-- Plugin integration for event triggers
-- macOS `say` command support
 
 ---
 
@@ -133,6 +134,8 @@ We value community input! Here's how to shape PAI-OpenCode's future:
 
 | Version | Release Date | Highlights |
 |---------|-------------|------------|
+| v1.1.0  | February 2026 | PAI 2.5 upgrade + Voice/Sentiment handlers |
+| v1.0.1  | February 2026 | Anthropic API fix, ISCValidator improvements |
 | v1.0.0  | January 2026 | Initial release - core PAI on OpenCode |
 
 ---

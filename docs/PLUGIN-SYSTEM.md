@@ -254,16 +254,34 @@ cat /tmp/pai-opencode-debug.log | grep DEBUG
 
 ## Unified Plugin Architecture
 
-PAI-OpenCode uses **one plugin** for all functionality:
+PAI-OpenCode uses **one plugin** for all functionality with **13 handlers**:
 
 ```
 plugins/
-├── pai-unified.ts           # Main plugin (exports all hooks)
+├── pai-unified.ts              # Main plugin (exports all hooks)
 ├── handlers/
-│   ├── context-loader.ts    # Context injection logic
-│   └── security-validator.ts # Security validation logic
+│   ├── context-loader.ts       # Context injection at session start
+│   ├── security-validator.ts   # Security validation before commands
+│   ├── rating-capture.ts       # User rating capture (1-10)
+│   ├── isc-validator.ts        # ISC criteria validation
+│   ├── learning-capture.ts     # Learning to MEMORY/LEARNING/
+│   ├── work-tracker.ts         # Work session tracking
+│   ├── skill-restore.ts        # Skill context restore
+│   ├── agent-capture.ts        # Agent output capture
+│   ├── voice-notification.ts   # TTS (ElevenLabs/Google/macOS) [v1.1]
+│   ├── implicit-sentiment.ts   # Sentiment detection [v1.1]
+│   ├── tab-state.ts            # Kitty terminal tab updates [v1.1]
+│   ├── update-counts.ts        # Skill/workflow counting [v1.1]
+│   └── response-capture.ts     # ISC tracking + learning [v1.1]
+├── adapters/
+│   └── types.ts                # Shared type definitions
 └── lib/
-    └── file-logger.ts       # Logging utilities
+    ├── file-logger.ts          # Logging utilities
+    ├── paths.ts                # Path resolution
+    ├── identity.ts             # User/AI identity
+    ├── time.ts                 # Timestamp utilities [v1.1]
+    ├── model-config.ts         # Model configuration
+    └── learning-utils.ts       # Learning capture helpers
 ```
 
 **Why unified?**
@@ -271,6 +289,16 @@ plugins/
 - Shared state between handlers
 - Simpler plugin management
 - Easier to reason about execution order
+
+### Handler Categories
+
+| Category | Handlers | Purpose |
+|----------|----------|---------|
+| **Core** | context-loader, security-validator | Essential session management |
+| **Learning** | rating-capture, learning-capture, isc-validator | Quality feedback loops |
+| **Observability** | work-tracker, agent-capture, response-capture | Session tracking |
+| **UX** | voice-notification, tab-state, implicit-sentiment | User experience |
+| **Maintenance** | skill-restore, update-counts | System upkeep |
 
 ---
 
@@ -303,4 +331,66 @@ See **MIGRATION.md** for detailed converter tool usage.
 
 ---
 
-**PAI-OpenCode v1.0** - Plugins > Hooks, Same Power
+---
+
+## v1.1 Handler Details
+
+### Voice Notification (`voice-notification.ts`)
+Provides TTS feedback for task completion and events.
+
+**Backends (in priority order):**
+1. **ElevenLabs via Voice Server** - `localhost:8888/notify`
+2. **Google Cloud TTS** - Requires credentials
+3. **macOS `say`** - Automatic fallback
+
+**Usage in skills:**
+```bash
+curl -s -X POST http://localhost:8888/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Task completed", "voice_id": "..."}'
+```
+
+### Implicit Sentiment (`implicit-sentiment.ts`)
+Detects user satisfaction from natural language without explicit ratings.
+
+**How it works:**
+- Analyzes user messages using Haiku inference (fast, cheap)
+- Detects positive/negative sentiment
+- Captures low satisfaction (<6) as learning opportunities
+
+**Example triggers:**
+- "This is exactly what I needed" → High satisfaction
+- "That's not what I asked for" → Low satisfaction
+
+### Tab State (`tab-state.ts`)
+Updates Kitty terminal tab title and color based on task context.
+
+**Features:**
+- Subject-first summaries (e.g., "Auth bug fixed")
+- Color coding by task type
+- Graceful fallback if not using Kitty
+
+### Update Counts (`update-counts.ts`)
+Counts system components at session end.
+
+**What it counts:**
+- Skills
+- Workflows
+- Plugins
+- Signals
+- Files
+
+Updates `settings.json` with current counts.
+
+### Response Capture (`response-capture.ts`)
+Tracks ISC criteria satisfaction and captures learnings.
+
+**Features:**
+- Extracts ISC criteria from responses
+- Tracks satisfaction per criterion
+- Updates THREAD.md for work items
+- Captures learnings to MEMORY/LEARNING/
+
+---
+
+**PAI-OpenCode v1.1** - 13 Handlers, Full PAI 2.5 Algorithm

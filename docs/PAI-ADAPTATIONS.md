@@ -1,14 +1,23 @@
 # PAI Adaptations
 
-**What we changed from vanilla PAI 2.4 and why**
+**What we changed from vanilla PAI 2.5 and why**
 
 ---
 
 ## Overview
 
-PAI-OpenCode is **PAI 2.4 ported to OpenCode**. Most of the system is unchanged—same skills, same agents, same memory structure. But some parts required adaptation due to fundamental platform differences.
+PAI-OpenCode is **PAI 2.5 ported to OpenCode**. Most of the system is unchanged—same skills, same agents, same memory structure. But some parts required adaptation due to fundamental platform differences.
 
 This document explains **what we changed** and **why**.
+
+---
+
+## PAI Version History
+
+| PAI-OpenCode | Based on PAI | Key Additions |
+|--------------|--------------|---------------|
+| v1.0.0 | PAI 2.4 | Core port, 8 handlers |
+| **v1.1.0** | **PAI 2.5** | Algorithm v0.2.25, 13 handlers, voice/sentiment |
 
 ---
 
@@ -173,17 +182,46 @@ export function fileLog(message: string, level = "info") {
 
 ---
 
-## What We Removed (Deferred to v1.x)
+## What We Added in v1.1 (PAI 2.5 Upgrade)
 
-These features exist in PAI 2.4 but are **deferred** in PAI-OpenCode v1.0:
+### PAI 2.5 Algorithm (v0.2.25)
+Full 7-phase Algorithm implementation:
+- **OBSERVE** - Reverse-engineering user intent
+- **THINK** - Capability Selection + Thinking Tools Assessment
+- **PLAN** - Finalize approach
+- **BUILD** - Create artifacts
+- **EXECUTE** - Run the work
+- **VERIFY** - ISC criteria validation
+- **LEARN** - Capture improvements
+
+### New v1.1 Handlers
+
+| Handler | Purpose | Backend |
+|---------|---------|---------|
+| `voice-notification.ts` | TTS for events | ElevenLabs / Google TTS / macOS say |
+| `implicit-sentiment.ts` | Satisfaction detection | Haiku inference |
+| `tab-state.ts` | Terminal tab updates | Kitty terminal |
+| `update-counts.ts` | System counting | settings.json |
+| `response-capture.ts` | ISC tracking | MEMORY/LEARNING/ |
+
+### Two-Pass Capability Selection
+- **Pass 1 (Hook):** AI inference suggests capabilities from raw prompt
+- **Pass 2 (THINK):** Validates against reverse-engineered request + ISC
+
+### Thinking Tools Assessment
+Mandatory in THINK phase - justify exclusion of:
+- Council, RedTeam, FirstPrinciples, Science, BeCreative, Prompting
+
+---
+
+## What's Deferred to v1.2+
 
 | Feature | Status | Target |
 |---------|--------|--------|
-| Voice Server (TTS) | Deferred | v1.1 |
 | Observability Dashboard | Deferred | v1.2 |
-| Installation Wizard | Deferred | v1.3 |
-| Auto-Migration | Deferred | v1.x |
-| MCP Server Adapters | Deferred | v1.x |
+| Multi-Channel Notifications | Partial | v1.2 |
+| Auto-Migration | Deferred | v2.0 |
+| MCP Server Adapters | Deferred | v2.0 |
 
 See **DEFERRED-FEATURES.md** for detailed roadmap.
 
@@ -191,15 +229,18 @@ See **DEFERRED-FEATURES.md** for detailed roadmap.
 
 ## Version Compatibility
 
-| Component | PAI 2.4 | PAI-OpenCode v1.0 |
+| Component | PAI 2.5 | PAI-OpenCode v1.1 |
 |-----------|---------|-------------------|
 | Skills | ✅ Identical | ✅ Identical |
 | Agents | ✅ Content identical | ⚠️ Filename casing changed |
 | MEMORY | ✅ Identical | ✅ Identical |
 | Security Patterns | ✅ Identical | ✅ Identical |
-| Hooks/Plugins | ❌ Different architecture | ✅ Plugin system |
-| Voice Server | ✅ Available | ⏳ Deferred |
-| Observability | ✅ Available | ⏳ Deferred |
+| Hooks/Plugins | ❌ Different architecture | ✅ Plugin system (13 handlers) |
+| Algorithm v0.2.25 | ✅ Full | ✅ Full |
+| Voice Server | ✅ Available | ✅ Available (3 backends) |
+| Sentiment Detection | ✅ Available | ✅ Available |
+| Tab State | ✅ Available | ✅ Available |
+| Observability Dashboard | ✅ Available | ⏳ Deferred to v1.2 |
 
 ---
 
@@ -251,4 +292,4 @@ See **MIGRATION.md** for full guide.
 
 ---
 
-**PAI-OpenCode v1.0** - Same Power, Different Platform
+**PAI-OpenCode v1.1** - Full PAI 2.5, Same Power, Different Platform

@@ -4,12 +4,12 @@
 
 **Personal AI Infrastructure for OpenCode** — Bring Daniel Miessler's renowned PAI scaffolding to any AI provider.
 
-[![Version](https://img.shields.io/badge/Version-1.0-brightgreen)](KNOWN_LIMITATIONS.md)
+[![Version](https://img.shields.io/badge/Version-1.1.0-brightgreen)](CHANGELOG.md)
 [![OpenCode Compatible](https://img.shields.io/badge/OpenCode-Compatible-green)](https://github.com/anomalyco/opencode)
-[![PAI Version](https://img.shields.io/badge/PAI-2.4-blue)](https://github.com/danielmiessler/Personal_AI_Infrastructure)
+[![PAI Version](https://img.shields.io/badge/PAI-2.5-blue)](https://github.com/danielmiessler/Personal_AI_Infrastructure)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> **v1.0 Release** — Core functionality ready. Voice server and dashboard coming in v1.1. See [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md).
+> **v1.1.0 Release** — Full PAI 2.5 Algorithm + Voice/Sentiment handlers. See [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
@@ -122,11 +122,15 @@ Persistent context across sessions:
 - Project documentation (`.opencode/MEMORY/projects/`)
 - Learning loops (`.opencode/MEMORY/LEARNINGS/`)
 
-### 🔧 Plugin System
-TypeScript lifecycle plugins:
-- Context injection at session start
-- Security validation before commands
-- Event capture for observability
+### 🔧 Plugin System (13 Handlers)
+TypeScript lifecycle plugins with comprehensive coverage:
+- **Context injection** at session start
+- **Security validation** before commands
+- **Voice notifications** (ElevenLabs + Google TTS + macOS say)
+- **Implicit sentiment** detection from user messages
+- **Tab state** updates for Kitty terminal
+- **ISC tracking** and response capture
+- **Rating capture** and learning loops
 
 ### 🌐 75+ AI Providers
 Use any AI provider:
@@ -163,11 +167,11 @@ PAI-OpenCode's design is documented through **Architecture Decision Records (ADR
 
 | Document | Description |
 |----------|-------------|
-| [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md) | What's in v1.0 vs v1.1 |
+| [CHANGELOG.md](CHANGELOG.md) | Version history and release notes |
 | [docs/WHAT-IS-PAI.md](docs/WHAT-IS-PAI.md) | PAI fundamentals explained |
 | [docs/OPENCODE-FEATURES.md](docs/OPENCODE-FEATURES.md) | OpenCode unique features |
-| [docs/PLUGIN-SYSTEM.md](docs/PLUGIN-SYSTEM.md) | Plugin architecture |
-| [docs/PAI-ADAPTATIONS.md](docs/PAI-ADAPTATIONS.md) | Changes from PAI 2.4 |
+| [docs/PLUGIN-SYSTEM.md](docs/PLUGIN-SYSTEM.md) | Plugin architecture (13 handlers) |
+| [docs/PAI-ADAPTATIONS.md](docs/PAI-ADAPTATIONS.md) | Changes from PAI 2.5 |
 | [docs/MIGRATION.md](docs/MIGRATION.md) | Migration from Claude Code PAI |
 | [ROADMAP.md](ROADMAP.md) | Version roadmap |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines |
