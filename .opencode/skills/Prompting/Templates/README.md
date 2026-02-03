@@ -168,7 +168,7 @@ cd ~/.opencode
 git checkout v2.5.0
 # Or to just undo templating:
 rm -rf Templates/
-git checkout v2.5.0 -- skills/PAI/Prompting.md
+git checkout v2.5.0 -- skills/CORE/Prompting.md
 ```
 
 ## Token Savings
@@ -304,7 +304,7 @@ This system is based on research from:
 
 ## Related Documentation
 
-- `~/.opencode/skills/PAI/Prompting.md` (Templating section)
+- `~/.opencode/skills/CORE/Prompting.md` (Templating section)
 - `~/.opencode/History/research/2025-12/2025-12-09-templating-system-research.md`
 - `~/.opencode/History/learnings/2025-12/2025-12-09-021700_LEARNING_complete-templating-system-and-evals-integration.md`
 - `~/.opencode/skills/Evals/SKILL.md`

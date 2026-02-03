@@ -1,5 +1,16 @@
 # Entity OSINT Lookup Workflow
 
+## Voice Notification
+
+```bash
+curl -s -X POST http://localhost:8888/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the EntityLookup workflow in the OSINT skill to investigate entities"}' \
+  > /dev/null 2>&1 &
+```
+
+Running the **EntityLookup** workflow in the **OSINT** skill to investigate entities...
+
 **Purpose:** Technical intelligence gathering on domains, IPs, infrastructure, and threat entities.
 
 **Authorization Required:** Explicit authorization, defined scope, legal compliance confirmed.

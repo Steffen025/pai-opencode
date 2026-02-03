@@ -1,5 +1,16 @@
 # Domain Reconnaissance Workflow
 
+## Voice Notification
+
+```bash
+curl -s -X POST http://localhost:8888/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the DomainRecon workflow in the Recon skill to map domain infrastructure"}' \
+  > /dev/null 2>&1 &
+```
+
+Running the **DomainRecon** workflow in the **Recon** skill to map domain infrastructure...
+
 **Comprehensive domain infrastructure mapping and enumeration**
 
 ## Purpose
@@ -893,7 +904,7 @@ _dmarc.example.com: v=DMARC1; p=quarantine; rua=mailto:dmarc@example.com
 
 **Authorization:** Passive reconnaissance only (no authorization required)
 
-**Analyst:** {daidentity.name} (recon skill)
+**Analyst:** {DAIDENTITY.NAME} (recon skill)
 
 **Report End**
 ```

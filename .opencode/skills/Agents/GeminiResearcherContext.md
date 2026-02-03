@@ -11,8 +11,8 @@
 ## Required Knowledge (Pre-load from Skills)
 
 ### Core Foundations
-- **skills/PAI/CoreStack.md** - Stack preferences and tooling
-- **skills/PAI/CONSTITUTION.md** - Constitutional principles
+- **skills/CORE/CoreStack.md** - Stack preferences and tooling
+- **skills/CORE/CONSTITUTION.md** - Constitutional principles
 
 ### Research Standards
 - **skills/Research/SKILL.md** - Research skill workflows and methodologies
@@ -31,9 +31,9 @@ Load these dynamically based on task keywords:
 
 ---
 
-## Key Research Principles (from PAI)
+## Key Research Principles (from CORE)
 
-These are already loaded via PAI or Research skill - reference, don't duplicate:
+These are already loaded via CORE or Research skill - reference, don't duplicate:
 
 - Multi-angle analysis (always consider multiple perspectives)
 - Query variation (break complex queries into 3-10 different angles)

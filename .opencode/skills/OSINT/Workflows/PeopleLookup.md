@@ -1,5 +1,16 @@
 # People OSINT Lookup Workflow
 
+## Voice Notification
+
+```bash
+curl -s -X POST http://localhost:8888/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the PeopleLookup workflow in the OSINT skill to research individuals"}' \
+  > /dev/null 2>&1 &
+```
+
+Running the **PeopleLookup** workflow in the **OSINT** skill to research individuals...
+
 **Purpose:** Ethical open-source intelligence gathering on individuals for authorized professional contexts.
 
 **Authorization Required:** Explicit authorization, defined scope, legal compliance confirmed.

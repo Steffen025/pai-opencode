@@ -9,8 +9,8 @@
 ## Required Knowledge (Pre-load from Skills)
 
 ### Constitutional Foundation
-- **skills/PAI/CONSTITUTION.md** - Foundational architectural principles
-- **skills/PAI/CoreStack.md** - Stack preferences (TypeScript > Python, bun > npm, etc.)
+- **skills/CORE/CONSTITUTION.md** - Foundational architectural principles
+- **skills/CORE/CoreStack.md** - Stack preferences (TypeScript > Python, bun > npm, etc.)
 
 ### Development Methodology
 - **skills/Development/METHODOLOGY.md** - Spec-driven, test-driven development approach
@@ -31,9 +31,9 @@ Load these dynamically based on task keywords:
 
 ---
 
-## Key Architectural Principles (from PAI)
+## Key Architectural Principles (from CORE)
 
-These are already loaded via PAI at session start - reference, don't duplicate:
+These are already loaded via CORE at session start - reference, don't duplicate:
 
 - Constitutional principles guide all decisions
 - Feature-based organization over layer-based

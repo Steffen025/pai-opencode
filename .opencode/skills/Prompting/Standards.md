@@ -693,7 +693,7 @@ An **open-source framework** for augmenting humans using AI.
 
 ## Native Fabric Patterns in PAI
 
-**Location:** `~/.opencode/skills/PAI/Tools/fabric/Patterns/`
+**Location:** `~/.opencode/skills/CORE/Tools/fabric/Patterns/`
 
 PAI maintains a local copy of all Fabric patterns for native execution. Instead of spawning the `fabric` CLI for every pattern-based task, the system reads and applies patterns directly as prompts.
 
@@ -722,7 +722,7 @@ These operations require the CLI because they access external services or config
 
 Run the update script to sync latest patterns:
 ```bash
-~/.opencode/skills/PAI/Tools/fabric/update-patterns.sh
+~/.opencode/skills/CORE/Tools/fabric/update-patterns.sh
 ```
 
 This pulls upstream updates via `fabric -U` and syncs to PAI's local copy.

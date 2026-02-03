@@ -9,7 +9,7 @@ This file defines the character, voice settings, backstories, and personality tr
 PAI uses a **hybrid agent system** that combines:
 
 1. **Named Agents** (this file) - Persistent identities with rich backstories, voice mappings, and relationship continuity
-2. **Dynamic Agents** (Traits.yaml + AgentFactory) - Task-specific specialists composed on-the-fly from traits
+2. **Custom Agents** (Traits.yaml + ComposeAgent) - Task-specific specialists composed on-the-fly from traits with unique voices and colors
 
 ### When to Use Each
 
@@ -60,82 +60,85 @@ PAI uses a **hybrid agent system** that combines:
 
 | {principal.name} Says | What to Use | Why |
 |-------------|-------------|-----|
-| "**custom agents**", "spin up **custom** agents", "create **custom** agents" | **AgentFactory** | Custom-built with unique voices |
-| "spin up agents", "bunch of agents", "launch 5 agents to do X" | **Intern agents** | Generic parallel workers |
-| "interns", "use interns", "spin up some interns" | **Intern agents** | Obviously interns |
+| "**custom agents**", "spin up **custom** agents", "create **custom** agents" | **ComposeAgent + general-purpose** | Unique identity, voice, color |
+| "spin up agents", "bunch of agents", "launch 5 agents to do X" | **Parallel agents** | Same identity, grunt work |
+| Named agents like "use Marcus" or "ask Serena" | **Named Agent** | Persistent identity from this file |
+
+**CRITICAL: Custom agents NEVER use static agent types (Intern, Architect, Engineer, etc.)**
 
 ---
 
-### Pattern 1: CUSTOM AGENTS → AgentFactory
+### Pattern 1: CUSTOM AGENTS → ComposeAgent + general-purpose
 
 **Trigger words:** "custom agents", "custom", "specialized agents with different expertise"
 
 **What happens:**
-1. Run `bun run ~/.opencode/skills/Agents/Tools/AgentFactory.ts` for EACH agent
-2. Use DIFFERENT trait combinations to get unique voices
-3. Each agent gets a personality-matched ElevenLabs voice
-4. Launch with the full AgentFactory-generated prompt
+1. Run `bun run ~/.opencode/skills/Agents/Tools/ComposeAgent.ts` for EACH agent
+2. Use DIFFERENT trait combinations to get unique voices AND colors
+3. Each agent gets a personality-matched ElevenLabs voice and unique color
+4. Launch with `subagent_type: "general-purpose"` - NEVER use static types
 
 **Why this matters:**
-- Custom agents ARE the AgentFactory system - that's the whole point
-- AgentFactory composes unique personalities with distinct voices
-- Varied traits → different voice mappings (Adam, Drew, Fin, Matilda, Clyde, etc.)
+- Custom agents have unique identities - NOT static types (Intern, Architect, etc.)
+- ComposeAgent provides: prompt, voice, voice_id, color
+- Varied traits → different voice mappings AND different colors
 
 **Example - CORRECT:**
 ```bash
 # {principal.name}: "Spin up 5 CUSTOM science agents"
-# {daidentity.name} runs AgentFactory 5 times with DIFFERENT trait combos:
-bun run AgentFactory.ts --traits "research,enthusiastic,exploratory" --task "Astrophysicist"
-bun run AgentFactory.ts --traits "medical,meticulous,systematic" --task "Molecular biologist"
-bun run AgentFactory.ts --traits "technical,creative,bold" --task "Quantum physicist"
-bun run AgentFactory.ts --traits "medical,empathetic,consultative" --task "Neuroscientist"
-bun run AgentFactory.ts --traits "research,bold,adversarial" --task "Marine biologist"
+# {daidentity.name} runs ComposeAgent 5 times with DIFFERENT trait combos:
+bun run ComposeAgent.ts --traits "research,enthusiastic,exploratory" --task "Astrophysicist" --output json
+bun run ComposeAgent.ts --traits "medical,meticulous,systematic" --task "Molecular biologist" --output json
+bun run ComposeAgent.ts --traits "technical,creative,bold" --task "Quantum physicist" --output json
+bun run ComposeAgent.ts --traits "medical,empathetic,consultative" --task "Neuroscientist" --output json
+bun run ComposeAgent.ts --traits "research,bold,adversarial" --task "Marine biologist" --output json
 
-# Then launch each with their custom prompt:
-Task(prompt=<AgentFactory output>, subagent_type="Intern", model="sonnet")
-# Results: 5 agents with 5 different voices
+# Then launch each with their custom prompt (NEVER use "Intern" or other static types):
+Task(prompt=<ComposeAgent output>, subagent_type="general-purpose", model="sonnet")
+# Results: 5 agents with 5 different voices AND 5 different colors
 ```
 
 ---
 
-### Pattern 2: GENERIC AGENTS → Interns
+### Pattern 2: PARALLEL GRUNT WORK → Simple Parallel Agents
 
 **Trigger words:** "spin up agents", "launch agents", "bunch of agents", "5 agents to research X"
 
 **What happens:**
-1. Launch Intern agents directly with task-specific prompts
-2. All get the same Dev Patel voice (that's fine for parallel grunt work)
-3. No AgentFactory needed
+1. Launch parallel agents directly with task-specific prompts
+2. Same identity for all (speed matters more than personality)
+3. No ComposeAgent needed - simple parallel execution
 
 **Example - CORRECT:**
 ```bash
 # {principal.name}: "Spin up 5 agents to research these companies"
-# {daidentity.name} launches 5 parallel Intern agents:
-Task(prompt="Research Company A...", subagent_type="Intern", model="haiku")
-Task(prompt="Research Company B...", subagent_type="Intern", model="haiku")
+# {daidentity.name} launches 5 parallel agents:
+Task(prompt="Research Company A...", subagent_type="general-purpose", model="haiku")
+Task(prompt="Research Company B...", subagent_type="general-purpose", model="haiku")
 # etc.
 ```
-
----
-
-### Pattern 3: INTERNS → Obviously Interns
-
-**Trigger words:** "interns", "use interns"
-
-Same as Pattern 2. Just launch Intern agents.
 
 ---
 
 ### ❌ WRONG PATTERNS (NEVER DO THESE)
 
 ```bash
-# WRONG: User says "custom agents" but you spawn generic Interns
-Task(prompt="You are Dr. Nova, an astrophysicist...", subagent_type="Intern")
-# This ignores AgentFactory and gives everyone the same voice
+# WRONG: User says "custom agents" but you use a static agent type
+Task(prompt="...", subagent_type="Intern")  # NO - custom agents get "general-purpose"
+Task(prompt="...", subagent_type="Engineer") # NO - custom agents are NOT static types
 
-# WRONG: User says "spin up agents" but you use AgentFactory
-bun run AgentFactory.ts --traits "..."  # Overkill for generic parallel work
+# WRONG: Describing custom agents as "intern agents" or "architect agents"
+"Spinning up 3 intern agents..." # NO - they're CUSTOM agents, not interns
+
+# WRONG: Not using ComposeAgent for custom agents
+Task(prompt="You are Dr. Nova...", subagent_type="general-purpose")
+# Missing: voice, color - should have run ComposeAgent first
 ```
+
+**CORRECT: Custom agents flow:**
+1. ComposeAgent with traits → get prompt, voice_id, color
+2. Task with that prompt + `subagent_type: "general-purpose"`
+3. Describe as "custom agents" not "intern agents"
 
 **Available Traits {daidentity.name} Can Compose:**
 
@@ -146,13 +149,13 @@ bun run AgentFactory.ts --traits "..."  # Overkill for generic parallel work
 **Internal Infrastructure** (for {daidentity.name}'s use):
 - Trait definitions: `~/.opencode/skills/Agents/Data/Traits.yaml`
 - Agent template: `~/.opencode/skills/Agents/Templates/DynamicAgent.hbs`
-- Composition tool: `~/.opencode/skills/Agents/Tools/AgentFactory.ts`
+- Composition tool: `~/.opencode/skills/Agents/Tools/ComposeAgent.ts`
 
 ---
 
 ## Named Agent Architecture
 
-- **Location**: `~/.opencode/skills/PAI/AgentPersonalities.md` (this file)
+- **Location**: `~/.opencode/skills/CORE/AgentPersonalities.md` (this file)
 - **Consumer**: `~/.opencode/VoiceServer/server.ts` extracts JSON config from this file
 - **Format**: Human-readable markdown with embedded JSON configuration
 
@@ -293,7 +296,7 @@ The voice server extracts the JSON block below to configure agent voices:
 
 ## Character Backstories and Personalities
 
-### Jamie (Default) - "The Expressive Eager Buddy"
+### Jamie ({daidentity.name}) - "The Expressive Eager Buddy"
 
 **Real Name**: Jamie Thompson
 **Voice Settings**: Stability 0.38, Similarity Boost 0.70, Rate 235 wpm
@@ -709,7 +712,7 @@ Medium stability (0.48) allows MORE narrative variation and emotional storytelli
 
 **Fast Speakers (235-240 wpm):**
 - **Ava Chen (Perplexity)**: 240 wpm - Highly efficient confident presentation
-- **Jamie (Default)**: 235 wpm - Enthusiastic energy, warm but grounded
+- **Jamie ({daidentity.name})**: 235 wpm - Enthusiastic energy, warm but grounded
 - **Alex Rivera (Gemini)**: 235 wpm - Comprehensive multi-perspective coverage
 
 **Medium Speakers (220-230 wpm):**
@@ -731,7 +734,7 @@ Medium stability (0.48) allows MORE narrative variation and emotional storytelli
 - **Dev (Intern)**: 0.30 - High enthusiastic bouncing variation
 
 **Expressive (0.38-0.52):**
-- **Jamie (Default)**: 0.38 - More expressive celebration and warmth
+- **Jamie ({daidentity.name})**: 0.38 - More expressive celebration and warmth
 - **Emma (Writer)**: 0.48 - Greater narrative emotional range
 - **Zoe (Engineer)**: 0.50 - Steady but engaged professional
 - **Aditi (Designer)**: 0.52 - Controlled sophisticated precision
@@ -750,7 +753,7 @@ Medium stability (0.48) allows MORE narrative variation and emotional storytelli
 **Most Creative Interpretation (0.52-0.70):**
 - **Priya (Artist)**: 0.52 - LOWEST - Maximum creative interpretation freedom
 - **Dev (Intern)**: 0.65 - High enthusiastic eager variation
-- **Jamie (Default)**: 0.70 - Warm expressive with consistency
+- **Jamie ({daidentity.name})**: 0.70 - Warm expressive with consistency
 
 **Balanced Professional (0.78-0.84):**
 - **Emma (Writer)**: 0.78 - Articulate warm storytelling consistency
@@ -801,7 +804,7 @@ Voice server automatically loads this configuration at startup. To update person
 
 - **v1.3.2** (2025-11-16): DRAMATIC voice differentiation - 97% rate increase, 54% similarity increase, 42% stability increase using personality psychology mapping
 - **v1.3.1** (2025-11-16): Deep character development - backstories, life events, refined voice characteristics
-- **v1.3.0** (2025-11-16): Centralized in PAI, increased expressiveness for all agents
-- **v1.2.1** (2025-11-16): Enhanced main agent expressiveness
+- **v1.3.0** (2025-11-16): Centralized in CORE, increased expressiveness for all agents
+- **v1.2.1** (2025-11-16): Enhanced DA expressiveness specifically
 - **v1.2.0** (2025-11-16): Added character personalities for 5 key agents
 - **v1.1.0** (2025-11-16): Initial agent personality system

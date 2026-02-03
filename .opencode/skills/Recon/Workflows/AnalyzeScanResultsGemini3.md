@@ -1,5 +1,16 @@
 # Analyze Scan Results with Gemini 3 Pro
 
+## Voice Notification
+
+```bash
+curl -s -X POST http://localhost:8888/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the AnalyzeScanResultsGemini3 workflow in the Recon skill to analyze scan results"}' \
+  > /dev/null 2>&1 &
+```
+
+Running the **AnalyzeScanResultsGemini3** workflow in the **Recon** skill to analyze scan results...
+
 **Deep multi-step reasoning analysis of large-scale security scan results**
 
 ## Purpose

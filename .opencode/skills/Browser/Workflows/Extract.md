@@ -1,5 +1,18 @@
 # Extract Workflow
 
+## Voice Notification
+
+```bash
+curl -s -X POST http://localhost:8888/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the Extract workflow in the Browser skill to extract page content"}' \
+  > /dev/null 2>&1 &
+```
+
+Running **Extract** in **Browser**...
+
+---
+
 Extract content from web pages.
 
 ## Steps

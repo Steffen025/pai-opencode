@@ -10,7 +10,7 @@ Complete visual content system for creating illustrations, diagrams, and visual 
 ## Customization
 
 **Before executing, check for user customizations at:**
-`~/.opencode/skills/PAI/USER/SKILLCUSTOMIZATIONS/Art/`
+`~/.opencode/skills/CORE/USER/SKILLCUSTOMIZATIONS/Art/`
 
 If this directory exists, load and apply:
 - `PREFERENCES.md` - Aesthetic preferences, default model, output location
@@ -86,7 +86,7 @@ Route to the appropriate workflow based on the request.
 - Character design specifications
 - Scene composition rules
 
-**Load from:** `~/.opencode/skills/PAI/USER/SKILLCUSTOMIZATIONS/Art/PREFERENCES.md`
+**Load from:** `~/.opencode/skills/CORE/USER/SKILLCUSTOMIZATIONS/Art/PREFERENCES.md`
 
 ---
 
@@ -94,7 +94,7 @@ Route to the appropriate workflow based on the request.
 
 **User customization** may include reference images for consistent style.
 
-Check `~/.opencode/skills/PAI/USER/SKILLCUSTOMIZATIONS/Art/PREFERENCES.md` for:
+Check `~/.opencode/skills/CORE/USER/SKILLCUSTOMIZATIONS/Art/PREFERENCES.md` for:
 - Reference image locations
 - Style examples by use case
 - Character and scene reference guidance

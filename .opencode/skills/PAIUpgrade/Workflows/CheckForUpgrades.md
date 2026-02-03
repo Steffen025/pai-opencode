@@ -43,7 +43,7 @@ bun ~/.opencode/skills/PAIUpgrade/Tools/Anthropic.ts
 
 **Load channel configuration (merges base + user customizations):**
 ```bash
-bun ~/.opencode/skills/PAI/Tools/LoadSkillConfig.ts ~/.opencode/skills/PAIUpgrade youtube-channels.json
+bun ~/.opencode/skills/CORE/Tools/LoadSkillConfig.ts ~/.opencode/skills/PAIUpgrade youtube-channels.json
 ```
 
 **For each channel, check for new videos:**
@@ -58,7 +58,7 @@ cat ~/.opencode/skills/PAIUpgrade/State/youtube-videos.json
 
 **For new videos, extract transcripts:**
 ```bash
-bun ~/.opencode/skills/PAI/Tools/GetTranscript.ts "<video-url>"
+bun ~/.opencode/skills/CORE/Tools/GetTranscript.ts "<video-url>"
 ```
 
 **Update state** with new video IDs (keep last 50 per channel).
@@ -121,7 +121,7 @@ State prevents duplicate reports - only NEW content is shown.
 
 **YouTube channels:** Two-tier configuration
 - Base: `youtube-channels.json` (empty by default)
-- User: `~/.opencode/skills/PAI/USER/SKILLCUSTOMIZATIONS/PAIUpgrade/youtube-channels.json`
+- User: `~/.opencode/skills/CORE/USER/SKILLCUSTOMIZATIONS/PAIUpgrade/youtube-channels.json`
 
 Use the config loader to merge both automatically.
 

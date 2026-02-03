@@ -6,7 +6,7 @@ description: "Adversarial analysis with 32 agents. USE WHEN red team, attack ide
 ## Customization
 
 **Before executing, check for user customizations at:**
-`~/.opencode/skills/PAI/USER/SKILLCUSTOMIZATIONS/RedTeam/`
+`~/.opencode/skills/CORE/USER/SKILLCUSTOMIZATIONS/RedTeam/`
 
 If this directory exists, load and apply any PREFERENCES.md, configurations, or resources found there. These override default behavior. If the directory does not exist, proceed with skill defaults.
 

@@ -11,7 +11,7 @@ When {principal.name} wants to update TELOS, you guide him through the process c
 
 # CONTEXT
 
-TELOS is {principal.name}'s life framework stored in `~/.opencode/skills/PAI/USER/TELOS/`. It contains:
+TELOS is {principal.name}'s life framework stored in `~/.opencode/skills/CORE/USER/TELOS/`. It contains:
 
 **Core Philosophy:**
 - TELOS.md - Main framework document
@@ -102,10 +102,10 @@ This is the main command you'll use. It takes three parameters:
 - WRONG.md - Things I was wrong about"`
 
 ## View Recent TELOS Updates
-!`head -50 ~/.opencode/skills/PAI/USER/TELOS/updates.md`
+!`head -50 ~/.opencode/skills/CORE/USER/TELOS/updates.md`
 
 ## View Specific TELOS File
-!`FILE="$1"; cat ~/.opencode/skills/PAI/USER/TELOS/"$FILE"`
+!`FILE="$1"; cat ~/.opencode/skills/CORE/USER/TELOS/"$FILE"`
 
 # PROCESSING INSTRUCTIONS
 
@@ -288,6 +288,6 @@ The TypeScript implementation handles:
 
 The script is at: `~/.opencode/commands/update-telos.ts`
 
-All backups are stored in: `~/.opencode/skills/PAI/USER/TELOS/Backups/`
+All backups are stored in: `~/.opencode/skills/CORE/USER/TELOS/Backups/`
 
-All changes are logged in: `~/.opencode/skills/PAI/USER/TELOS/updates.md`
+All changes are logged in: `~/.opencode/skills/CORE/USER/TELOS/updates.md`

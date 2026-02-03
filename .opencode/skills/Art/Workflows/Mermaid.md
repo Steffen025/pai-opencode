@@ -656,7 +656,7 @@ GOING INTO BLOG/WEBSITE: Remove background for transparency
 **For blog/website use** — use the **Images skill** for background removal:
 
 ```bash
-bun ~/.opencode/skills/PAI/Tools/RemoveBg.ts /path/to/mermaid-diagram.png
+bun ~/.opencode/skills/CORE/Tools/RemoveBg.ts /path/to/mermaid-diagram.png
 ```
 
 **Immediately open:**

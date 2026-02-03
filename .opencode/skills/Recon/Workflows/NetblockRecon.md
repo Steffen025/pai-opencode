@@ -1,5 +1,16 @@
 # Netblock Reconnaissance Workflow
 
+## Voice Notification
+
+```bash
+curl -s -X POST http://localhost:8888/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the NetblockRecon workflow in the Recon skill to scan network blocks"}' \
+  > /dev/null 2>&1 &
+```
+
+Running the **NetblockRecon** workflow in the **Recon** skill to scan network blocks...
+
 **CIDR range and IP block investigation**
 
 ## Purpose
@@ -696,7 +707,7 @@ function categorizeHosts(liveHosts: HostInfo[]): CategorizedHosts {
 **Scan Window:** 2025-11-11 06:00-08:00 PST
 **Contact:** security@example.com, +1-555-0199
 
-**Analyst:** {daidentity.name} (recon skill)
+**Analyst:** {DAIDENTITY.NAME} (recon skill)
 
 **Report End**
 ```

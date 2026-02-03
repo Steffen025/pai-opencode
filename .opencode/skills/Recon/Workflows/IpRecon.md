@@ -1,5 +1,16 @@
 # IP Address Reconnaissance Workflow
 
+## Voice Notification
+
+```bash
+curl -s -X POST http://localhost:8888/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the IpRecon workflow in the Recon skill to investigate IP addresses"}' \
+  > /dev/null 2>&1 &
+```
+
+Running the **IpRecon** workflow in the **Recon** skill to investigate IP addresses...
+
 **Comprehensive investigation of individual IP addresses**
 
 ## Purpose
@@ -102,7 +113,7 @@ curl "https://ipinfo.io/1.2.3.4/json?token=$IPINFO_API_KEY" | jq
   "country": "US",
   "loc": "37.7749,-122.4194",
   "postal": "94102",
-  "timezone": "{principal.timezone}",
+  "timezone": "{PRINCIPAL.TIMEZONE}",
   "asn": {
     "asn": "AS12345",
     "name": "Example Hosting Inc",
@@ -672,7 +683,7 @@ None required - IP appears legitimate with good security posture
 
 **Authorization:** Active reconnaissance authorized - Pentest Engagement SOW-2025-11-01
 
-**Analyst:** {daidentity.name} (recon skill)
+**Analyst:** {DAIDENTITY.NAME} (recon skill)
 ```
 
 ## Integration Examples

@@ -500,10 +500,10 @@ For non-blog images that only need transparency, or to remove backgrounds after 
 
 ```bash
 # Use the Images Skill for background removal
-bun ~/.opencode/skills/PAI/Tools/RemoveBg.ts /path/to/output.png
+bun ~/.opencode/skills/CORE/Tools/RemoveBg.ts /path/to/output.png
 
 # Or batch process multiple images
-bun ~/.opencode/skills/PAI/Tools/RemoveBg.ts image1.png image2.png image3.png
+bun ~/.opencode/skills/CORE/Tools/RemoveBg.ts image1.png image2.png image3.png
 ```
 
 ### 🚨 COMPOSITION: USE FULL FRAME, MINIMALIST, NO BACKGROUNDS
@@ -807,7 +807,7 @@ open /path/to/generated-image.png
 ```
 1. UNDERSTAND → Deeply read and comprehend the content
 2. CSE-24 → Run Create Story Explanation (24 items) to extract narrative arc
-3. EMOTION → Match to register in ~/.opencode/skills/PAI/aesthetic.md
+3. EMOTION → Match to register in ~/.opencode/skills/CORE/aesthetic.md
 4. COMPOSITION → Design what to DRAW (content-relevant, NOT defaulting to architecture)
 5. PROMPT → Build using charcoal sketch TECHNIQUE template
 6. GENERATE → Execute with nano-banana-pro + --thumbnail flag

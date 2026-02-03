@@ -6,7 +6,7 @@ Intelligent multi-layer content retrieval system for DIFFICULT content retrieval
 
 **Before starting any task with this skill, load complete PAI context:**
 
-`read ~/.opencode/skills/PAI/SKILL.md`
+`read ~/.opencode/skills/CORE/SKILL.md`
 
 This provides access to:
 - Complete contact list (Angela, Bunny, Saša, Greg, team members)

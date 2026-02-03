@@ -108,7 +108,7 @@ Modular, reusable capabilities invoked by name:
 - **Art** — Excalidraw-style visual diagrams
 - **Browser** — Code-first browser automation
 - **Security** — Pentesting, secret scanning
-- **Research** — Deep web research with 242+ Fabric patterns
+- **Research** — Cost-aware multi-provider research system (see below)
 
 ### 🤖 Agent Orchestration
 Dynamic multi-agent composition with specialized roles:
@@ -139,6 +139,52 @@ Use any AI provider:
 - Google (Gemini)
 - AWS Bedrock
 - Groq, Mistral, Ollama, and more...
+
+---
+
+## Cost-Aware Research System
+
+PAI-OpenCode includes a **3-tier research system** that optimizes for both quality and cost:
+
+| Tier | Workflow | Agents | Cost | Trigger |
+|------|----------|--------|------|---------|
+| **Quick** (DEFAULT) | `QuickResearch` | 1 Claude | **$0 FREE** | "research X" |
+| **Standard** | `StandardResearch` | 3 (Claude + Gemini + Perplexity) | ~$0.01 | "standard research" |
+| **Extensive** | `ExtensiveResearch` | 4-5 providers | ~$0.10-0.50 | "extensive research" |
+
+### Why This Matters
+
+**Quick Research is FREE** — ClaudeResearcher uses Claude WebSearch, which is included in your Anthropic subscription. No API keys needed, no extra cost.
+
+**Standard Research** adds multi-perspective coverage with Gemini and Perplexity for ~$0.01 per query.
+
+**Extensive Research** requires explicit confirmation before running (cost gate) to prevent unexpected charges.
+
+### Available Research Agents
+
+| Agent | Model | Specialty | Cost |
+|-------|-------|-----------|------|
+| `ClaudeResearcher` | claude-sonnet-4-5 | Academic depth, scholarly synthesis | **FREE** |
+| `GeminiResearcher` | gemini-1.5-pro | Multi-perspective analysis | ~$0.01 |
+| `GrokResearcher` | grok-4-1-fast | Contrarian, social media, X access | ~$0.01 |
+| `PerplexityResearcher` | sonar | Real-time news, breaking events | ~$0.01 |
+| `PerplexityProResearcher` | sonar-pro | Deep investigation, extensive | ~$0.05 |
+| `CodexResearcher` | gpt-4o | Technical, TypeScript-focused | ~$0.03 |
+
+### Setup
+
+Copy `.opencode/.env.example` to `.opencode/.env` and add your API keys:
+
+```bash
+cp .opencode/.env.example .opencode/.env
+# Edit .env with your keys
+```
+
+**Required for Standard/Extensive only:**
+- `PERPLEXITY_API_KEY` — $5/month includes sonar
+- `GOOGLE_API_KEY` — Free tier available
+- `XAI_API_KEY` — Very cheap (~$0.20/1M tokens)
+- `OPENAI_API_KEY` — For CodexResearcher
 
 ---
 

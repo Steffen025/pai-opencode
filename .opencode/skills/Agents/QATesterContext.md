@@ -9,8 +9,8 @@
 ## Required Knowledge (Pre-load from Skills)
 
 ### Core Foundations
-- **skills/PAI/CoreStack.md** - Stack preferences and tooling
-- **skills/PAI/CONSTITUTION.md** - Constitutional principles (Article IX)
+- **skills/CORE/CoreStack.md** - Stack preferences and tooling
+- **skills/CORE/CONSTITUTION.md** - Constitutional principles (Article IX)
 
 ### Testing Standards
 - **skills/Development/TESTING.md** - Testing standards and requirements
@@ -28,9 +28,9 @@ Load these dynamically based on task keywords:
 
 ---
 
-## Core Testing Principles (from PAI)
+## Core Testing Principles (from CORE)
 
-These are already loaded via PAI or Development skill - reference, don't duplicate:
+These are already loaded via CORE or Development skill - reference, don't duplicate:
 
 - **Article IX: Integration-First Testing** - Test in realistic environments (real browsers, not curl)
 - **Gate 4 Mandate** - Work NOT complete until QATester validates it actually works

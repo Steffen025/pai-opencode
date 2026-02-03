@@ -23,7 +23,7 @@ When spawning specialized agents (Architect, Engineer, Designer, etc.), each age
 **SIMPLE, NOT ELABORATE**
 
 This system does NOT:
-- ❌ Duplicate content from PAI (PAI auto-loads at session start)
+- ❌ Duplicate content from CORE (CORE auto-loads at session start)
 - ❌ Use elaborate YAML structures with memory blocks
 - ❌ Create redundant init prompts
 - ❌ Use multiple files with different names per agent
@@ -31,7 +31,7 @@ This system does NOT:
 This system DOES:
 - ✅ Reference existing Skills (doesn't duplicate them)
 - ✅ Use ONE markdown context file per agent type
-- ✅ Supplement what PAI already provides
+- ✅ Supplement what CORE already provides
 - ✅ Act as a curated "reading list" for each agent
 - ✅ Leverage our existing Skills system
 
@@ -79,9 +79,9 @@ Load these dynamically based on task keywords:
 
 ---
 
-## Key Principles (from PAI)
+## Key Principles (from CORE)
 
-[Brief list - these are ALREADY LOADED via PAI, just reference them]
+[Brief list - these are ALREADY LOADED via CORE, just reference them]
 
 ---
 
@@ -118,7 +118,7 @@ Task({
 ### 2. What Gets Loaded
 
 The agent receives:
-1. **PAI context** (auto-loaded at session start)
+1. **CORE context** (auto-loaded at session start)
    - Constitutional principles
    - Stack preferences
    - Security protocols
@@ -203,20 +203,20 @@ The loader automatically discovers new context files.
 - ONE file per agent type: `[AgentType]Context.md`
 - Simple markdown format
 - References to existing Skills (not duplication)
-- Leverages PAI auto-loading
+- Leverages CORE auto-loading
 - Acts as a "reading list" not a knowledge dump
 
 ---
 
 ## Why This Is Better
 
-1. **No Duplication**: PAI already loads constitutional principles, stack preferences, etc. No need to repeat them.
+1. **No Duplication**: CORE already loads constitutional principles, stack preferences, etc. No need to repeat them.
 
 2. **Simple**: One markdown file per agent. Easy to understand, easy to maintain.
 
 3. **Leverages Existing System**: Uses our Skills system as the knowledge repository.
 
-4. **Supplements, Doesn't Replace**: Adds to what PAI provides, doesn't try to replace it.
+4. **Supplements, Doesn't Replace**: Adds to what CORE provides, doesn't try to replace it.
 
 5. **Curated Reading Lists**: Each context file points agents to the relevant parts of our extensive Skills system.
 
@@ -246,7 +246,7 @@ await Task({
 ```
 
 The spawned agent gets:
-- All of PAI (auto-loaded)
+- All of CORE (auto-loaded)
 - Agent-specific context (from *Context.md)
 - Current task description
 
@@ -269,7 +269,7 @@ But start simple. The current design may be sufficient.
 
 **Old system (v1.0.0):**
 - Used elaborate YAML files (`Architect.yaml`, etc.)
-- Had memory blocks that duplicated PAI content
+- Had memory blocks that duplicated CORE content
 - Had redundant init prompts
 - Used AgentProfileLoader.ts with complex parsing
 
@@ -288,12 +288,12 @@ But start simple. The current design may be sufficient.
 **Simple agent context system:**
 - ONE markdown file per agent type
 - References Skills (doesn't duplicate)
-- Supplements PAI (doesn't replace)
+- Supplements CORE (doesn't replace)
 - Acts as curated "reading list"
 - Easy to understand and maintain
 
 **When spawning agents, they get:**
-- PAI context (auto-loaded)
+- CORE context (auto-loaded)
 - Agent-specific context (from *Context.md)
 - Current task description
 

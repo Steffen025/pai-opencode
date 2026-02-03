@@ -1,5 +1,16 @@
 # Company Investment Due Diligence Workflow
 
+## Voice Notification
+
+```bash
+curl -s -X POST http://localhost:8888/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the CompanyDueDiligence workflow in the OSINT skill to vet investments"}' \
+  > /dev/null 2>&1 &
+```
+
+Running the **CompanyDueDiligence** workflow in the **OSINT** skill to vet investments...
+
 **Purpose:** Comprehensive 5-phase investment vetting combining domain-first OSINT, technical reconnaissance, multi-source research, and investment risk assessment.
 
 **Authorization Required:** Only for authorized investment vetting and business intelligence.

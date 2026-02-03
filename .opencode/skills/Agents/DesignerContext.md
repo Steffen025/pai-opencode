@@ -9,8 +9,8 @@
 ## Required Knowledge (Pre-load from Skills)
 
 ### Core Foundations
-- **skills/PAI/CoreStack.md** - Stack preferences and tooling
-- **skills/PAI/CONSTITUTION.md** - Constitutional principles
+- **skills/CORE/CoreStack.md** - Stack preferences and tooling
+- **skills/CORE/CONSTITUTION.md** - Constitutional principles
 
 ### Design Standards
 - **skills/FrontendDesign/SKILL.md** - Frontend design workflows and patterns
@@ -29,9 +29,9 @@ Load these dynamically based on task keywords:
 
 ---
 
-## Key Design Principles (from PAI)
+## Key Design Principles (from CORE)
 
-These are already loaded via PAI or FrontendDesign skill - reference, don't duplicate:
+These are already loaded via CORE or FrontendDesign skill - reference, don't duplicate:
 
 - User-centered design (empathy for user experience)
 - Accessibility first (WCAG 2.1 AA minimum, inclusive design mandatory)

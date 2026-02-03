@@ -10,7 +10,7 @@ description: Dynamic agent composition. USE WHEN custom agents, agent personalit
 ## Customization
 
 **Before executing, check for user customizations at:**
-`~/.opencode/skills/PAI/USER/SKILLCUSTOMIZATIONS/Agents/`
+`~/.opencode/skills/CORE/USER/SKILLCUSTOMIZATIONS/Agents/`
 
 If this directory exists, load and apply:
 - `PREFERENCES.md` - Named agent roster summary
@@ -181,7 +181,7 @@ bun run ~/.opencode/skills/Agents/Tools/AgentFactory.ts --list
 - Maps agent names to ElevenLabs voice IDs
 - Delivers personality-driven voice notifications
 
-**PAI Skill** (`~/.opencode/skills/PAI/`)
+**CORE Skill** (`~/.opencode/skills/CORE/`)
 - References Agents skill for custom agent creation
 - Documents the custom vs generic distinction
 - Includes agent creation in delegation patterns
@@ -241,7 +241,7 @@ Always specify the appropriate model:
 
 ## Related Skills
 
-- **PAI** - Main system identity and delegation patterns
+- **CORE** - Main system identity and delegation patterns
 - **VoiceNarration** - Voice output for content (separate from agent notifications)
 - **Development** - Uses Engineer and Architect agents
 

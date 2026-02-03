@@ -1,5 +1,16 @@
 # Adversarial Validation Pattern (Battle of Bots)
 
+## Voice Notification
+
+```bash
+curl -s -X POST http://localhost:8888/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the AdversarialValidation workflow in the RedTeam skill to validate decisions"}' \
+  > /dev/null 2>&1 &
+```
+
+Running the **AdversarialValidation** workflow in the **RedTeam** skill to validate decisions...
+
 **Purpose:** Use competing agents + critic to produce superior synthesis through adversarial refinement.
 
 **When to Use:**
@@ -239,6 +250,6 @@ Start with A's JWT approach (pragmatic), add B's short-lived tokens (15 min) and
 
 **Related Workflows:**
 - `parallelAnalysis.md` - For stress-testing existing arguments
-- `Tree-of-thought.md` (PAI) - For exploring branches before committing
+- `Tree-of-thought.md` (CORE) - For exploring branches before committing
 
 **Last Updated:** 2025-11-27

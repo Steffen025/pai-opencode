@@ -6,7 +6,7 @@ description: "Generate TypeScript CLIs. USE WHEN create CLI, build CLI, command-
 ## Customization
 
 **Before executing, check for user customizations at:**
-`~/.opencode/skills/PAI/USER/SKILLCUSTOMIZATIONS/CreateCLI/`
+`~/.opencode/skills/CORE/USER/SKILLCUSTOMIZATIONS/CreateCLI/`
 
 If this directory exists, load and apply any PREFERENCES.md, configurations, or resources found there. These override default behavior. If the directory does not exist, proceed with skill defaults.
 

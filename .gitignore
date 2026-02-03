@@ -2,3 +2,20 @@ node_modules/
 
 # Backup folders created by converter/migration tools
 .opencode.backup-*/
+
+# Environment files with secrets
+.opencode/.env
+.env
+*.env.local
+
+# Runtime artifacts
+*.log
+.DS_Store
+
+# Personal content (user customizes)
+.opencode/USER/*
+!.opencode/USER/README.md
+!.opencode/USER/.gitkeep
+
+# Security patterns (user customizes)
+.opencode/PAISECURITYSYSTEM/patterns.yaml
