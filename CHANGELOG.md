@@ -7,6 +7,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.0] - 2026-02-05
+
+### Major Feature: Real-Time Observability Dashboard
+
+This release introduces a complete monitoring infrastructure for PAI-OpenCode with real-time event streaming, SQLite persistence, and a Vue 3 dashboard.
+
+### Added
+
+#### Observability Server
+- **Bun HTTP Server** on port 8889 with REST API and SSE streaming
+- **SQLite Database** for event persistence with 30-day retention
+- **14 Event Types** captured across all plugin hooks
+- **Real-time SSE Stream** at `/api/events/stream`
+
+#### API Endpoints
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/health` | GET | Health check with server stats |
+| `/events` | POST | Event ingestion from plugins |
+| `/api/events` | GET | Query events with filters |
+| `/api/events/stream` | GET | SSE real-time stream |
+| `/api/sessions` | GET | Query sessions |
+| `/api/stats` | GET | Aggregated statistics |
+
+#### Vue 3 Dashboard
+- **Dashboard Page**: Real-time stats cards + live event stream
+- **Events Page**: Searchable/filterable event browser with pagination
+- **Sessions Page**: Session list with expandable event details
+- **GitHub Dark Theme**: Professional #0d1117 color scheme
+- **SSE Connection**: Live updates with pause/resume and reconnect
+
+#### New Handler
+| Handler | Purpose |
+|---------|---------|
+| `observability-emitter.ts` | Fire-and-forget event emission to observability server |
+
+#### Event Types Captured
+- Session lifecycle: `session.start`, `session.end`
+- Tool execution: `tool.execute`, `tool.blocked`
+- Security: `security.block`, `security.warn`
+- Messages: `message.user`, `message.assistant`
+- Ratings: `rating.explicit`, `rating.implicit`
+- Agents: `agent.spawn`, `agent.complete`
+- Voice: `voice.sent`
+- Learning: `learning.captured`
+- Validation: `isc.validated`, `context.loaded`
+
+### Technical Details
+- **Server Stack**: Bun HTTP + SQLite (bun:sqlite)
+- **Dashboard Stack**: Vue 3.4 + Vite 5 + Tailwind CSS 3.4 + TypeScript
+- **Plugin Integration**: 82 new lines in `pai-unified.ts`
+- **Event Emission**: 1s timeout, fail silently (non-blocking)
+
+### File Structure
+```
+.opencode/observability-server/
+├── server.ts          # HTTP server (:8889)
+├── db.ts              # SQLite operations
+├── README.md          # Documentation
+└── dashboard/         # Vue 3 SPA
+    ├── src/components/  # StatsCards, EventStream, EventList, SessionList
+    ├── src/pages/       # Dashboard, Events, Sessions
+    └── [config]         # Vite, Tailwind, TypeScript
+```
+
+---
+
 ## [1.1.0] - 2026-02-02
 
 ### Major Upgrade: PAI 2.5 + Voice/Sentiment Handlers
