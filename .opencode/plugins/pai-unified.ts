@@ -42,6 +42,23 @@ import { handleResponseCapture } from "./handlers/response-capture";
 import { handleImplicitSentiment } from "./handlers/implicit-sentiment";
 import { handleTabState } from "./handlers/tab-state";
 import { fileLog, fileLogError, clearLog } from "./lib/file-logger";
+import {
+  emitSessionStart,
+  emitSessionEnd,
+  emitToolExecute,
+  emitSecurityBlock,
+  emitSecurityWarn,
+  emitUserMessage,
+  emitAssistantMessage,
+  emitExplicitRating,
+  emitImplicitSentiment,
+  emitAgentSpawn,
+  emitAgentComplete,
+  emitVoiceSent,
+  emitLearningCaptured,
+  emitISCValidated,
+  emitContextLoaded,
+} from "./handlers/observability-emitter";
 
 /**
  * Extract text content from message
@@ -96,12 +113,19 @@ export const PaiUnified: Plugin = async (ctx) => {
     "experimental.chat.system.transform": async (input, output) => {
       try {
         fileLog("Injecting context...");
+        
+        // Emit session start
+        emitSessionStart({ model: (input as any).model }).catch(() => {});
 
         const result = await loadContext();
 
         if (result.success && result.context) {
           output.system.push(result.context);
           fileLog("Context injected successfully");
+          
+          // Emit context loaded
+          const contextSize = result.context.length;
+          emitContextLoaded(1, contextSize).catch(() => {});
         } else {
           fileLog(
             `Context injection skipped: ${result.error || "unknown"}`,
@@ -139,11 +163,13 @@ export const PaiUnified: Plugin = async (ctx) => {
           case "block":
             output.status = "deny";
             fileLog(`BLOCKED: ${result.reason}`, "error");
+            emitSecurityBlock(tool, result.reason || "Unknown").catch(() => {});
             break;
 
           case "confirm":
             output.status = "ask";
             fileLog(`CONFIRM: ${result.reason}`, "warn");
+            emitSecurityWarn(tool, result.reason || "Requires confirmation").catch(() => {});
             break;
 
           case "allow":
@@ -180,12 +206,14 @@ export const PaiUnified: Plugin = async (ctx) => {
 
       if (result.action === "block") {
         fileLog(`BLOCKED: ${result.reason}`, "error");
+        emitSecurityBlock(input.tool, result.reason || "Unknown", result.pattern).catch(() => {});
         // Throwing an error blocks the tool execution
         throw new Error(`[PAI Security] ${result.message || result.reason}`);
       }
 
       if (result.action === "confirm") {
         fileLog(`WARNING: ${result.reason}`, "warn");
+        emitSecurityWarn(input.tool, result.reason || "Requires confirmation").catch(() => {});
         // For now, log warning but allow - OpenCode will handle its own permission prompt
       }
 
@@ -202,13 +230,21 @@ export const PaiUnified: Plugin = async (ctx) => {
     "tool.execute.after": async (input, output) => {
       try {
         fileLog(`Tool after: ${input.tool}`, "debug");
+        
+        // Emit tool execution
+        const args = (input as any).args || (output as any).args || {};
+        const resultLength = output.result ? JSON.stringify(output.result).length : 0;
+        emitToolExecute(input.tool, args, undefined, true, resultLength).catch(() => {});
 
         // === AGENT OUTPUT CAPTURE ===
         // Check for Task tool (subagent) completion
         if (isTaskTool(input.tool)) {
           fileLog("Subagent task completed, capturing output...", "info");
+          
+          // Emit agent complete
+          const agentType = args.subagent_type || "unknown";
+          emitAgentComplete(agentType, resultLength).catch(() => {});
 
-          const args = (input as any).args || (output as any).args || {};
           const result = output.result;
 
           const captureResult = await captureAgentOutput(args, result);
@@ -317,6 +353,9 @@ export const PaiUnified: Plugin = async (ctx) => {
         // === SESSION START ===
         if (eventType.includes("session.created")) {
           fileLog("=== Session Started ===", "info");
+          
+          // Emit session start (backup emit, primary is in context injection)
+          emitSessionStart().catch(() => {});
 
           // SKILL RESTORE WORKAROUND
           // OpenCode modifies SKILL.md files when loading them.
@@ -351,6 +390,11 @@ export const PaiUnified: Plugin = async (ctx) => {
                 `Extracted ${learningResult.learnings.length} learnings`,
                 "info"
               );
+              
+              // Emit learning captured for each learning
+              learningResult.learnings.forEach((learning: any) => {
+                emitLearningCaptured(learning.category || "unknown", learning.filepath || "unknown").catch(() => {});
+              });
             }
           } catch (error) {
             fileLogError("Learning extraction failed", error);
@@ -374,6 +418,9 @@ export const PaiUnified: Plugin = async (ctx) => {
           } catch (error) {
             fileLogError("Update counts failed (non-blocking)", error);
           }
+          
+          // Emit session end
+          emitSessionEnd().catch(() => {});
         }
 
         // === ASSISTANT MESSAGE HANDLING (ISC VALIDATION + VOICE + CAPTURE) ===
@@ -395,6 +442,13 @@ export const PaiUnified: Plugin = async (ctx) => {
                   if (iscResult.warnings.length > 0) {
                     fileLog(`[ISC Validation] Warnings: ${iscResult.warnings.join(", ")}`, "warn");
                   }
+                  
+                  // Emit ISC validation
+                  emitISCValidated(
+                    iscResult.criteriaCount || 0,
+                    iscResult.warnings.length === 0,
+                    iscResult.warnings || []
+                  ).catch(() => {});
                 }
               } catch (error) {
                 fileLogError("[ISC Validation] Failed", error);
@@ -407,6 +461,9 @@ export const PaiUnified: Plugin = async (ctx) => {
                 if (voiceCompletion) {
                   fileLog(`[Voice] Found completion: "${voiceCompletion.substring(0, 50)}..."`, "info");
                   await handleVoiceNotification(voiceCompletion, sessionId);
+                  
+                  // Emit voice sent
+                  emitVoiceSent(voiceCompletion.length).catch(() => {});
                   
                   // === TAB STATE UPDATE ===
                   // Update terminal tab title/color after completion
@@ -421,6 +478,11 @@ export const PaiUnified: Plugin = async (ctx) => {
               } catch (error) {
                 fileLogError("[Voice] Voice notification failed (non-blocking)", error);
               }
+              
+              // Emit assistant message
+              const hasVoiceLine = !!extractVoiceCompletion(responseText);
+              const hasISC = responseText.includes("🤖") || responseText.includes("OBSERVE");
+              emitAssistantMessage(responseText.length, hasVoiceLine, hasISC).catch(() => {});
 
               // === RESPONSE CAPTURE ===
               // Capture response for work tracking and learning
@@ -472,6 +534,12 @@ export const PaiUnified: Plugin = async (ctx) => {
               const ratingResult = await captureRating(userText, "user message");
               if (ratingResult.success && ratingResult.rating) {
                 fileLog(`Rating captured: ${ratingResult.rating.score}/10`, "info");
+                
+                // Emit explicit rating
+                emitExplicitRating(
+                  ratingResult.rating.score,
+                  ratingResult.rating.comment
+                ).catch(() => {});
               } else {
                 fileLog(`Rating capture failed: ${ratingResult.error}`, "warn");
               }
@@ -480,11 +548,23 @@ export const PaiUnified: Plugin = async (ctx) => {
               // Only run if NOT an explicit rating
               try {
                 const sessionId = (input as any).sessionID || 'unknown';
-                await handleImplicitSentiment(userText, sessionId);
+                const sentimentResult = await handleImplicitSentiment(userText, sessionId);
+                
+                // Emit implicit sentiment if captured
+                if (sentimentResult && sentimentResult.score !== undefined) {
+                  emitImplicitSentiment(
+                    sentimentResult.score,
+                    sentimentResult.confidence || 0,
+                    sentimentResult.indicators || []
+                  ).catch(() => {});
+                }
               } catch (error) {
                 fileLogError('[ImplicitSentiment] Failed (non-blocking)', error);
               }
             }
+            
+            // Emit user message
+            emitUserMessage(userText.length, !!rating).catch(() => {});
             
             // === AUTO-WORK CREATION ===
             const currentSession = getCurrentSession();

@@ -1,0 +1,15 @@
+{
+  "name": "pai-observability-server",
+  "version": "1.0.0",
+  "description": "Real-time monitoring dashboard for PAI-OpenCode",
+  "main": "server.ts",
+  "type": "module",
+  "scripts": {
+    "start": "bun run server.ts",
+    "dev": "bun --watch run server.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "bun-types": "latest"
+  }
+}
