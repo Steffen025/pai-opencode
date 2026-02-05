@@ -6,7 +6,7 @@
 
 ## Overview
 
-PAI-OpenCode v1.1 includes **full PAI 2.5 functionality**—skills, agents, security, memory, voice, and sentiment detection. Some advanced features are **deferred to future releases**.
+PAI-OpenCode v1.2 includes **full PAI 2.5 functionality**—skills, agents, security, memory, voice, sentiment detection, and observability dashboard. Some advanced features are **deferred to future releases**.
 
 ---
 
@@ -20,7 +20,7 @@ PAI-OpenCode v1.1 includes **full PAI 2.5 functionality**—skills, agents, secu
 | MEMORY System | ✅ Stable | ✅ Included | v1.0 | P0 |
 | Voice Server | ✅ Stable | ✅ **Included** | v1.1 | P1 |
 | Implicit Sentiment | ✅ Stable | ✅ **Included** | v1.1 | P1 |
-| Observability Dashboard | ✅ Stable | ⏳ Deferred | v1.2 | P2 |
+| Observability Dashboard | ✅ Stable | ✅ **Included** | v1.2 | P2 |
 | Auto-Migration | ✅ Stable | ⏳ Deferred | v1.x | P3 |
 | MCP Server Adapters | ⚠️ Experimental | ⏳ Deferred | v1.x | P3 |
 
@@ -57,9 +57,9 @@ See `.opencode/voice-server/README.md` for setup details.
 
 ---
 
-## 2. Observability Dashboard
+## 2. Observability Dashboard ✅ INCLUDED IN v1.2
 
-**Status:** Deferred to v1.2
+**Status:** ✅ Included in v1.2
 **Priority:** P2 (Medium)
 
 ### What It Does
@@ -71,20 +71,24 @@ The Observability Dashboard provides **real-time monitoring** of:
 - Learning capture
 - Agent invocations
 
-![Observability Dashboard](images/observability-dashboard.png)
+### Implementation (v1.2)
 
-### Why Deferred
+The observability server is now included in `.opencode/observability-server/`:
 
-- Vue + Vite build system needs OpenCode testing
-- Event capture requires plugin `tool.execute.after` testing
-- Real-time SSE needs validation
-
-### Workaround (v1.1)
-
-View events manually:
 ```bash
-cat .opencode/MEMORY/raw-outputs/2026-*/*.jsonl | jq
+# Start the observability server
+cd .opencode/observability-server
+bun run server.ts
 ```
+
+**Features:**
+- **Real-time SSE streaming** at `http://localhost:8889`
+- **Vue 3 Dashboard** with GitHub Dark theme
+- **14 Event Types** captured across all plugin hooks
+- **SQLite persistence** with 30-day retention
+- **REST API** for querying events, sessions, and statistics
+
+See `.opencode/observability-server/README.md` for full documentation.
 
 ---
 
@@ -157,7 +161,24 @@ Use external tools directly or via web interfaces.
 
 ---
 
-### v1.1 (Current) - Voice, Sentiment & Full Algorithm
+### v1.2 (Current) - Observability Dashboard
+
+**Released:** February 2026
+
+**Included:**
+- ✅ Observability Server (Bun HTTP + SQLite)
+- ✅ Vue 3 Dashboard (real-time SSE stream)
+- ✅ 14 Event Types (session, tool, agent, voice, learning)
+- ✅ REST API (events, sessions, statistics)
+- ✅ 14 Plugin Handlers (up from 13)
+
+**Deferred:**
+- ⏳ Auto-Migration
+- ⏳ MCP Server Adapters
+
+---
+
+### v1.1 - Voice, Sentiment & Full Algorithm
 
 **Released:** February 2026
 
@@ -168,22 +189,6 @@ Use external tools directly or via web interfaces.
 - ✅ 13 Plugin Handlers (up from 8)
 - ✅ Tab State Management (Kitty terminal)
 - ✅ ISC Tracking & Response Capture
-
-**Deferred:**
-- ⏳ Observability Dashboard
-- ⏳ Auto-Migration
-- ⏳ MCP Server Adapters
-
----
-
-### v1.2 - Observability
-
-**Target:** Q2 2026
-
-- Event capture plugin
-- Dashboard server (Bun + HTTP)
-- Vue client (real-time feed)
-- Session timeline visualization
 
 ---
 

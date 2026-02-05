@@ -6,6 +6,35 @@ This roadmap outlines the development path from v1.0 to v2.0 and beyond.
 
 ## Current Release
 
+### v1.2.0 - Observability Dashboard (February 2026)
+
+**Status:** ✅ Released
+
+**Major Feature:** Real-time monitoring infrastructure with Vue 3 dashboard
+
+**What's New in v1.2:**
+- **Observability Server** - Bun HTTP server on port 8889 with SQLite persistence
+- **14 Event Types** - Session lifecycle, tool usage, agent spawning, voice notifications
+- **Vue 3 Dashboard** - Real-time stats cards, live event stream, GitHub Dark theme
+- **REST API** - Query events, sessions, and statistics with filters
+- **SSE Streaming** - Real-time event updates with pause/resume
+- **New Handler** - `observability-emitter.ts` for fire-and-forget event emission
+
+**Technical Details:**
+- 14 handlers total (up from 13 in v1.1)
+- Dashboard: Vue 3.4 + Vite 5 + Tailwind CSS 3.4
+- Server: Bun + SQLite with 30-day retention
+- Non-blocking event emission (1s timeout)
+
+**Documentation:**
+- [CHANGELOG.md](CHANGELOG.md) - Full release notes
+- [README.md](README.md) - Updated for v1.2
+- [.opencode/observability-server/README.md](.opencode/observability-server/README.md) - Server documentation
+
+---
+
+## Previous Releases
+
 ### v1.1.0 - PAI 2.5 + Voice/Sentiment Handlers (February 2026)
 
 **Status:** ✅ Released
@@ -24,10 +53,6 @@ This roadmap outlines the development path from v1.0 to v2.0 and beyond.
 - 13 handlers total (up from 8 in v1.0)
 - Build: 21 modules, 85.77 KB
 - Graceful fallbacks for all optional features
-
-**Documentation:**
-- [CHANGELOG.md](CHANGELOG.md) - Full release notes
-- [README.md](README.md) - Updated for v1.1
 
 ---
 
@@ -51,27 +76,6 @@ This roadmap outlines the development path from v1.0 to v2.0 and beyond.
 ---
 
 ## Upcoming Releases
-
----
-
-### v1.2.0 - Observability Dashboard (Q2 2026)
-
-**Goal:** Visual monitoring of PAI activity
-
-**Features:**
-- Real-time event stream visualization
-- Skill usage analytics
-- Plugin execution timeline
-- Session history browser
-- Export capabilities (JSON, CSV)
-
-**Technical Stack:**
-- Vue 3 frontend
-- Bun HTTP server backend
-- SQLite for event storage
-- Server-Sent Events (SSE) for real-time updates
-
-![Dashboard Mockup](docs/images/dashboard-mockup.png)
 
 ---
 
@@ -134,6 +138,7 @@ We value community input! Here's how to shape PAI-OpenCode's future:
 
 | Version | Release Date | Highlights |
 |---------|-------------|------------|
+| v1.2.0  | February 2026 | Observability Dashboard + 14 handlers |
 | v1.1.0  | February 2026 | PAI 2.5 upgrade + Voice/Sentiment handlers |
 | v1.0.1  | February 2026 | Anthropic API fix, ISCValidator improvements |
 | v1.0.0  | January 2026 | Initial release - core PAI on OpenCode |

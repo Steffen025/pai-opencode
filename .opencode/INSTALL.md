@@ -115,13 +115,56 @@ If the voice server is unavailable, PAI-OpenCode automatically falls back to:
 
 See `.opencode/voice-server/README.md` for detailed documentation.
 
+## Observability Dashboard Setup (Optional)
+
+PAI-OpenCode includes a real-time observability dashboard for monitoring sessions, tools, and agents.
+
+### Quick Start
+
+```bash
+# Start the observability server
+cd .opencode/observability-server
+bun run server.ts
+```
+
+The dashboard will be available at `http://localhost:8889` by default.
+
+### What You Get
+
+- **Real-time event streaming** via Server-Sent Events (SSE)
+- **Session tracking** with lifecycle management
+- **Tool usage analytics** across all sessions
+- **Agent spawn monitoring** for parallel work visibility
+- **Vue 3 Dashboard** with GitHub Dark theme
+
+### Run as Background Service
+
+```bash
+# Start in background
+nohup bun run .opencode/observability-server/server.ts > /dev/null 2>&1 &
+
+# Or use PM2
+pm2 start .opencode/observability-server/server.ts --name pai-observability --interpreter bun
+```
+
+### Configuration
+
+Environment variables (optional):
+```bash
+PORT=8889                    # Server port
+DATA_DIR=./data             # SQLite database directory
+RETENTION_HOURS=168         # Session retention (7 days)
+```
+
+See `.opencode/observability-server/README.md` for detailed documentation.
+
 ## What's Included
 
 | Component | Count | Description |
 |-----------|-------|-------------|
 | Skills | 29 | PAI 2.5 skills adapted for OpenCode |
 | Agents | 16 | Named AI personalities |
-| Plugin | 1 | Unified (13 handlers: security, context, voice, sentiment, etc.) |
+| Plugin | 1 | Unified (14 handlers: security, context, voice, sentiment, observability) |
 | Voice Server | 1 | TTS notifications (ElevenLabs/Google) |
 | Converter | 1 | For migrating PAI updates |
 

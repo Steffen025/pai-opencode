@@ -331,6 +331,54 @@ If you want to use a different provider (OpenAI, Groq, etc.):
 
 ---
 
+## Optional Services
+
+### Voice Server (TTS Notifications)
+
+Enable spoken notifications for task completions and agent results:
+
+```bash
+# Start the voice server
+cd .opencode/voice-server
+bun run server.ts
+```
+
+**Supported TTS Providers:**
+1. **ElevenLabs** (default) - High-quality voices, requires API key
+2. **Google Cloud TTS** - Alternative, requires API key
+3. **macOS `say`** - Free fallback, built-in
+
+Configure in `.opencode/.env`:
+```bash
+TTS_PROVIDER=elevenlabs
+ELEVENLABS_API_KEY=your_key_here
+```
+
+See [.opencode/voice-server/README.md](.opencode/voice-server/README.md) for details.
+
+### Observability Dashboard
+
+Monitor sessions, tools, and agents in real-time:
+
+```bash
+# Start the observability server
+cd .opencode/observability-server
+bun run server.ts
+```
+
+Dashboard available at `http://localhost:8889`
+
+**Features:**
+- Real-time event streaming via SSE
+- Session lifecycle tracking
+- Tool usage analytics
+- Agent spawn monitoring
+- Vue 3 dashboard with GitHub Dark theme
+
+See [.opencode/observability-server/README.md](.opencode/observability-server/README.md) for details.
+
+---
+
 ## Next Steps
 
 - Read [docs/WHAT-IS-PAI.md](docs/WHAT-IS-PAI.md) for PAI fundamentals
