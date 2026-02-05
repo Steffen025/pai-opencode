@@ -641,7 +641,11 @@ async function main(): Promise<void> {
   process.exit(0);
 }
 
-main().catch(err => {
-  console.error(`${c.red}Error:${c.reset}`, err.message);
-  process.exit(1);
-});
+// Only execute if this is the main script (not imported)
+const isMainScript = typeof Bun !== 'undefined' && Bun.main === import.meta.path;
+if (isMainScript) {
+  main().catch(err => {
+    console.error(`${c.red}Error:${c.reset}`, err.message);
+    process.exit(1);
+  });
+}

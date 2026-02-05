@@ -17,5 +17,5 @@
     }
   },
   "include": ["**/*.ts"],
-  "exclude": ["node_modules", "_deprecated"]
+  "exclude": ["node_modules", "_deprecated", "PAIOpenCodeWizard.ts", "observability-server", "voice-server"]
 }
