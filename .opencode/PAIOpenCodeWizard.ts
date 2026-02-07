@@ -38,7 +38,7 @@ const c = {
 
 // Paths - OpenCode uses .opencode instead of .claude
 const HOME = homedir();
-const SCRIPT_DIR = dirname(new URL(import.meta.url).pathname);
+const SCRIPT_DIR = dirname(new URL(import.meta.url).pathname).replace(/^\/([A-Z]:)/, '$1');
 const OPENCODE_DIR = SCRIPT_DIR; // Wizard lives inside .opencode/
 const PROJECT_ROOT = dirname(OPENCODE_DIR);
 const SHELL_RC = join(HOME, process.env.SHELL?.includes('zsh') ? '.zshrc' : '.bashrc');
@@ -215,6 +215,10 @@ async function promptChoice(question: string, choices: string[], defaultIdx = 0)
 // ============================================================================
 
 function fixPermissions(targetDir: string): void {
+  if (process.platform === 'win32') {
+    return;
+  }
+  
   const info = userInfo();
 
   print('');
@@ -251,13 +255,14 @@ function checkBun(): boolean {
   print(`${c.gray}─────────────────────────────────────────────────${c.reset}`);
 
   try {
-    const bunVersion = execSync('bun --version 2>/dev/null', { encoding: 'utf-8' }).trim();
+    const bunVersion = execSync('bun --version', { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
     printSuccess(`Bun ${bunVersion} found`);
     return true;
   } catch {
-    printError('Bun not found');
-    printInfo('Install Bun: curl -fsSL https://bun.sh/install | bash');
-    return false;
+    const installCmd = process.platform === 'win32' 
+    ? 'powershell -c "irm bun.sh/install.ps1 | iex"' 
+    : 'curl -fsSL https://bun.sh/install | bash';
+    printInfo(`Install Bun: ${installCmd}`);
   }
 }
 
