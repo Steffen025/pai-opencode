@@ -1,0 +1,35 @@
+# GitHub Copilot: Claude - Recommended for best PAI experience
+# 3-Tier: Opus (deep reasoning) → Sonnet (standard) → Haiku (speed)
+#
+# Requires: GitHub Copilot (oauth)
+#
+# Available models (Feb 2026):
+#   github-copilot/claude-opus-4.6    - Most capable, deep reasoning (expensive)
+#   github-copilot/claude-sonnet-4.5  - Balanced standard tier (recommended default)
+#   github-copilot/claude-haiku-4.5   - Fast budget tier
+#
+name: github-copilot
+description: GitHub Copilot Claude models - recommended for best quality
+models:
+  # Main model (opencode.json "model" field)
+  default: github-copilot/claude-sonnet-4.5
+
+  # 3-Tier: Most Capable → Standard → Budget
+  Algorithm: github-copilot/claude-opus-4.6
+  Architect: github-copilot/claude-sonnet-4.5
+  Engineer: github-copilot/claude-sonnet-4.5
+  general: github-copilot/claude-sonnet-4.5
+  explore: github-copilot/claude-haiku-4.5
+  Intern: github-copilot/claude-haiku-4.5
+  writer: github-copilot/claude-sonnet-4.5
+  ClaudeResearcher: github-copilot/claude-sonnet-4.5
+  GeminiResearcher: github-copilot/gemini-3-flash-preview
+  GrokResearcher: github-copilot/claude-sonnet-4.5
+  PerplexityResearcher: github-copilot/claude-sonnet-4.5
+  PerplexityProResearcher: github-copilot/gpt-5.1
+  QATester: github-copilot/claude-sonnet-4.5
+  Pentester: github-copilot/claude-sonnet-4.5
+  Designer: github-copilot/claude-sonnet-4.5
+  Artist: github-copilot/claude-sonnet-4.5
+  CodexResearcher: github-copilot/gpt-4.1
+  researcher: github-copilot/claude-sonnet-4.5
