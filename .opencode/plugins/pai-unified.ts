@@ -9,6 +9,14 @@
  * - Agent output capture (AgentOutputCapture)
  * - Learning extraction (WorkCompletionLearning)
  *
+ * v3.0 HANDLERS (added 2026-02-17):
+ * - Algorithm state tracking
+ * - Agent execution validation
+ * - Skill invocation validation
+ * - Version update checking
+ * - System integrity checks
+ * - Effort level detection
+ *
  * IMPORTANT: This plugin NEVER uses console.log!
  * All logging goes through file-logger.ts to prevent TUI corruption.
  *
@@ -58,6 +66,13 @@ import {
   emitISCValidated,
   emitContextLoaded,
 } from "./handlers/observability-emitter";
+// v3.0 HANDLERS
+import { trackAlgorithmState } from "./handlers/algorithm-tracker";
+import { validateAgentExecution } from "./handlers/agent-execution-guard";
+import { validateSkillInvocation } from "./handlers/skill-guard";
+import { checkForUpdates, formatUpdateNotification } from "./handlers/check-version";
+import { runIntegrityCheck } from "./handlers/integrity-check";
+import { detectEffortLevel } from "./handlers/format-reminder";
 
 /**
  * Extract text content from message
@@ -101,6 +116,7 @@ export const PaiUnified: Plugin = async (ctx) => {
   fileLog("=== PAI-OpenCode Plugin Loaded ===");
   fileLog(`Working directory: ${process.cwd()}`);
   fileLog("Hooks: Context, Security, Work, Ratings, Agents, Learning");
+  fileLog("v3.0 Handlers: Algorithm Tracker, Agent Guard, Skill Guard, Version Check, Integrity Check, Effort Level");
 
   const hooks: Hooks = {
     /**
@@ -218,6 +234,32 @@ export const PaiUnified: Plugin = async (ctx) => {
       }
 
       fileLog(`Security check passed for ${input.tool}`, "debug");
+
+      // === AGENT EXECUTION GUARD (v3.0) ===
+      if (input.tool === "mcp_task" || input.tool.toLowerCase().includes("task")) {
+        try {
+          const guardResult = await validateAgentExecution(output.args ?? {});
+          if (!guardResult.allowed) {
+            fileLog(`[AgentGuard] Warning: ${guardResult.reason}`, "warn");
+          }
+        } catch (error) {
+          fileLogError("[AgentGuard] Validation failed (non-blocking)", error);
+        }
+      }
+
+      // === SKILL GUARD (v3.0) ===
+      if (input.tool === "mcp_skill" || input.tool.toLowerCase().includes("skill")) {
+        try {
+          const skillName = (output.args as any)?.name || "unknown";
+          const context = (output.args as any)?.context || "";
+          const skillResult = await validateSkillInvocation(skillName, context);
+          if (!skillResult.valid) {
+            fileLog(`[SkillGuard] Warning: ${skillResult.reason}`, "warn");
+          }
+        } catch (error) {
+          fileLogError("[SkillGuard] Validation failed (non-blocking)", error);
+        }
+      }
     },
 
     /**
@@ -251,6 +293,14 @@ export const PaiUnified: Plugin = async (ctx) => {
           if (captureResult.success && captureResult.filepath) {
             fileLog(`Agent output saved: ${captureResult.filepath}`, "info");
           }
+        }
+
+        // === ALGORITHM TRACKER (v3.0) ===
+        try {
+          const sessionId = (input as any).sessionId || "unknown";
+          await trackAlgorithmState(input.tool, (input as any).args || (output as any).args || {}, output.result, sessionId);
+        } catch (error) {
+          fileLogError("[AlgorithmTracker] Tracking failed (non-blocking)", error);
         }
       } catch (error) {
         fileLogError("Tool after hook failed", error);
@@ -328,6 +378,16 @@ export const PaiUnified: Plugin = async (ctx) => {
           }
         }
 
+        // === EFFORT LEVEL DETECTION (v3.0) ===
+        if (content.length > 20) {
+          try {
+            const effortResult = await detectEffortLevel(content);
+            fileLog(`[EffortLevel] Detected: ${effortResult.level} (${effortResult.budget})`, "info");
+          } catch (error) {
+            fileLogError("[EffortLevel] Detection failed (non-blocking)", error);
+          }
+        }
+
         // === FORMAT REMINDER ===
         // For non-trivial prompts, nudge towards Algorithm format
         // (Not blocking, just logging for awareness)
@@ -372,6 +432,16 @@ export const PaiUnified: Plugin = async (ctx) => {
             fileLogError("Skill restore failed", error);
             // Don't throw - session should continue
           }
+
+          // === VERSION CHECK (v3.0) ===
+          try {
+            const updateResult = await checkForUpdates();
+            if (updateResult.updateAvailable) {
+              fileLog(`[VersionCheck] Update available: ${updateResult.currentVersion} → ${updateResult.latestVersion}`, "info");
+            }
+          } catch (error) {
+            fileLogError("[VersionCheck] Check failed (non-blocking)", error);
+          }
         }
 
         // === SESSION END ===
@@ -398,6 +468,18 @@ export const PaiUnified: Plugin = async (ctx) => {
             }
           } catch (error) {
             fileLogError("Learning extraction failed", error);
+          }
+
+          // === INTEGRITY CHECK (v3.0) ===
+          try {
+            const healthResult = await runIntegrityCheck();
+            if (!healthResult.healthy) {
+              fileLog(`[IntegrityCheck] Issues found: ${healthResult.issues.join(", ")}`, "warn");
+            } else {
+              fileLog("[IntegrityCheck] System healthy", "info");
+            }
+          } catch (error) {
+            fileLogError("[IntegrityCheck] Check failed (non-blocking)", error);
           }
 
           // SESSION SUMMARY

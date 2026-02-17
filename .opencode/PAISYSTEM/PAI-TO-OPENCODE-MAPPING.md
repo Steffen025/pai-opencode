@@ -262,10 +262,55 @@ When importing a new PAI version:
 
 ---
 
+## v3.0 Feature Mapping
+
+The following features were added in PAI v3.0 (Algorithm v1.2.0):
+
+| v3.0 Feature | Claude Code | OpenCode | Status |
+|---|---|---|---|
+| Constraint Extraction [EX-N] | In SKILL.md | In SKILL.md | ✅ Ported |
+| Self-Interrogation | In SKILL.md | In SKILL.md | ✅ Ported |
+| Build Drift Prevention | In SKILL.md | In SKILL.md | ✅ Ported |
+| Verification Rehearsal | In SKILL.md | In SKILL.md | ✅ Ported |
+| Mechanical Verification | In SKILL.md | In SKILL.md | ✅ Ported |
+| 8 Effort Levels | FormatReminder hook | format-reminder.ts handler | ✅ Ported |
+| 7 Quality Gates | In SKILL.md | In SKILL.md | ✅ Ported |
+| 25-Capability Audit | In SKILL.md | In SKILL.md (adapted) | ✅ Ported |
+| PRD System | ~/.claude/MEMORY/WORK/ | ~/.opencode/MEMORY/WORK/PRD/ | ✅ Ported |
+| ISC Naming Convention | In SKILL.md | In SKILL.md | ✅ Ported |
+| Anti-Criteria | In SKILL.md | In SKILL.md | ✅ Ported |
+| Algorithm Reflection JSONL | In SKILL.md | In SKILL.md | ✅ Ported |
+| Start Symbol ♻︎ | In SKILL.md | In SKILL.md | ✅ Ported |
+| OBSERVE Hard Gate | In SKILL.md | In SKILL.md | ✅ Ported |
+| AUTO-COMPRESS 150% | In SKILL.md | In SKILL.md | ✅ Ported |
+| Loop Mode | algorithm.ts CLI | In SKILL.md (concept) | ✅ Ported |
+| Agent Teams/Swarm | CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 | N/A | ❌ Not portable |
+| Plan Mode | EnterPlanMode/ExitPlanMode | N/A | ❌ Not portable |
+| StatusLine | Claude Code UI | N/A | ❌ Not portable |
+| Voice Personality | settings.json personality block | settings.json personality block | ✅ Compatible |
+
+---
+
+## v3.0 Hook → Handler Mapping
+
+New hooks added in v3.0 and their OpenCode handler equivalents:
+
+| v3.0 Hook | OpenCode Handler | Event | Status |
+|---|---|---|---|
+| AlgorithmTracker.hook.ts | algorithm-tracker.ts | tool.execute.after | ✅ Created |
+| AgentExecutionGuard.hook.ts | agent-execution-guard.ts | tool.execute.before | ✅ Created |
+| SkillGuard.hook.ts | skill-guard.ts | tool.execute.before | ✅ Created |
+| CheckVersion.hook.ts | check-version.ts | event (session.start) | ✅ Created |
+| IntegrityCheck.hook.ts | integrity-check.ts | event (session.end) | ✅ Created |
+| FormatReminder (update) | format-reminder.ts | chat.message | ✅ Updated |
+
+---
+
 ## Version History
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-02-17 | 2.0 | Added v3.0 Feature Mapping, Hook → Handler Mapping |
 | 2026-01-24 | 1.1 | Added Model Configuration section, Agent Type Mapping |
 | 2026-01-24 | 1.0 | Initial mapping guide created |
 

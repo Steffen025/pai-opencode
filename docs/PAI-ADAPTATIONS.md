@@ -14,11 +14,12 @@ This document explains **what we changed** and **why**.
 
 ## PAI Version History
 
-| PAI-OpenCode | Based on PAI | Key Additions |
-|--------------|--------------|---------------|
-| v1.0.0 | PAI 2.4 | Core port, 8 handlers |
-| **v1.1.0** | **PAI 2.5** | Algorithm v0.2.25, 13 handlers, voice/sentiment |
-| **v1.3.0** | **PAI 2.5** | 16 agents, model tiers, 3 presets, wizard rewrite |
+| PAI-OpenCode | Based on PAI | Algorithm | Key Additions |
+|--------------|--------------|-----------|---------------|
+| v1.0.0 | PAI 2.4 | v0.2.24 | Core port, 8 handlers |
+| v1.1.0 | PAI 2.5 | v0.2.25 | 13 handlers, voice/sentiment |
+| v1.3.0 | PAI 2.5 | v0.2.25 | 16 agents, model tiers, 3 presets |
+| **v2.0.0** | **PAI 3.0** | **v1.2.0** | **8 effort levels, 25-capability audit, PRD system, 5 new handlers** |
 
 ---
 
@@ -192,6 +193,112 @@ export function fileLog(message: string, level = "info") {
     }
   }
 }
+```
+
+---
+
+## v3.0 Adaptations
+
+### Platform-Specific Adaptations
+
+**Algorithm v1.2.0** introduced several features — some portable to OpenCode, some Claude Code only:
+
+#### ✅ Ported to OpenCode
+
+| Feature | Implementation | Notes |
+|---------|----------------|-------|
+| **8 Effort Levels** | `format-reminder.ts` handler | Instant → Loop, replaces 3-tier depth |
+| **25-Capability Audit** | In SKILL.md | Capability table adapted for OpenCode agents |
+| **Constraint Extraction** | In SKILL.md | [EX-N] before ISC creation |
+| **Self-Interrogation** | In SKILL.md | 5 questions before BUILD |
+| **Build Drift Prevention** | In SKILL.md | Re-read [CRITICAL] ISC before each artifact |
+| **Verification Rehearsal** | In SKILL.md | Simulate violations in THINK |
+| **Mechanical Verification** | In SKILL.md | No rubber-stamp PASS |
+| **7 Quality Gates** | In SKILL.md | QG1-QG7 phase gates |
+| **PRD System** | `MEMORY/WORK/PRD/` directory | Persistent Requirements Documents |
+| **ISC Naming Convention** | In SKILL.md | ISC-{Domain}-{N} with tags |
+| **Anti-Criteria** | In SKILL.md | ISC-A-{Domain}-{N} |
+| **Algorithm Reflection JSONL** | In SKILL.md | Structured learning capture |
+| **Start Symbol ♻︎** | In SKILL.md | Replaces 🤖 |
+| **OBSERVE Hard Gate** | In SKILL.md | Thinking-only phase |
+| **AUTO-COMPRESS 150%** | In SKILL.md | Drop effort tier on budget overrun |
+| **Loop Mode** | In SKILL.md (concept) | Multi-pass refinement |
+
+#### ❌ Not Portable (Claude Code Only)
+
+| Feature | Why Not Portable |
+|---------|------------------|
+| **Agent Teams/Swarm** | Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` environment flag — not in OpenCode |
+| **Plan Mode** | Built-in tools `EnterPlanMode`/`ExitPlanMode` — OpenCode doesn't have these |
+| **StatusLine** | Claude Code UI feature — terminal status bar integration |
+
+### New Handlers (v2.0)
+
+Five new plugin handlers added for v3.0:
+
+| Handler | Purpose | Event | Status |
+|---------|---------|-------|--------|
+| `algorithm-tracker.ts` | Monitors Algorithm phase transitions, ISC progress | tool.execute.after | ✅ Created |
+| `agent-execution-guard.ts` | Validates agent invocations before execution | tool.execute.before | ✅ Created |
+| `skill-guard.ts` | Ensures skill prerequisites are met | tool.execute.before | ✅ Created |
+| `check-version.ts` | Verifies Algorithm version compatibility | session.start | ✅ Created |
+| `integrity-check.ts` | Session-end validation and cleanup | session.end | ✅ Created |
+
+### PRD System Directory Structure
+
+PAI v3.0 introduced PRD (Persistent Requirements Documents). OpenCode adaptation:
+
+```
+MEMORY/WORK/PRD/
+├── TEMPLATES/
+│   ├── PRD-TEMPLATE.md
+│   └── ISC-EXTRACTION-TEMPLATE.md
+├── ACTIVE/
+│   └── [feature-name]/
+│       ├── PRD.md
+│       ├── ISC.md
+│       └── SESSIONS.md
+├── COMPLETED/
+└── ARCHIVED/
+```
+
+**Differences from Claude Code:**
+- Claude Code stores in `~/.claude/MEMORY/WORK/`
+- OpenCode stores in `.opencode/MEMORY/WORK/PRD/` (relative path)
+
+### Capability Audit Table Changes
+
+The 25-capability audit table in SKILL.md required adaptation:
+
+**Claude Code agents:**
+- Uses agent names specific to Claude Code ecosystem
+- Includes Plan mode as capability
+
+**OpenCode agents (adapted):**
+- Mapped Claude Code agents to OpenCode equivalents
+- Removed Plan mode (not portable)
+- Added OpenCode-specific agents (explore, general)
+
+**Example mapping:**
+```
+Claude Code:        OpenCode:
+Plan mode      →    Architect agent
+Explore        →    explore (lowercase, built-in)
+general        →    general (built-in)
+```
+
+### format-reminder Handler Enhancement
+
+Updated for 8-tier effort level system:
+
+**Old (v1.3):**
+```typescript
+// 3 depth levels: FULL, ITERATION, MINIMAL
+```
+
+**New (v2.0):**
+```typescript
+// 8 effort levels: Instant, Fast, Standard, Extended, Advanced, Deep, Comprehensive, Loop
 ```
 
 ---

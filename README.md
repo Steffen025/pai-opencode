@@ -4,27 +4,29 @@
 
 **Personal AI Infrastructure for OpenCode** — Bring Daniel Miessler's renowned PAI scaffolding to any AI provider.
 
-[![Version](https://img.shields.io/badge/Version-1.3.1-brightgreen)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-2.0.0-brightgreen)](CHANGELOG.md)
 [![OpenCode Compatible](https://img.shields.io/badge/OpenCode-Compatible-green)](https://github.com/anomalyco/opencode)
-[![PAI Version](https://img.shields.io/badge/PAI-2.5-blue)](https://github.com/danielmiessler/Personal_AI_Infrastructure)
+[![PAI Version](https://img.shields.io/badge/PAI-3.0-blue)](https://github.com/danielmiessler/Personal_AI_Infrastructure)
+[![Algorithm](https://img.shields.io/badge/Algorithm-1.2.0-blueviolet)](https://github.com/danielmiessler/TheAlgorithm)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> **v1.3 Release** — Multi-Provider Agent System with Dynamic Tier Routing. Every agent scales to the right model for the task. Choose your preset: `zen-paid`, `openrouter`, or `local-ollama`. See [CHANGELOG.md](CHANGELOG.md).
+> **v2.0 Release** — PAI v3.0 / Algorithm v1.2.0 with 8 effort levels, 25-capability audit, PRD system, constraint extraction, and 5 new quality mechanisms. See [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
 ## What is this?
 
-PAI-OpenCode is the complete port of **Daniel Miessler's Personal AI Infrastructure (PAI)** to **OpenCode** — an open-source, provider-agnostic AI coding assistant.
+PAI-OpenCode is the complete port of **Daniel Miessler's Personal AI Infrastructure (PAI v3.0)** to **OpenCode** — an open-source, provider-agnostic AI coding assistant.
 
 ![Architecture Overview](docs/images/architecture-overview.jpg)
 
 **PAI** is a scaffolding system that makes AI assistants work better for *you*. It's not about which model you use — it's about the infrastructure around it:
 
-- **Skills** — Modular capabilities (code review, security testing, research, design)
+- **The Algorithm (v1.2.0)** — 8 effort levels with 25-capability audit, constraint extraction, and quality gates
+- **Skills** — Modular capabilities (39 skills including Cloudflare, ExtractWisdom, Science)
 - **Agents** — Dynamic multi-agent orchestration
-- **Memory** — Session history, project context, learning loops
-- **Plugins** — Lifecycle automation (session init, security validation, observability)
+- **Memory** — Session history, project context, learning loops, PRD system
+- **Plugins** — Lifecycle automation (session init, security validation, observability, algorithm tracking)
 
 **OpenCode** is an open-source alternative to Claude Code that supports 75+ AI providers — from Anthropic and OpenAI to Google, AWS Bedrock, Ollama, and beyond.
 
@@ -109,13 +111,17 @@ This **10-15 minute** interactive session will configure your complete TELOS fra
 
 ![Features Showcase](docs/images/features-showcase.jpg)
 
-### 🎯 Skills System (29 Skills)
+### 🎯 Skills System (39 Skills)
 Modular, reusable capabilities invoked by name:
-- **CORE** — Identity, preferences, auto-loaded at session start
+- **CORE** — Identity, preferences, auto-loaded at session start (Algorithm v1.2.0)
 - **Art** — Excalidraw-style visual diagrams
 - **Browser** — Code-first browser automation
 - **Security** — Pentesting, secret scanning
 - **Research** — Cost-aware multi-provider research system (see below)
+- **ExtractWisdom** — Fabric-style wisdom extraction
+- **Science** — Hypothesis-driven experimentation
+- **Cloudflare** — Pages, Workers, R2, KV automation
+- **Plus 31 more** — See `.opencode/skills/` for full list
 
 ### 🤖 Agent Orchestration (16 Agents)
 Dynamic multi-agent composition with **intelligent tier routing** — every agent scales up or down based on task complexity:
@@ -147,7 +153,7 @@ Persistent context across sessions:
 - Project documentation (`.opencode/MEMORY/projects/`)
 - Learning loops (`.opencode/MEMORY/LEARNINGS/`)
 
-### 🔧 Plugin System (14 Handlers)
+### 🔧 Plugin System (19 Handlers)
 TypeScript lifecycle plugins with comprehensive coverage:
 - **Context injection** at session start
 - **Security validation** before commands
@@ -157,6 +163,11 @@ TypeScript lifecycle plugins with comprehensive coverage:
 - **ISC tracking** and response capture
 - **Rating capture** and learning loops
 - **Observability** (real-time event streaming and monitoring)
+- **Algorithm tracking** — Monitors phase transitions and ISC progress
+- **Agent execution guard** — Validates agent invocations
+- **Skill guard** — Ensures skill prerequisites
+- **Version check** — Algorithm version compatibility
+- **Integrity check** — Session-end validation
 
 ### 🌐 75+ AI Providers
 Use any AI provider:

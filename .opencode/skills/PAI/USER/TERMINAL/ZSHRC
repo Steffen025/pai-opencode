@@ -4,7 +4,7 @@
 # ============================================
 # PAI Command Alias
 # ============================================
-# The PAI command launches Claude Code with full PAI context
+# The PAI command launches OpenCode with full PAI context
 # This is the primary way to interact with your Personal AI Infrastructure
 #
 # Usage:
@@ -12,11 +12,11 @@
 #   pai "do thing"   # Start PAI with initial prompt
 #
 # You can alias this to any short command you prefer:
-#   alias k="bun ~/.claude/skills/CORE/Tools/pai.ts"    # Single letter
-#   alias ai="bun ~/.claude/skills/CORE/Tools/pai.ts"   # Descriptive
-#   alias p="bun ~/.claude/skills/CORE/Tools/pai.ts"    # Minimal
+#   alias k="opencode"    # Single letter
+#   alias ai="opencode"   # Descriptive
+#   alias p="opencode"    # Minimal
 
-alias pai="bun ~/.claude/skills/CORE/Tools/pai.ts"
+alias pai="opencode"
 
 # ============================================
 # Optional: Additional aliases

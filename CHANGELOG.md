@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.0] - 2026-02-17
+
+### Breaking Changes
+- Algorithm format changed (8 effort levels replace FULL/ITERATION/MINIMAL depth)
+- Start symbol changed from 🤖 to ♻︎
+- ISC naming convention updated to ISC-{Domain}-{N} with priority/confidence tags
+- SKILL.md completely rewritten for Algorithm v1.2.0
+
+### Added
+- **Constraint Extraction System** — Mechanical [EX-N] extraction before ISC
+- **Self-Interrogation** — 5 structured questions before BUILD
+- **Build Drift Prevention** — Re-read [CRITICAL] ISC before each artifact
+- **Verification Rehearsal** — Simulate violations in THINK phase
+- **Mechanical Verification** — No rubber-stamp PASS, require evidence
+- **8 Effort Levels** — Instant, Fast, Standard, Extended, Advanced, Deep, Comprehensive, Loop
+- **7 Quality Gates** — QG1-QG7 must pass before proceeding
+- **25-Capability Full Scan Audit** — Replaces Two-Pass capability selection
+- **PRD System** — Persistent Requirements Documents for cross-session tracking
+- **Anti-Criteria** — ISC-A-{Domain}-{N} for what must NOT happen
+- **Algorithm Reflection JSONL** — Structured Q1/Q2/Q3 learning capture
+- **OBSERVE Hard Gate** — Thinking-only phase, no tool calls except TaskCreate
+- **AUTO-COMPRESS** — Drop effort tier when >150% of phase budget
+- **10 new skills** — Cloudflare, ExtractWisdom, IterativeDepth, Science, Parser, Remotion, Sales, USMetrics, WorldThreatModelHarness, WriteStory
+- **5 new plugin handlers** — algorithm-tracker, agent-execution-guard, skill-guard, check-version, integrity-check
+- **format-reminder handler** updated for 8-tier effort level system
+- **PRD directory structure** with templates and lifecycle management
+
+### Changed
+- SKILL.md rewritten from Algorithm v0.2.25 to v1.2.0
+- Capability selection now uses 25-capability full scan (was Two-Pass)
+- ISC criteria now use domain-grouped naming convention
+- format-reminder handler enhanced with effort level detection
+
+### Not Portable (Claude Code Only)
+- Agent Teams/Swarm (requires CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1)
+- Plan Mode (EnterPlanMode/ExitPlanMode built-in tools)
+- StatusLine (Claude Code UI feature)
+
+---
+
 ## v1.3.2 — Wizard Fixes + Fork Alignment (2026-02-11)
 
 ### Fixed

@@ -254,7 +254,7 @@ cat /tmp/pai-opencode-debug.log | grep DEBUG
 
 ## Unified Plugin Architecture
 
-PAI-OpenCode uses **one plugin** for all functionality with **14 handlers**:
+PAI-OpenCode uses **one plugin** for all functionality with **20 handlers**:
 
 ```
 plugins/
@@ -274,6 +274,12 @@ plugins/
 │   ├── update-counts.ts        # Skill/workflow counting [v1.1]
 │   └── response-capture.ts     # ISC tracking + learning [v1.1]
 │   ├── observability-emitter.ts  # Fire-and-forget event emission to observability server [v1.2]
+│   ├── algorithm-tracker.ts      # Algorithm phase & ISC tracking [v2.0]
+│   ├── agent-execution-guard.ts  # Agent pattern validation [v2.0]
+│   ├── skill-guard.ts            # Skill invocation validation [v2.0]
+│   ├── check-version.ts          # GitHub release update check [v2.0]
+│   ├── integrity-check.ts        # System health validation [v2.0]
+│   └── format-reminder.ts        # 8-tier effort level detection [v2.0]
 ├── adapters/
 │   └── types.ts                # Shared type definitions
 └── lib/
@@ -301,6 +307,9 @@ plugins/
 | **UX** | voice-notification, tab-state, implicit-sentiment | User experience |
 | **Observability** | observability-emitter | Event emission to external systems |
 | **Maintenance** | skill-restore, update-counts | System upkeep |
+| **v3.0 Algorithm** | algorithm-tracker, format-reminder | Algorithm state & effort levels |
+| **v3.0 Guards** | agent-execution-guard, skill-guard | Execution validation |
+| **v3.0 System** | check-version, integrity-check | Update & health checks |
 
 ---
 
@@ -395,4 +404,4 @@ Tracks ISC criteria satisfaction and captures learnings.
 
 ---
 
-**PAI-OpenCode v1.3** — 14 Handlers, Full PAI 2.5 Algorithm, Dynamic Tier Routing
+**PAI-OpenCode v2.0** — 20 Handlers, Full PAI v3.0 Algorithm (v1.2.0), 8-Tier Effort Levels, PRD System
