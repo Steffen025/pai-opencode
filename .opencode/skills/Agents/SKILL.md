@@ -163,6 +163,7 @@ bun run ~/.opencode/skills/Agents/Tools/AgentFactory.ts --list
 
 **Named Agents:**
 - Jamie - Expressive eager buddy
+- Tasker - Quiet finisher for simple tasks
 - Rook Blackburn (Pentester) - Reformed grey hat
 - Priya Desai (Artist) - Aesthetic anarchist
 - Aditi Sharma (Designer) - Design school perfectionist
