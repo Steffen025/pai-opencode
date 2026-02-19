@@ -1,0 +1,23 @@
+[Unit]
+Description=Kirito Telegram Bridge (session persistante)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/.opencode/telegram-bridge
+ExecStart=/root/.bun/bin/bun /root/.opencode/telegram-bridge/bridge.ts
+Restart=always
+RestartSec=10
+
+Environment=HOME=/root
+Environment=PATH=/root/.bun/bin:/usr/local/bin:/usr/bin:/bin
+Environment=XDG_DATA_HOME=/root/.local/share
+EnvironmentFile=-/root/.opencode/telegram-bridge/.env
+Environment=OPENCODE_MODELS=anthropic/claude-sonnet-4-6,openai/gpt-5.1-codex-mini,openai/gpt-5.2-codex,google/gemini-2.5-flash
+Environment=OPENCODE_RUN_TIMEOUT_SECONDS=45
+Environment=TELEGRAM_CONTEXT_MODE=desktop
+# ALLOWED_USERS=123456789  # Décommente et mets ton Telegram user ID pour restreindre l'accès
+
+[Install]
+WantedBy=multi-user.target
