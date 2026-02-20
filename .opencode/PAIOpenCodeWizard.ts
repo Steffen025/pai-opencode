@@ -146,7 +146,7 @@ function execCommand(cmd: string, options: { cwd?: string; silent?: boolean } = 
       cwd: options.cwd,
       stdio: options.silent ? 'pipe' : 'inherit',
     });
-    return { success: true, output: output.trim() };
+    return { success: true, output: (output ?? '').trim() };
   } catch (err: any) {
     return { success: false, output: '', error: err.message };
   }
@@ -160,8 +160,6 @@ interface PrereqCheck {
   bun: boolean;
   bunVersion: string;
   git: boolean;
-  go: boolean;
-  goVersion: string;
 }
 
 function checkPrerequisites(): PrereqCheck {
@@ -169,21 +167,22 @@ function checkPrerequisites(): PrereqCheck {
   print(`${c.bold}Step 0: Prerequisites Check${c.reset}`);
   print(`${c.gray}─────────────────────────────────────────────────${c.reset}`);
 
-  const results: PrereqCheck = { bun: false, bunVersion: '', git: false, go: false, goVersion: '' };
+  const results: PrereqCheck = { bun: false, bunVersion: '', git: false };
 
-  // Check bun with version requirement (1.3+ required)
+  // Check bun with version requirement (1.3.9+ required — matches OpenCode monorepo packageManager)
   try {
     const bunVersion = execSync('bun --version 2>/dev/null', { encoding: 'utf-8' }).trim();
-    const versionMatch = bunVersion.match(/(\d+)\.(\d+)/);
+    const versionMatch = bunVersion.match(/(\d+)\.(\d+)\.(\d+)/);
     if (versionMatch) {
       const major = parseInt(versionMatch[1]);
       const minor = parseInt(versionMatch[2]);
-      if (major > 1 || (major === 1 && minor >= 3)) {
+      const patch = parseInt(versionMatch[3]);
+      if (major > 1 || (major === 1 && minor > 3) || (major === 1 && minor === 3 && patch >= 9)) {
         printSuccess(`Bun ${bunVersion} found`);
         results.bun = true;
         results.bunVersion = bunVersion;
       } else {
-        printError(`Bun ${bunVersion} found — version 1.3+ required`);
+        printError(`Bun ${bunVersion} found — version 1.3.9+ required`);
         printInfo('Upgrade Bun: bun upgrade');
       }
     }
@@ -202,29 +201,6 @@ function checkPrerequisites(): PrereqCheck {
     printInfo('Install Git: https://git-scm.com/downloads');
   }
 
-  // Check Go (required for building OpenCode from source)
-  try {
-    const goVersion = execSync('go version 2>/dev/null', { encoding: 'utf-8' }).trim();
-    const goMatch = goVersion.match(/go(\d+)\.(\d+)/);
-    if (goMatch) {
-      const major = parseInt(goMatch[1]);
-      const minor = parseInt(goMatch[2]);
-      if (major > 1 || (major === 1 && minor >= 22)) {
-        printSuccess(`Go ${major}.${minor} found`);
-        results.go = true;
-        results.goVersion = `${major}.${minor}`;
-      } else {
-        printWarning(`Go ${major}.${minor} found — version 1.22+ recommended for building OpenCode`);
-        results.go = true; // Still allow, just warn
-        results.goVersion = `${major}.${minor}`;
-      }
-    }
-  } catch {
-    printWarning('Go not found — needed to build OpenCode from source');
-    printInfo('Install Go: https://go.dev/dl/ or brew install go');
-    printInfo('If you skip the build step, Go is not required');
-  }
-
   return results;
 }
 
@@ -237,24 +213,9 @@ async function buildOpenCode(): Promise<boolean> {
   print(`${c.bold}Step 1: Build OpenCode from Dev Source${c.reset}`);
   print(`${c.gray}─────────────────────────────────────────────────${c.reset}`);
   print('');
-  print(`  ${c.cyan}PAI-OpenCode requires OpenCode with model tier support${c.reset}`);
-  print(`  ${c.gray}(development build — not yet available in stable release)${c.reset}`);
+  print(`  ${c.cyan}PAI-OpenCode requires a custom OpenCode build with model tier support${c.reset}`);
+  print(`  ${c.gray}(built from our fork using Bun's native compiler — no Go needed)${c.reset}`);
   print('');
-
-  // Check if Go is available (needed for building)
-  const goCheck = execCommand('go version', { silent: true });
-  if (!goCheck.success) {
-    printWarning('Go is not installed — required for building OpenCode from source');
-    printInfo('Install Go: https://go.dev/dl/ or brew install go');
-    print('');
-
-    const skipChoice = await promptChoice('', [
-      'Skip build — I\'ll install Go and try later',
-      'Skip build — I already have OpenCode installed',
-    ], 0);
-
-    return true; // Don't block the wizard
-  }
 
   // Check if opencode is already installed
   const whichResult = execCommand('which opencode', { silent: true });
@@ -297,6 +258,7 @@ async function buildOpenCode(): Promise<boolean> {
   // Build from dev source
   print('');
   print(`${c.cyan}Building OpenCode from development branch...${c.reset}`);
+  print(`${c.gray}This uses Bun's native compiler to produce a standalone binary.${c.reset}`);
   print('');
 
   const buildDir = '/tmp/opencode-build';
@@ -327,8 +289,8 @@ async function buildOpenCode(): Promise<boolean> {
       return false;
     }
 
-    // Install dependencies
-    printInfo('Installing dependencies with bun...');
+    // Install dependencies (monorepo workspace — must run from root)
+    printInfo('Installing monorepo dependencies with bun (this may take a minute)...');
     const installResult = execCommand('bun install', { cwd: buildDir, silent: false });
 
     if (!installResult.success) {
@@ -336,8 +298,8 @@ async function buildOpenCode(): Promise<boolean> {
       return false;
     }
 
-    // Build standalone binary
-    printInfo('Building OpenCode standalone binary...');
+    // Build standalone binary using Bun's native compiler
+    printInfo('Building OpenCode standalone binary with Bun compiler...');
     const buildResult = execCommand(
       'bun run ./packages/opencode/script/build.ts --single',
       { cwd: buildDir, silent: false }
@@ -345,77 +307,62 @@ async function buildOpenCode(): Promise<boolean> {
 
     if (!buildResult.success) {
       printError('Build failed');
+      printInfo('Make sure you have Bun 1.3.9+ installed: bun upgrade');
       return false;
     }
 
-    // Determine binary location (likely in packages/opencode/dist/)
+    // Locate binary using deterministic platform-based path
+    // Bun.build() outputs to: dist/opencode-{os}-{arch}/bin/opencode
     printInfo('Locating built binary...');
-    const distDir = join(buildDir, 'packages', 'opencode', 'dist');
-    const possibleBinaries = ['opencode', 'opencode.exe', 'opencode-macos', 'opencode-linux', 'opencode-win.exe'];
-    let binaryPath: string | null = null;
-
-    for (const binary of possibleBinaries) {
-      const candidate = join(distDir, binary);
-      if (existsSync(candidate)) {
-        binaryPath = candidate;
-        break;
-      }
-    }
-
-    // If not found in dist, try with glob-based search
-    if (!binaryPath) {
-      try {
-        const findResult = execCommand('find packages/opencode/dist -type f -name "opencode*" 2>/dev/null | head -1', { cwd: buildDir, silent: true });
-        if (findResult.success && findResult.output) {
-          binaryPath = join(buildDir, findResult.output);
-        }
-      } catch (e) {
-        // Find failed, continue
-      }
-    }
+    const binaryPath = locateBuildBinary(buildDir);
 
     if (!binaryPath) {
-      printError('Binary not found after build');
+      printError(`Binary not found for platform ${process.platform}-${process.arch}`);
+      printInfo('Expected at: packages/opencode/dist/opencode-{os}-{arch}/bin/opencode');
+      printInfo('Check build output above for errors.');
       return false;
     }
+
+    printSuccess(`Found binary: ${binaryPath.replace(buildDir + '/', '')}`);
 
     // Determine install location (local or system)
     const localBin = join(HOME, '.local', 'bin');
     const usrLocalBin = '/usr/local/bin';
     let installPath: string;
 
-    // Prefer ~/.local/bin if it exists or can be created
+    // Prefer ~/.local/bin — create it if it doesn't exist
+    if (!existsSync(localBin)) {
+      try {
+        mkdirSync(localBin, { recursive: true });
+      } catch {
+        // Fall through to /usr/local/bin
+      }
+    }
+
     if (existsSync(localBin)) {
       installPath = join(localBin, 'opencode');
     } else {
       installPath = join(usrLocalBin, 'opencode');
     }
 
-    // Move binary
+    // Copy binary to install location
     printInfo(`Installing to ${installPath}...`);
-    const moveResult = execCommand(
-      `mv "${binaryPath}" "${installPath}"`,
+    const copyResult = execCommand(
+      `cp "${binaryPath}" "${installPath}"`,
       { silent: true }
     );
 
-    if (!moveResult.success) {
+    if (!copyResult.success) {
       printWarning('May need sudo to install to system path');
       printInfo('Trying with sudo...');
       const sudoResult = execCommand(
-        `sudo mv "${binaryPath}" "${installPath}"`,
+        `sudo cp "${binaryPath}" "${installPath}"`,
         { silent: false }
       );
       if (!sudoResult.success) {
-        // Try using install instead
-        printInfo('Trying with install command...');
-        const installResult = execCommand(
-          `install "${binaryPath}" "${installPath}"`,
-          { silent: false }
-        );
-        if (!installResult.success) {
-          printError('Installation failed');
-          return false;
-        }
+        printError(`Installation failed — you can manually copy the binary:`);
+        printInfo(`  cp "${binaryPath}" ~/.local/bin/opencode`);
+        return false;
       }
     }
 
@@ -432,6 +379,7 @@ async function buildOpenCode(): Promise<boolean> {
       printSuccess(`OpenCode ${verifyResult.output} installed`);
     } else {
       printWarning('Installation may have succeeded but version check failed');
+      printInfo('If "opencode" is not in PATH, add ~/.local/bin to your PATH');
     }
 
     // Clean up
@@ -443,6 +391,45 @@ async function buildOpenCode(): Promise<boolean> {
     printError(`Build error: ${err.message}`);
     return false;
   }
+}
+
+/**
+ * Locate the built binary using deterministic platform-based path.
+ * Bun.build({ compile: true }) outputs to: dist/opencode-{os}-{arch}/bin/opencode
+ */
+function locateBuildBinary(buildDir: string): string | null {
+  const os = process.platform;   // 'darwin', 'linux', 'win32'
+  const arch = process.arch;     // 'arm64', 'x64'
+
+  const osName = os === 'win32' ? 'windows' : os;
+  const binaryName = os === 'win32' ? 'opencode.exe' : 'opencode';
+
+  // Primary: exact platform match
+  const primaryPath = join(buildDir, 'packages', 'opencode', 'dist', `opencode-${osName}-${arch}`, 'bin', binaryName);
+  if (existsSync(primaryPath)) {
+    return primaryPath;
+  }
+
+  // Fallback: try baseline variant (x64 without AVX2)
+  const baselinePath = join(buildDir, 'packages', 'opencode', 'dist', `opencode-${osName}-${arch}-baseline`, 'bin', binaryName);
+  if (existsSync(baselinePath)) {
+    return baselinePath;
+  }
+
+  // Last resort: search dist directory for any matching binary
+  try {
+    const findResult = execCommand(
+      `find packages/opencode/dist -name "${binaryName}" -type f 2>/dev/null | head -1`,
+      { cwd: buildDir, silent: true }
+    );
+    if (findResult.success && findResult.output) {
+      return join(buildDir, findResult.output);
+    }
+  } catch {
+    // Find failed, return null
+  }
+
+  return null;
 }
 
 // ============================================================================
@@ -1035,8 +1022,8 @@ async function main(): Promise<void> {
     print('  bun run PAIOpenCodeWizard.ts --help    Show this help message');
     print('');
     print(`${c.bold}What it does:${c.reset}`);
-    print('  1. Checks prerequisites (Bun 1.3+, git, Go 1.22+)');
-    print('  2. Builds OpenCode from development source');
+    print('  1. Checks prerequisites (Bun 1.3.9+, git)');
+    print('  2. Builds OpenCode from development source (Bun native compiler)');
     print('  3. Guides you through 4 preset provider choices');
     print('  4. Sets up your identity and AI assistant name');
     print('  5. Generates configuration files with model_tiers support');

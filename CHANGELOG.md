@@ -74,6 +74,34 @@ Porting 14 upstream commits spanning Algorithm v1.3.0 through v1.8.0:
 
 ---
 
+## v2.0.1 — Wizard Build Process Fix (2026-02-20)
+
+### Fixed
+
+#### Critical: Wizard Build-from-Source Completely Broken
+- **Symptom:** `git clone` succeeds but wizard reports "Failed to clone repository" and aborts
+- **Root cause:** `execCommand()` with `stdio: 'inherit'` returns `null` from `execSync()`. Calling `.trim()` on `null` throws TypeError, caught as failure. **Every non-silent command falsely reports failure.**
+- **Fix:** Null-safe guard: `output.trim()` → `(output ?? '').trim()`
+
+#### Go Prerequisite Removed (No Longer Needed)
+- **Context:** OpenCode was historically a Go project (BubbleTea TUI). It has been completely rewritten to Bun/TypeScript. The build now uses `Bun.build({ compile: true })` to produce native binaries — no Go toolchain needed.
+- **Fix:** Removed Go prerequisite check from wizard and all documentation
+- **Fix:** Strengthened Bun version check from 1.3+ to 1.3.9+ (matches OpenCode monorepo `packageManager` field)
+
+#### Binary Detection After Build
+- **Symptom:** After successful build, wizard couldn't find the binary
+- **Root cause:** Generic filename search didn't match `Bun.build()` output structure (`dist/opencode-{os}-{arch}/bin/opencode`)
+- **Fix:** Deterministic platform-based binary lookup using `process.platform` + `process.arch` with baseline fallback
+
+### Changed
+- **Wizard messaging** updated to reflect Bun-based build (not Go)
+- **INSTALL.md** — Prerequisites: removed Go, added Bun 1.3.9+ note. Manual install: complete rewrite with `bun run ./packages/opencode/script/build.ts --single`. WSL section: removed `golang-go` package.
+- **README.md** — Quick Start: added prerequisites line, updated wizard step description
+- **docs/MIGRATION.md** — Replaced `go install` with wizard command, replaced `$(go env GOPATH)/bin` with `~/.local/bin` in PATH troubleshooting
+- **EXPLORATION-SUMMARY.md** — Updated wizard flow description
+
+---
+
 ## v1.3.2 — Wizard Fixes + Fork Alignment (2026-02-11)
 
 ### Fixed

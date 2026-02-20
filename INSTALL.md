@@ -15,14 +15,11 @@ Before running the wizard, ensure you have:
    - Linux: `sudo apt install git`
    - Usually pre-installed on most systems
 
-2. **Bun** — JavaScript/TypeScript runtime
+2. **Bun** (1.3.9+) — JavaScript/TypeScript runtime and native compiler
    ```bash
    curl -fsSL https://bun.sh/install | bash
    ```
-
-3. **Go** (1.24+) — For building OpenCode from source (required for model tiers)
-   - macOS: `brew install go`
-   - Linux: [Download from go.dev](https://go.dev/dl/)
+   > **Note:** Bun 1.3.9+ is required because OpenCode is built using Bun's native compiler (`Bun.build({ compile: true })`). Earlier versions will not work.
 
 ---
 
@@ -41,8 +38,8 @@ opencode
 ```
 
 The wizard will:
-1. ✅ Check prerequisites (git, bun, go)
-2. ✅ **Build OpenCode from dev source** (required for model tiers feature)
+1. ✅ Check prerequisites (git, bun 1.3.9+)
+2. ✅ **Build OpenCode from dev source** using Bun's native compiler (required for model tiers feature)
 3. ✅ Ask you to choose a preset:
    - **Anthropic Max** (recommended) — Best quality, full PAI experience
    - **ZEN PAID** — Budget-friendly, paid tier models
@@ -113,12 +110,15 @@ Open your WSL terminal (search "Ubuntu" in Start menu):
 # Update packages
 sudo apt update && sudo apt upgrade -y
 
-# Install Git and Go
-sudo apt install git golang-go -y
+# Install Git
+sudo apt install git -y
 
-# Install Bun
+# Install Bun (1.3.9+ required)
 curl -fsSL https://bun.sh/install | bash
 source ~/.bashrc
+
+# Verify Bun version
+bun --version  # Should show 1.3.9 or higher
 ```
 
 ### Step 3: Clone and Install PAI-OpenCode
@@ -175,19 +175,35 @@ After installation, see [ADVANCED-SETUP.md](docs/ADVANCED-SETUP.md) for:
 
 If you prefer to install manually without the wizard:
 
-**Step 1:** Install OpenCode from dev source (required for model tiers)
+**Step 1:** Build OpenCode from dev source (required for model tiers)
 ```bash
-# Clone OpenCode
+# Clone our OpenCode fork with model tier support
 cd /tmp
-git clone https://github.com/anomalyco/opencode.git
-cd opencode
+git clone https://github.com/Steffen025/opencode.git opencode-build
+cd opencode-build
 
-# Build from dev source
-go build -o opencode .
+# Checkout the model tiers branch
+git checkout feature/model-tiers
 
-# Move to PATH
-sudo mv opencode /usr/local/bin/
+# Install monorepo dependencies
+bun install
+
+# Build standalone binary for your platform
+bun run ./packages/opencode/script/build.ts --single
+
+# The binary is at: packages/opencode/dist/opencode-{os}-{arch}/bin/opencode
+# For example on macOS ARM: packages/opencode/dist/opencode-darwin-arm64/bin/opencode
+# For example on Linux x64: packages/opencode/dist/opencode-linux-x64/bin/opencode
+
+# Copy to your PATH
+cp packages/opencode/dist/opencode-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/x64/' | sed 's/aarch64/arm64/')/bin/opencode ~/.local/bin/opencode
+chmod +x ~/.local/bin/opencode
+
+# Clean up
+cd ~ && rm -rf /tmp/opencode-build
 ```
+
+> **Note:** Bun 1.3.9+ is required for the native compiler. Run `bun --version` to check, `bun upgrade` to update.
 
 **Step 2:** Clone the PAI-OpenCode repository
 ```bash
@@ -202,7 +218,7 @@ bun install
 
 **Step 4:** Create symlink to connect OpenCode with PAI
 ```bash
-# Remove the empty .opencode folder that OpenCode created
+# Remove the empty .opencode folder that OpenCode created (if any)
 rm -rf ~/.opencode
 
 # Create symlink from your home directory to your PAI-OpenCode installation
@@ -247,12 +263,35 @@ After installation, verify everything works:
 
 ### "Command not found: opencode"
 
-Ensure `$GOPATH/bin` is in your PATH:
+The wizard installs OpenCode to `~/.local/bin/opencode` (preferred) or `/usr/local/bin/opencode` (fallback).
+
+**Check where it was installed:**
 ```bash
-export PATH=$PATH:$(go env GOPATH)/bin
+which opencode
+ls -la ~/.local/bin/opencode
+ls -la /usr/local/bin/opencode
 ```
 
-Add to your `.bashrc` or `.zshrc` for persistence.
+**If `~/.local/bin` is not in your PATH, add it:**
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+**Make it permanent** (add to your shell config):
+```bash
+# For bash users:
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+
+# For zsh users:
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+**Alternatively, use the full path:**
+```bash
+~/.local/bin/opencode
+```
 
 ### "Bun command not found"
 
@@ -279,18 +318,18 @@ cat /tmp/pai-opencode-debug.log
 
 **Error: `model_tiers is not a valid property`**
 
-This means you have the **stable OpenCode installed**. The dev build is required for model tier support.
+This means you have the **stable OpenCode installed** instead of the PAI-OpenCode fork build. The dev build from our fork is required for model tier support.
 
 **Fix:**
 ```bash
 # Remove the stable version
 rm $(which opencode)
 
-# Run the wizard which builds from dev source
+# Re-run the wizard which builds from our fork using Bun's native compiler
 bun run .opencode/PAIOpenCodeWizard.ts
 ```
 
-> **Note:** The wizard builds OpenCode from source by default. If you see the error above, re-run the wizard to ensure dev build is installed.
+> **Note:** The wizard builds OpenCode from our fork (`Steffen025/opencode`, branch `feature/model-tiers`) using `Bun.build({ compile: true })`. This produces a standalone native binary — no Go, no runtime dependencies.
 
 ---
 

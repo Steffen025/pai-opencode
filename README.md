@@ -73,13 +73,15 @@ opencode
 
 > **Already using OpenCode?** If you have an existing `~/.opencode` directory, see [Existing OpenCode Users](#existing-opencode-users) in the Installation Guide for symlink setup.
 
-The wizard will ask you to:
-- **Choose your preset** — `zen-paid` (recommended), `openrouter` (provider diversity), or `local-ollama` (fully offline)
-- Configure research agents (optional)
+**Prerequisites:** [Git](https://git-scm.com/) and [Bun 1.3.9+](https://bun.sh/) (no Go needed).
+
+The wizard will:
+- **Build OpenCode** from our fork with model tier support (using Bun's native compiler)
+- **Choose your preset** — Anthropic (recommended), ZEN PAID, ZEN FREE, or Ollama (local)
 - Set your name and timezone
 - Name your AI assistant
 
-**Takes ~2 minutes** and creates all necessary configuration files.
+**Takes ~3-5 minutes** (including the build) and creates all necessary configuration files.
 
 ---
 

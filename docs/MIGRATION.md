@@ -28,11 +28,11 @@ This guide helps you migrate an existing PAI 2.x installation from Claude Code t
 
 - **OpenCode** (AI coding assistant)
    ```bash
-   # For v1.3+ features (model tiers, agent routing), build from source:
-   # See INSTALL.md for detailed build instructions
-   go install github.com/anomalyco/opencode@latest
+   # For model tiers and agent routing, build from our fork:
+   # The PAI-OpenCode wizard handles this automatically!
+   bun run .opencode/PAIOpenCodeWizard.ts
    ```
-   > **Note:** v1.3.0 features (model tiers, agent-specific routing) require a dev build from source. See [INSTALL.md](../INSTALL.md) for build instructions.
+   > **Note:** Model tiers and agent-specific routing require a build from our fork (`Steffen025/opencode`, branch `feature/model-tiers`). The wizard builds this automatically using Bun's native compiler. See [INSTALL.md](../INSTALL.md) for manual build instructions.
 
 ---
 
@@ -196,9 +196,13 @@ See **PLUGIN-SYSTEM.md** for full guide.
 
 ### "opencode: command not found"
 
+The wizard installs OpenCode to `~/.local/bin/`. Make sure it's in your PATH:
+
 ```bash
-export PATH="$PATH:$(go env GOPATH)/bin"
+export PATH="$HOME/.local/bin:$PATH"
 ```
+
+Add to your shell config (`~/.bashrc` or `~/.zshrc`) to make it permanent.
 
 ### Plugin doesn't load
 
