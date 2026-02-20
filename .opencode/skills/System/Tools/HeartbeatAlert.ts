@@ -15,6 +15,10 @@ type ProjectItem = {
   issueNumber?: number;
 };
 
+type N8nWorkflowResponse = {
+  data?: Array<{ active?: boolean }>;
+};
+
 const DEFAULT_STATE_FILE = "/root/.opencode/telegram-bridge/sessions/heartbeat-alert-state.json";
 
 function env(name: string, fallback = ""): string {
@@ -86,12 +90,80 @@ async function main(): Promise<void> {
   const botToken = env("TELEGRAM_BOT_TOKEN");
   const chatId = env("TELEGRAM_CHECKUP_CHAT_ID");
   const stateFile = env("HEARTBEAT_ALERT_STATE_FILE", DEFAULT_STATE_FILE);
+  const typebotUrl = env("TYPEBOT_URL", "https://typebot.bunnichrist.fr");
+  const n8nUrl = env("N8N_URL", "https://n8n.bunnichrist.fr");
+  const n8nApiKey = env("N8N_API_KEY");
 
   if (!botToken) throw new Error("TELEGRAM_BOT_TOKEN missing");
   if (!chatId) throw new Error("TELEGRAM_CHECKUP_CHAT_ID missing");
 
   const service = await run(["systemctl", "is-active", "pai-telegram-bridge"]);
   const serviceActive = service.code === 0 && service.stdout === "active";
+
+  const typebotProbe = await run([
+    "curl",
+    "-4",
+    "-sS",
+    "-o",
+    "/dev/null",
+    "-w",
+    "%{http_code}",
+    "--max-time",
+    "15",
+    typebotUrl,
+  ]);
+  const typebotCode = Number(typebotProbe.stdout || "0");
+  const typebotUp = Number.isFinite(typebotCode) && typebotCode >= 200 && typebotCode < 400;
+
+  const n8nHealthProbe = await run([
+    "curl",
+    "-4",
+    "-sS",
+    "-o",
+    "/dev/null",
+    "-w",
+    "%{http_code}",
+    "--max-time",
+    "15",
+    `${n8nUrl}/healthz`,
+  ]);
+  const n8nHealthCode = Number(n8nHealthProbe.stdout || "0");
+  const n8nHealthUp = Number.isFinite(n8nHealthCode) && n8nHealthCode >= 200 && n8nHealthCode < 400;
+
+  let n8nApiCode = 0;
+  let n8nActiveWorkflows = 0;
+  let n8nApiUp = false;
+
+  if (n8nApiKey) {
+    const n8nApiProbe = await run([
+      "curl",
+      "-4",
+      "-sS",
+      "-o",
+      "/tmp/n8n_alert_workflows.json",
+      "-w",
+      "%{http_code}",
+      "--max-time",
+      "20",
+      "-H",
+      `X-N8N-API-KEY: ${n8nApiKey}`,
+      "-H",
+      "Accept: application/json",
+      `${n8nUrl}/api/v1/workflows?limit=250`,
+    ]);
+    n8nApiCode = Number(n8nApiProbe.stdout || "0");
+    n8nApiUp = Number.isFinite(n8nApiCode) && n8nApiCode >= 200 && n8nApiCode < 300;
+
+    if (n8nApiUp) {
+      try {
+        const raw = await readFile("/tmp/n8n_alert_workflows.json", "utf-8");
+        const parsed = JSON.parse(raw) as N8nWorkflowResponse;
+        n8nActiveWorkflows = (parsed.data || []).filter((wf) => wf.active).length;
+      } catch {
+        n8nApiUp = false;
+      }
+    }
+  }
 
   const logs = await run([
     "journalctl",
@@ -108,7 +180,7 @@ async function main(): Promise<void> {
   const fallbackCount = (text.match(/Passage au modèle/g) || []).length;
 
   let current: AlertState["lastState"] = "OK";
-  if (!serviceActive) {
+  if (!serviceActive || !typebotUp || !n8nHealthUp || !n8nApiUp) {
     current = "INCIDENT";
   } else if (timeoutCount > 0 || stderrCount > 0) {
     current = "DEGRADED";
@@ -140,6 +212,10 @@ async function main(): Promise<void> {
     const message = [
       `ALERTE IMMEDIATE: ${current}`,
       `Bridge: ${serviceActive ? "active" : "inactive"}`,
+      `Typebot: ${typebotUp ? "UP" : "DOWN"} | HTTP ${typebotCode || 0} | URL: ${typebotUrl}`,
+      `n8n: ${n8nHealthUp ? "UP" : "DOWN"} | healthz ${n8nHealthCode || 0} | api ${
+        n8nApiCode || 0
+      } | active workflows ${n8nActiveWorkflows}`,
       `Fenetre 5min -> timeouts:${timeoutCount} stderr:${stderrCount} fallbacks:${fallbackCount}`,
       actionLine,
       `Horodatage: ${new Date().toISOString()}`,

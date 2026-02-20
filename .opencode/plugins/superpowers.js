@@ -1,0 +1,1 @@
+/root/.opencode/vendor/superpowers/.opencode/plugins/superpowers.js

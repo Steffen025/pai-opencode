@@ -228,6 +228,7 @@ Quick Push:         GitPush (if docs already created)
 | **UpdateIndex.ts** | Regenerate index.json and CHANGELOG.md | `Tools/UpdateIndex.ts` |
 | **UpdateSearch.ts** | Search and query system updates | `Tools/UpdateSearch.ts` |
 | **ExtractArchitectureUpdates.ts** | Historical migration tool (one-time use) | `Tools/ExtractArchitectureUpdates.ts` |
+| **HeartbeatMonitor.ts** | Generic process heartbeat monitor (no Telegram dependency) | `Tools/HeartbeatMonitor.ts` |
 
 ## Templates
 

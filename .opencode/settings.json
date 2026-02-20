@@ -1,7 +1,7 @@
 {
   "paiVersion": "2.5-opencode",
   "env": {
-    "PAI_DIR": ".opencode",
+    "PAI_DIR": "/root/pai-opencode/.opencode",
     "OPENCODE_MAX_OUTPUT_TOKENS": "80000",
     "BASH_DEFAULT_TIMEOUT_MS": "600000"
   },
@@ -12,42 +12,38 @@
     "skills/PAI/USER/DAIDENTITY.md"
   ],
   "daidentity": {
-    "name": "PAI",
-    "fullName": "Personal AI Assistant",
-    "displayName": "PAI",
+    "name": "Kirito",
+    "fullName": "Kirito - Personal AI",
+    "displayName": "Kirito",
     "color": "#3B82F6",
-    "voiceId": "",
-    "voice": {
-      "stability": 0.5,
-      "similarity_boost": 0.75,
-      "style": 0,
-      "speed": 1,
-      "use_speaker_boost": true,
-      "volume": 0.8
-    },
-    "startupCatchphrase": "PAI ready."
+    "startupCatchphrase": "C'est Kirito, on peut commencer"
   },
   "principal": {
-    "name": "User",
-    "timezone": "UTC"
+    "name": "Bunni",
+    "timezone": "Europe/Berlin"
   },
   "pai": {
     "source": "github.com/Steffen025/pai-opencode",
     "upstream": "github.com/danielmiessler/PAI",
-    "version": "2.5",
-    "algorithm": "v0.2.25"
+    "version": "2.5"
   },
   "techStack": {
-    "browser": "chrome",
+    "browser": "arc",
     "terminal": "terminal",
     "packageManager": "bun",
     "language": "TypeScript"
   },
   "provider": {
-    "id": "anthropic",
-    "name": "Anthropic Claude models - recommended for best quality",
-    "model": "anthropic/claude-sonnet-4-5",
-    "profile": "anthropic",
-    "multiResearch": true
+    "id": "local",
+    "name": "Ollama (Local)",
+    "profile": "local"
+  },
+  "counts": {
+    "skills": 30,
+    "workflows": 143,
+    "plugins": 1,
+    "signals": 0,
+    "files": 58,
+    "updatedAt": "2026-02-20T06:54:15.130Z"
   }
 }

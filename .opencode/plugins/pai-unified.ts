@@ -89,6 +89,66 @@ function extractTextContent(message: any): string {
   return String(message.content);
 }
 
+const EXECUTION_APPROVAL_REGEX =
+  /\b(je valide|vas[- ]?y|applique|execute|exécute|i approve|go ahead)\b/i;
+const APPROVAL_REVOKE_REGEX =
+  /\b(stop|annule|cancel|pause|n[' ]?ex[ée]cute pas|do not execute|don't execute)\b/i;
+const AGENT_KEYWORD_REGEX =
+  /\b(agent|agents|subagent|delegate|delegue|d[ée]l[ée]gue|delegation|d[ée]l[ée]gation)\b/i;
+const FOREGROUND_REQUEST_REGEX = /\b(foreground|bloquant|blocking)\b/i;
+
+interface RuntimePolicyState {
+  executionApproved: boolean;
+  agentDelegationApproved: boolean;
+  explicitForegroundApproved: boolean;
+  preferBackgroundAgents: boolean;
+  lastApprovalMessage: string;
+}
+
+function isReadOnlyTool(toolName: string): boolean {
+  const normalized = toolName.toLowerCase();
+  return (
+    normalized === "read" ||
+    normalized === "glob" ||
+    normalized === "grep" ||
+    normalized === "webfetch" ||
+    normalized === "skill" ||
+    normalized === "question" ||
+    normalized === "todowrite" ||
+    normalized.startsWith("switch-provider_")
+  );
+}
+
+function applyUserPolicySignals(
+  policy: RuntimePolicyState,
+  content: string
+): void {
+  const normalized = content.trim();
+  if (!normalized) return;
+
+  if (APPROVAL_REVOKE_REGEX.test(normalized)) {
+    policy.executionApproved = false;
+    policy.agentDelegationApproved = false;
+    policy.explicitForegroundApproved = false;
+    policy.lastApprovalMessage = "";
+    return;
+  }
+
+  const hasApproval = EXECUTION_APPROVAL_REGEX.test(normalized);
+  if (hasApproval) {
+    policy.executionApproved = true;
+    policy.lastApprovalMessage = normalized.slice(0, 160);
+
+    if (AGENT_KEYWORD_REGEX.test(normalized)) {
+      policy.agentDelegationApproved = true;
+    }
+
+    if (FOREGROUND_REQUEST_REGEX.test(normalized)) {
+      policy.explicitForegroundApproved = true;
+    }
+  }
+}
+
 /**
  * PAI Unified Plugin
  *
@@ -101,6 +161,14 @@ export const PaiUnified: Plugin = async (ctx) => {
   fileLog("=== PAI-OpenCode Plugin Loaded ===");
   fileLog(`Working directory: ${process.cwd()}`);
   fileLog("Hooks: Context, Security, Work, Ratings, Agents, Learning");
+
+  const policy: RuntimePolicyState = {
+    executionApproved: false,
+    agentDelegationApproved: false,
+    explicitForegroundApproved: false,
+    preferBackgroundAgents: true,
+    lastApprovalMessage: "",
+  };
 
   const hooks: Hooks = {
     /**
@@ -116,7 +184,15 @@ export const PaiUnified: Plugin = async (ctx) => {
         // Emit session start
         emitSessionStart({ model: (input as any).model }).catch(() => {});
 
-
+        const hardIdentityLock = [
+          "IDENTITY LOCK (HARD)",
+          "You are Kirito, Bunni's personal AI assistant.",
+          "Never present yourself as OpenCode.",
+          'If asked who you are, answer exactly: "Je suis Kirito."',
+        ].join("\n");
+        // Put lock at highest priority in injected system stack
+        output.system.unshift(hardIdentityLock);
+        
         const result = await loadContext();
 
         if (result.success && result.context) {
@@ -197,6 +273,34 @@ export const PaiUnified: Plugin = async (ctx) => {
         `output.args: ${JSON.stringify(output.args ?? {}).substring(0, 500)}`,
         "debug"
       );
+
+      const toolName = input.tool;
+
+      // Runtime policy enforcement from USER preferences:
+      // reflection-first default, explicit approval before execution.
+      if (!isReadOnlyTool(toolName)) {
+
+
+        if (toolName === "Task" && policy.preferBackgroundAgents) {
+          const currentArgs = ((output as any).args ?? {}) as Record<
+            string,
+            unknown
+          >;
+
+          if (
+            currentArgs.prompt &&
+            typeof currentArgs.prompt === "string" &&
+            !currentArgs.prompt.includes("[PAI-RUNTIME-POLICY]")
+          ) {
+            currentArgs.prompt =
+              "[PAI-RUNTIME-POLICY]\n" +
+              "- User preference: run agents in background-first mode.\n" +
+              "- Return concise status/checkpoint-first output before long details.\n\n" +
+              currentArgs.prompt;
+            (output as any).args = currentArgs;
+          }
+        }
+      }
 
       // Security validation - throws error to block dangerous commands
       const result = await validateSecurity({
@@ -299,6 +403,8 @@ export const PaiUnified: Plugin = async (ctx) => {
 
         // Only process user messages
         if (role !== "user") return;
+
+        applyUserPolicySignals(policy, content);
 
         fileLog(
           `[chat.message] User: ${content.substring(0, 100)}...`,
@@ -510,6 +616,7 @@ export const PaiUnified: Plugin = async (ctx) => {
           if (message?.role === "user") {
             userText = extractTextContent(message);
             fileLog(`[message.updated] User message: "${userText.substring(0, 100)}..."`, "debug");
+            applyUserPolicySignals(policy, userText);
           }
           
           // Process user message if we found it

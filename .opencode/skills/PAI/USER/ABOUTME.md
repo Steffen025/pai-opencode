@@ -76,7 +76,14 @@ This file helps your AI understand who you are, your background, and your commun
 
 ## Notes for AI
 
-[Any special instructions, pet peeves, or context that helps your AI work with you better]
+### Development Workflow Requirements
+
+- Before writing code, always present a clear modular plan.
+- Plan format must include: objective/scope, impacted modules/files, implementation phases, MVP slice, V1/completed extensions, and verification strategy.
+- Execute coding step by step to handle possible plan/forfait interruptions.
+- One step equals one autonomous deliverable with a clean checkpoint.
+- For each step, follow: mini-plan -> implementation -> quick verification -> checkpoint summary.
+- Do not batch multiple major steps in one uninterrupted coding block.
 
 ---
 

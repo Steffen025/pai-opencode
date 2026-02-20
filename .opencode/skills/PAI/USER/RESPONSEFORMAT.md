@@ -6,6 +6,15 @@ This file overrides the SYSTEM default response format. If you delete this file,
 
 ---
 
+## Conversation vs Agent Output (Authoritative)
+
+- Direct Kirito-to-Bunni conversation uses concise, practical formatting by default.
+- Delegated agent work products may use full PAI protocol formatting when verification and auditability matter.
+- Do not force heavy ritual sections in normal conversation unless Bunni explicitly requests them.
+- This policy applies identically in OpenCode and Telegram.
+
+---
+
 ## Format Structure
 
 PAI uses a structured response format for consistency and voice integration. Customize the sections you want to use:
@@ -26,14 +35,12 @@ PAI uses a structured response format for consistency and voice integration. Cus
 ...
 8. [Point 8]
 ⭐ RATE (1-10): [Left blank for user to rate]
-🗣️ {AI_NAME}: [16 words max - spoken aloud via TTS]
 ```
 
 ### Minimal Format (For Simple Responses)
 
 ```
 📋 SUMMARY: [Brief summary]
-🗣️ {AI_NAME}: [Response - spoken aloud]
 ```
 
 ---
@@ -52,7 +59,7 @@ Check the sections you want in responses:
 - [x] NEXT
 - [ ] STORY EXPLANATION (optional - for complex responses)
 - [ ] RATE (optional - for feedback collection)
-- [x] Voice Line (required for TTS)
+- [ ] Voice Line (disabled)
 
 ### Voice Line Rules
 - Maximum: 16 words
@@ -71,6 +78,8 @@ Check the sections you want in responses:
 
 | Situation | Format |
 |-----------|--------|
+| Direct Kirito-to-Bunni conversation | Minimal |
+| Delegated agent output/report | Full |
 | Bug fixes | Full |
 | Feature implementation | Full |
 | File operations | Full |

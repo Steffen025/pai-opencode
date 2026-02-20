@@ -15,6 +15,8 @@ This defines the base response format for any PAI implementation. User-specific 
 
 Every response MUST include a voice output line (`🗣️ {daidentity.name}:`). This is how the voice server speaks responses aloud. Without it, the response is silent.
 
+**Override note:** If `USER/RESPONSEFORMAT.md` explicitly disables voice lines or defines different conversation formatting, USER policy controls formatting for that implementation.
+
 ---
 
 ## Format Structure

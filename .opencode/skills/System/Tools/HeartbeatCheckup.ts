@@ -23,6 +23,10 @@ type ProjectItem = {
   issueNumber?: number;
 };
 
+type N8nWorkflowResponse = {
+  data?: Array<{ active?: boolean }>;
+};
+
 const DEFAULT_STATE_FILE = "/root/.opencode/telegram-bridge/sessions/checkup-state.json";
 
 function env(name: string, fallback = ""): string {
@@ -152,12 +156,81 @@ async function main(): Promise<void> {
   const botToken = env("TELEGRAM_BOT_TOKEN");
   const chatId = env("TELEGRAM_CHECKUP_CHAT_ID");
   const stateFile = env("CHECKUP_STATE_FILE", DEFAULT_STATE_FILE);
+  const typebotUrl = env("TYPEBOT_URL", "https://typebot.bunnichrist.fr");
+  const n8nUrl = env("N8N_URL", "https://n8n.bunnichrist.fr");
+  const n8nApiKey = env("N8N_API_KEY");
 
   if (!botToken) throw new Error("TELEGRAM_BOT_TOKEN missing");
   if (!chatId) throw new Error("TELEGRAM_CHECKUP_CHAT_ID missing");
 
   const service = await run(["systemctl", "is-active", "pai-telegram-bridge"]);
   const serviceActive = service.code === 0 && service.stdout === "active";
+
+  const typebotProbe = await run([
+    "curl",
+    "-4",
+    "-sS",
+    "-o",
+    "/dev/null",
+    "-w",
+    "%{http_code}",
+    "--max-time",
+    "15",
+    typebotUrl,
+  ]);
+  const typebotCode = Number(typebotProbe.stdout || "0");
+  const typebotUp = Number.isFinite(typebotCode) && typebotCode >= 200 && typebotCode < 400;
+
+  const n8nHealthProbe = await run([
+    "curl",
+    "-4",
+    "-sS",
+    "-o",
+    "/dev/null",
+    "-w",
+    "%{http_code}",
+    "--max-time",
+    "15",
+    `${n8nUrl}/healthz`,
+  ]);
+  const n8nHealthCode = Number(n8nHealthProbe.stdout || "0");
+  const n8nHealthUp = Number.isFinite(n8nHealthCode) && n8nHealthCode >= 200 && n8nHealthCode < 400;
+
+  let n8nApiCode = 0;
+  let n8nActiveWorkflows = 0;
+  let n8nApiUp = false;
+
+  if (n8nApiKey) {
+    const n8nApiProbe = await run([
+      "curl",
+      "-4",
+      "-sS",
+      "-o",
+      "/tmp/n8n_checkup_workflows.json",
+      "-w",
+      "%{http_code}",
+      "--max-time",
+      "20",
+      "-H",
+      `X-N8N-API-KEY: ${n8nApiKey}`,
+      "-H",
+      "Accept: application/json",
+      `${n8nUrl}/api/v1/workflows?limit=250`,
+    ]);
+
+    n8nApiCode = Number(n8nApiProbe.stdout || "0");
+    n8nApiUp = Number.isFinite(n8nApiCode) && n8nApiCode >= 200 && n8nApiCode < 300;
+
+    if (n8nApiUp) {
+      try {
+        const raw = await readFile("/tmp/n8n_checkup_workflows.json", "utf-8");
+        const parsed = JSON.parse(raw) as N8nWorkflowResponse;
+        n8nActiveWorkflows = (parsed.data || []).filter((wf) => wf.active).length;
+      } catch {
+        n8nApiUp = false;
+      }
+    }
+  }
 
   const previous = await loadPreviousState(stateFile);
   const since = previous?.lastCheckAt || new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
@@ -177,7 +250,7 @@ async function main(): Promise<void> {
   const stderrCount = (logText.match(/\[stderr\]/g) || []).length;
 
   let globalState = "OK";
-  if (!serviceActive) {
+  if (!serviceActive || !typebotUp || !n8nHealthUp || !n8nApiUp) {
     globalState = "INCIDENT";
   } else if (timeoutCount > 0 || stderrCount > 0) {
     globalState = "DEGRADED";
@@ -185,6 +258,11 @@ async function main(): Promise<void> {
 
   const uptimeRes = await runShell("systemctl show pai-telegram-bridge --property=ActiveEnterTimestamp --value");
   const uptimeStamp = uptimeRes.code === 0 && uptimeRes.stdout ? uptimeRes.stdout : "unknown";
+
+  let counts: Counts = { backlog: 0, todo: 0, inProgress: 0, blocked: 0, done: 0 };
+  let deltas: Counts = { backlog: 0, todo: 0, inProgress: 0, blocked: 0, done: 0 };
+  let action: ProjectItem | null = null;
+  let projectWarn = "";
 
   const projectItemsRes = await run([
     "gh",
@@ -196,13 +274,14 @@ async function main(): Promise<void> {
     "--format",
     "json",
   ]);
-  if (projectItemsRes.code !== 0) {
-    throw new Error(`gh project item-list failed: ${projectItemsRes.stderr}`);
+  if (projectItemsRes.code === 0) {
+    const projectJson = JSON.parse(projectItemsRes.stdout) as { items: Array<Record<string, unknown>> };
+    counts = countFromItems(projectJson.items);
+    deltas = delta(counts, previous?.counts || null);
+    action = pickAction(projectJson.items);
+  } else {
+    projectWarn = `Kanban unavailable (${projectItemsRes.stderr.split("\n")[0] || "gh error"})`;
   }
-  const projectJson = JSON.parse(projectItemsRes.stdout) as { items: Array<Record<string, unknown>> };
-  const counts = countFromItems(projectJson.items);
-  const deltas = delta(counts, previous?.counts || null);
-  const action = pickAction(projectJson.items);
 
   const actionLine = action
     ? `Action: #${action.issueNumber || "?"} - ${action.title || "(sans titre)"}`
@@ -211,6 +290,10 @@ async function main(): Promise<void> {
   const message = [
     `Heartbeat: ${globalState}`,
     `Bridge: ${serviceActive ? "active" : "inactive"} | Since: ${uptimeStamp}`,
+    `Typebot: ${typebotUp ? "UP" : "DOWN"} | HTTP ${typebotCode || 0} | URL: ${typebotUrl}`,
+    `n8n: ${n8nHealthUp ? "UP" : "DOWN"} | healthz ${n8nHealthCode || 0} | api ${
+      n8nApiCode || 0
+    } | active workflows ${n8nActiveWorkflows}`,
     `Window: since ${since}`,
     `Timeouts: ${timeoutCount} | Fallbacks: ${fallbackCount} | Stderr: ${stderrCount}`,
     `Issues: B:${counts.backlog} T:${counts.todo} IP:${counts.inProgress} BL:${counts.blocked} D:${counts.done}`,
@@ -218,6 +301,7 @@ async function main(): Promise<void> {
       deltas.inProgress
     )} BL:${formatSigned(deltas.blocked)} D:${formatSigned(deltas.done)}`,
     actionLine,
+    projectWarn ? `Warn: ${projectWarn}` : "",
   ].join("\n");
 
   const sendRes = await run([

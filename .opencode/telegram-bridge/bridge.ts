@@ -26,12 +26,17 @@ const DEFAULT_MODELS = [
 const MODEL_CHAIN = parseModelChain(process.env.OPENCODE_MODELS);
 let currentModelIndex = 0;
 const RUN_TIMEOUT_SECONDS = Number(process.env.OPENCODE_RUN_TIMEOUT_SECONDS || "90");
+const TASKER_RUN_TIMEOUT_SECONDS = Number(process.env.TASKER_RUN_TIMEOUT_SECONDS || String(Math.max(RUN_TIMEOUT_SECONDS, 180)));
 const MEDIA_DIR = "/tmp/kirito-telegram-media";
 const SUMMARY_DIR = "/root/.opencode/telegram-bridge/sessions";
 const SUMMARY_FILE = join(SUMMARY_DIR, "last-summary.md");
 const MODEL_STATE_FILE = join(SUMMARY_DIR, "model-state.json");
 const SESSION_STATE_FILE = join(SUMMARY_DIR, "session-state.json");
+const POLLING_LOCK_FILE = join(SUMMARY_DIR, "telegram-polling.lock");
+const POLLING_LOCK_REFRESH_MS = Number(process.env.TELEGRAM_POLLING_LOCK_REFRESH_MS || "15000");
+const POLLING_LOCK_STALE_MS = Number(process.env.TELEGRAM_POLLING_LOCK_STALE_MS || "60000");
 const SOUL_FILE = "/root/.opencode/soul.md";
+const TELOS_FILE = "/root/.opencode/skills/PAI/USER/TELOS/TELOS.md";
 
 type ModelState = {
   preferredModelIndex: number;
@@ -49,6 +54,13 @@ type SessionState = {
   sessionId: string | null;
 };
 
+type PollingLockState = {
+  pid: number;
+  owner: string;
+  acquiredAt: string;
+  updatedAt: string;
+};
+
 type BridgeMetrics = {
   totalRequests: number;
   successfulResponses: number;
@@ -59,12 +71,23 @@ type BridgeMetrics = {
   providerUnavailable: number;
   maxQueueDepth: number;
   latencySamplesMs: number[];
+  taskerQueued: number;
+  taskerCompleted: number;
+  taskerFailed: number;
+};
+
+type TaskerJob = {
+  id: string;
+  chatId: number;
+  prompt: string;
+  enqueuedAt: number;
 };
 
 // --- State ---
 let sessionId: string | null = null;
 let lastSummary: string | null = null;
 let soulContext: string | null = null;
+let telosContext: string | null = null;
 let busy = false;
 const messageQueue: Array<{ resolve: () => void; fn: () => Promise<void> }> = [];
 let currentOpencodeProc: Bun.Subprocess | null = null;
@@ -73,7 +96,12 @@ const manuallyStoppedRuns = new Set<number>();
 let preferredModelIndex = 0;
 let pendingAutoResetToPreferred = false;
 let lastFallback: LastFallback | null = null;
+let taskerBusy = false;
+const taskerQueue: TaskerJob[] = [];
+const TASKER_SESSION_TITLE = "Kirito Tasker Background";
 const bridgeStartedAt = Date.now();
+let pollingLockHeld = false;
+let pollingLockHeartbeat: ReturnType<typeof setInterval> | null = null;
 const LATENCY_WINDOW_SIZE = 50;
 const metrics: BridgeMetrics = {
   totalRequests: 0,
@@ -85,6 +113,9 @@ const metrics: BridgeMetrics = {
   providerUnavailable: 0,
   maxQueueDepth: 0,
   latencySamplesMs: [],
+  taskerQueued: 0,
+  taskerCompleted: 0,
+  taskerFailed: 0,
 };
 
 if (!BOT_TOKEN) {
@@ -110,6 +141,151 @@ function parseModelChain(rawModels: string | undefined): string[] {
     .filter((model) => model.length > 0);
 
   return normalized.length > 0 ? normalized : DEFAULT_MODELS;
+}
+
+function logStructured(event: string, fields: Record<string, unknown> = {}): void {
+  console.log(JSON.stringify({
+    ts: new Date().toISOString(),
+    level: "info",
+    event,
+    ...fields,
+  }));
+}
+
+function isPidAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function readPollingLock(): Promise<PollingLockState | null> {
+  try {
+    const raw = await readFile(POLLING_LOCK_FILE, "utf-8");
+    const parsed = JSON.parse(raw) as Partial<PollingLockState>;
+    if (typeof parsed.pid !== "number" || !Number.isFinite(parsed.pid)) return null;
+    return {
+      pid: parsed.pid,
+      owner: typeof parsed.owner === "string" ? parsed.owner : "unknown",
+      acquiredAt: typeof parsed.acquiredAt === "string" ? parsed.acquiredAt : new Date(0).toISOString(),
+      updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : new Date(0).toISOString(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function writePollingLock(acquiredAt?: string): Promise<void> {
+  const now = new Date().toISOString();
+  const payload: PollingLockState = {
+    pid: process.pid,
+    owner: SESSION_TITLE,
+    acquiredAt: acquiredAt || now,
+    updatedAt: now,
+  };
+  await writeFile(POLLING_LOCK_FILE, JSON.stringify(payload, null, 2), "utf-8");
+}
+
+async function acquirePollingLock(): Promise<boolean> {
+  await ensureSummaryDir();
+  const existing = await readPollingLock();
+
+  if (existing && existing.pid !== process.pid) {
+    const updatedAtMs = Date.parse(existing.updatedAt);
+    const ageMs = Number.isFinite(updatedAtMs) ? Date.now() - updatedAtMs : Number.POSITIVE_INFINITY;
+    const holderAlive = isPidAlive(existing.pid);
+    const stale = !holderAlive || ageMs > POLLING_LOCK_STALE_MS;
+
+    if (!stale) {
+      logStructured("telegram_polling_lock_contention", {
+        lockFile: POLLING_LOCK_FILE,
+        holderPid: existing.pid,
+        holderOwner: existing.owner,
+        holderAgeMs: Math.max(0, Math.round(ageMs)),
+        currentPid: process.pid,
+      });
+      return false;
+    }
+
+    logStructured("telegram_polling_lock_stale_recovered", {
+      lockFile: POLLING_LOCK_FILE,
+      holderPid: existing.pid,
+      holderOwner: existing.owner,
+      holderAlive,
+      holderAgeMs: Number.isFinite(ageMs) ? Math.max(0, Math.round(ageMs)) : null,
+      staleThresholdMs: POLLING_LOCK_STALE_MS,
+      currentPid: process.pid,
+    });
+  }
+
+  await writePollingLock(existing?.acquiredAt);
+  pollingLockHeld = true;
+  logStructured("telegram_polling_lock_acquired", {
+    lockFile: POLLING_LOCK_FILE,
+    pid: process.pid,
+    refreshMs: POLLING_LOCK_REFRESH_MS,
+    staleMs: POLLING_LOCK_STALE_MS,
+  });
+
+  pollingLockHeartbeat = setInterval(() => {
+    void writePollingLock().catch((error: unknown) => {
+      logStructured("telegram_polling_lock_refresh_failed", {
+        lockFile: POLLING_LOCK_FILE,
+        pid: process.pid,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    });
+  }, POLLING_LOCK_REFRESH_MS);
+
+  return true;
+}
+
+async function releasePollingLock(reason: string): Promise<void> {
+  if (!pollingLockHeld) return;
+  if (pollingLockHeartbeat) {
+    clearInterval(pollingLockHeartbeat);
+    pollingLockHeartbeat = null;
+  }
+
+  const existing = await readPollingLock();
+  if (existing?.pid === process.pid) {
+    await unlink(POLLING_LOCK_FILE).catch(() => {
+      // ignore
+    });
+  }
+
+  pollingLockHeld = false;
+  logStructured("telegram_polling_lock_released", {
+    lockFile: POLLING_LOCK_FILE,
+    pid: process.pid,
+    reason,
+  });
+}
+
+function setupPollingLockCleanup(): void {
+  const releaseAndExit = (signal: string) => {
+    void releasePollingLock(`signal:${signal}`).finally(() => {
+      process.exit(0);
+    });
+  };
+
+  process.once("SIGINT", () => releaseAndExit("SIGINT"));
+  process.once("SIGTERM", () => releaseAndExit("SIGTERM"));
+
+  process.once("beforeExit", () => {
+    void releasePollingLock("beforeExit");
+  });
+
+  process.once("uncaughtException", (error) => {
+    logStructured("telegram_bridge_uncaught_exception", {
+      message: error?.message || "unknown",
+    });
+    void releasePollingLock("uncaughtException").finally(() => {
+      process.exit(1);
+    });
+  });
 }
 
 function formatDuration(ms: number): string {
@@ -213,16 +389,27 @@ async function loadLastSummary(): Promise<string | null> {
   }
 }
 
-/**
- * Charge le fichier SOUL.md (regles de fond) au demarrage.
- */
-async function loadSoulContext(): Promise<string | null> {
+async function loadContextFile(filePath: string): Promise<string | null> {
   try {
-    const content = await readFile(SOUL_FILE, "utf-8");
+    const content = await readFile(filePath, "utf-8");
     return content.trim() || null;
   } catch {
     return null;
   }
+}
+
+/**
+ * Charge le fichier SOUL.md (regles de fond) au demarrage.
+ */
+async function loadSoulContext(): Promise<string | null> {
+  return loadContextFile(SOUL_FILE);
+}
+
+/**
+ * Charge le fichier TELOS.md (mission/cadre long terme) au demarrage.
+ */
+async function loadTelosContext(): Promise<string | null> {
+  return loadContextFile(TELOS_FILE);
 }
 
 /**
@@ -393,16 +580,24 @@ async function runOpenCode(model: string, message: string, files?: string[]): Pr
   let contextPrefix = getContextPrefix();
   const hasAttachedFiles = Boolean(files && files.length > 0);
 
-  if (!sessionId && soulContext) {
-    const soulBlock =
+  if (!sessionId && (telosContext || soulContext)) {
+    const governanceHeader =
       `\n\nHierarchie de gouvernance (obligatoire):\n` +
       `1) TELOS.md\n` +
       `2) DAIDENTITY.md\n` +
       `3) SOUL.md\n` +
       `4) AISTEERINGRULES.md (surtout coding)\n` +
-      `En cas de conflit: TELOS et DAIDENTITY priment.\n\n` +
-      `Regles SOUL:\n${soulContext}\nFin des regles SOUL.`;
-    contextPrefix = contextPrefix ? `${contextPrefix}${soulBlock}` : soulBlock.trimStart();
+      `En cas de conflit: TELOS et DAIDENTITY priment.`;
+
+    const telosBlock = telosContext
+      ? `\n\nDirectives TELOS:\n${telosContext}\nFin directives TELOS.`
+      : "";
+    const soulBlock = soulContext
+      ? `\n\nRegles SOUL:\n${soulContext}\nFin des regles SOUL.`
+      : "";
+
+    const bootstrapBlock = `${governanceHeader}${telosBlock}${soulBlock}`;
+    contextPrefix = contextPrefix ? `${contextPrefix}${bootstrapBlock}` : bootstrapBlock.trimStart();
   }
 
   // NOTE: avec opencode run + --file, un prompt multiline injecte depuis lastSummary
@@ -620,6 +815,147 @@ async function sendToOpenCode(message: string, files?: string[]): Promise<string
   return finalize(result.text || "Pas de réponse. Réessaie.");
 }
 
+function createTaskerJobId(): string {
+  return `tsk-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+async function runTaskerOpenCode(model: string, message: string): Promise<{ text: string; stdout: string; stderr: string; success: boolean; timedOut: boolean }> {
+  const args = [
+    "/usr/local/bin/opencode",
+    "run",
+    "--format",
+    "json",
+    "--model",
+    model,
+    "--title",
+    TASKER_SESSION_TITLE,
+    `${getContextPrefix()}\n\n[TASKER BACKGROUND MODE: execute the task and return concise completion output.]\n\n${message}`,
+  ];
+
+  const wrappedArgs = [
+    "/usr/bin/timeout",
+    "--signal=TERM",
+    `${TASKER_RUN_TIMEOUT_SECONDS}s`,
+    ...args,
+  ];
+
+  const proc = Bun.spawn(wrappedArgs, {
+    stdout: "pipe",
+    stderr: "pipe",
+    env: {
+      ...process.env,
+      HOME: "/root",
+      PATH: "/root/.bun/bin:/usr/local/bin:/usr/bin:/bin",
+      XDG_DATA_HOME: "/root/.local/share",
+    },
+  });
+
+  const [stdout, stderr, exitCode] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+
+  const timedOut = exitCode === 124;
+  let textParts: string[] = [];
+  for (const line of stdout.split("\n")) {
+    if (!line.trim()) continue;
+    try {
+      const event = JSON.parse(line);
+      if (event.type === "text" && event.part?.text) {
+        textParts.push(event.part.text);
+      }
+    } catch {
+      // ignore non-json lines
+    }
+  }
+
+  const text = textParts.join("").trim();
+  return { text, stdout, stderr, success: text.length > 0, timedOut };
+}
+
+async function sendToOpenCodeTasker(message: string): Promise<string> {
+  const startIndex = preferredModelIndex;
+  const orderedModels = [
+    ...MODEL_CHAIN.slice(startIndex),
+    ...MODEL_CHAIN.slice(0, startIndex),
+  ];
+
+  for (const model of orderedModels) {
+    const result = await runTaskerOpenCode(model, message);
+    if (result.success) {
+      return result.text;
+    }
+    if (isPermissionError(result.stdout, result.stderr)) {
+      return (
+        "⛔ Tasker background job blocked by local policy permissions. " +
+        "Grant required access and retry."
+      );
+    }
+    if (!(result.timedOut || isProviderBlocked(result.stdout, result.stderr))) {
+      return result.text || "Tasker job failed without provider fallback condition.";
+    }
+  }
+
+  return "Tasker could not complete the job: all providers unavailable or timed out.";
+}
+
+async function enqueueTaskerJob(ctx: any, prompt: string): Promise<void> {
+  const job: TaskerJob = {
+    id: createTaskerJobId(),
+    chatId: ctx.chat.id,
+    prompt,
+    enqueuedAt: Date.now(),
+  };
+
+  taskerQueue.push(job);
+  metrics.taskerQueued++;
+  const position = taskerQueue.length;
+
+  await ctx.reply(
+    `🛠️ Tasker job queued\n` +
+    `Job ID: ${job.id}\n` +
+    `Queue position: ${position}\n` +
+    `I remain available in chat while Tasker runs this in background.`
+  );
+
+  void processTaskerQueue(ctx.api);
+}
+
+async function processTaskerQueue(api: any): Promise<void> {
+  if (taskerBusy || taskerQueue.length === 0) return;
+  taskerBusy = true;
+
+  const job = taskerQueue.shift()!;
+  const waitSeconds = Math.max(0, Math.round((Date.now() - job.enqueuedAt) / 1000));
+
+  try {
+    await api.sendMessage(job.chatId, `▶️ Tasker started job ${job.id} (queued ${waitSeconds}s).`);
+    const result = await sendToOpenCodeTasker(job.prompt);
+    metrics.taskerCompleted++;
+    const formatted = formatForTelegram(result);
+    await api.sendMessage(job.chatId, `✅ Tasker completed ${job.id}\n\n${formatted}`, {
+      parse_mode: "Markdown",
+    }).catch(async () => {
+      await api.sendMessage(job.chatId, `✅ Tasker completed ${job.id}\n\n${formatted}`);
+    });
+  } catch (error: any) {
+    metrics.taskerFailed++;
+    await api.sendMessage(job.chatId, `❌ Tasker failed ${job.id}: ${error.message || "unknown error"}`);
+  } finally {
+    taskerBusy = false;
+    void processTaskerQueue(api);
+  }
+}
+
+function extractTaskerPrompt(text: string): string | null {
+  const trimmed = text.trim();
+  if (trimmed.toLowerCase().startsWith("tasker:")) {
+    return trimmed.slice("tasker:".length).trim() || null;
+  }
+  return null;
+}
+
 // Toutes les 10 minutes, essayer de revenir au modèle principal
 setInterval(() => {
   resetToMainModel();
@@ -672,6 +1008,7 @@ function getCommandsHelpText(): string {
     "/summarize - Genere un resume de la session active (ou affiche le dernier resume).\n" +
     "/reset - Termine la session en cours, sauvegarde un resume, puis repart sur une nouvelle session.\n" +
     "/stop - Arrete la requete OpenCode en cours et vide la file d'attente.\n" +
+    "/tasker <demande> - Lance une tache agent en arriere-plan sans bloquer le chat.\n" +
     "/health - Affiche la sante du bridge (uptime, modele, queue, fallback).\n" +
     "/models - Affiche le modele courant et la chaine de fallback.\n" +
     "/models <nom> - Selectionne un modele de la chaine (ex: /models anthropic).\n" +
@@ -679,6 +1016,7 @@ function getCommandsHelpText(): string {
     "/model - Alias de /models.\n\n" +
     "Notes:\n" +
     "- Sans commande, tout message texte/photo/document est envoye a OpenCode.\n" +
+    "- Prefixe 'tasker: ...' pour deleguer une tache simple en arriere-plan.\n" +
     "- Les commandes ne sont executees que pour les utilisateurs autorises."
   );
 }
@@ -735,6 +1073,12 @@ bot.on("message:text", async (ctx, next) => {
   // Laisser les commandes continuer vers bot.command()
   if (text.startsWith("/")) {
     await next();
+    return;
+  }
+
+  const taskerPrompt = extractTaskerPrompt(text);
+  if (taskerPrompt) {
+    await enqueueTaskerJob(ctx, taskerPrompt);
     return;
   }
 
@@ -862,6 +1206,7 @@ bot.command("start", async (ctx) => {
     "/summarize — Résumé de la session en cours\n" +
     "/session — Info session actuelle\n" +
     "/stop — Arrêter la requête en cours\n" +
+    "/tasker <demande> — Exécuter une tâche simple en arrière-plan\n" +
     "/health — État du bridge\n" +
     "/models — Voir/changer le modèle\n" +
     "/commands — Toutes les commandes"
@@ -903,10 +1248,29 @@ bot.command("health", async (ctx) => {
     `Switches fallback: ${metrics.fallbackSwitches}\n` +
     `Stops manuels: ${metrics.stoppedRequests}\n` +
     `Erreurs permission: ${metrics.permissionErrors}\n` +
-    `Providers indisponibles: ${metrics.providerUnavailable}\n` +
-    `Latence moy (fenêtre ${latency.sampleSize}): ${formatMs(latency.avgMs)}\n` +
-    `Latence p95 (fenêtre ${latency.sampleSize}): ${formatMs(latency.p95Ms)}`
+      `Providers indisponibles: ${metrics.providerUnavailable}\n` +
+      `Tasker queue: ${taskerQueue.length}\n` +
+      `Tasker occupé: ${taskerBusy ? "oui" : "non"}\n` +
+      `Tasker jobs: ${metrics.taskerQueued} (ok ${metrics.taskerCompleted}, fail ${metrics.taskerFailed})\n` +
+      `Latence moy (fenêtre ${latency.sampleSize}): ${formatMs(latency.avgMs)}\n` +
+      `Latence p95 (fenêtre ${latency.sampleSize}): ${formatMs(latency.p95Ms)}`
   );
+});
+
+bot.command("tasker", async (ctx) => {
+  const userId = ctx.from?.id;
+  if (!userId || !isAllowed(userId)) return;
+
+  const prompt = ctx.message.text.replace(/^\/tasker(?:@\w+)?/, "").trim();
+  if (!prompt) {
+    await ctx.reply(
+      "Usage: /tasker <demande>\n" +
+      "Exemple: /tasker Prépare un plan de correction pour le ticket #21"
+    );
+    return;
+  }
+
+  await enqueueTaskerJob(ctx, prompt);
 });
 
 bot.command("stop", async (ctx) => {
@@ -922,7 +1286,8 @@ bot.command("stop", async (ctx) => {
   if (stopped) {
     await ctx.reply(
       `⛔ Requête en cours arrêtée.\n` +
-      `Messages en attente supprimés: ${queued}.`
+      `Messages en attente supprimés: ${queued}.\n` +
+      `Tasker background n'est pas interrompu par /stop.`
     );
   } else {
     await ctx.reply("Aucune requête en cours à arrêter.");
@@ -1060,7 +1425,9 @@ bot.command("session", async (ctx) => {
     `Chaîne: ${MODEL_CHAIN.join(" → ")}\n` +
     `Résumé précédent: ${lastSummary ? "oui" : "non"}\n` +
     `Queue: ${messageQueue.length} message(s) en attente\n` +
-    `Occupé: ${busy}`
+    `Occupé: ${busy}\n` +
+    `Tasker queue: ${taskerQueue.length}\n` +
+    `Tasker occupé: ${taskerBusy ? "oui" : "non"}`
   );
 });
 
@@ -1072,6 +1439,7 @@ bot.command("models", handleModelCommand);
 // Charger le dernier résumé au démarrage
 lastSummary = await loadLastSummary();
 soulContext = await loadSoulContext();
+telosContext = await loadTelosContext();
 await loadSessionState();
 await loadModelState();
 await saveModelState();
@@ -1084,6 +1452,7 @@ console.log(`  Model: ${getCurrentModel()}`);
 console.log(`  Model chain: ${MODEL_CHAIN.join(" -> ")}`);
 console.log(`  Users: ${ALLOWED_USERS.length > 0 ? ALLOWED_USERS.join(", ") : "tous"}`);
 console.log(`  Résumé chargé: ${lastSummary ? "oui" : "non"}`);
+console.log(`  TELOS chargé: ${telosContext ? "oui" : "non"}`);
 console.log(`  SOUL chargé: ${soulContext ? "oui" : "non"}`);
 console.log("====================================");
 
@@ -1091,4 +1460,14 @@ bot.catch((err) => {
   console.error("[bot error]", err.message);
 });
 
+const pollingLockAcquired = await acquirePollingLock();
+if (!pollingLockAcquired) {
+  logStructured("telegram_polling_lock_start_skipped", {
+    lockFile: POLLING_LOCK_FILE,
+    pid: process.pid,
+  });
+  process.exit(0);
+}
+
+setupPollingLockCleanup();
 bot.start();

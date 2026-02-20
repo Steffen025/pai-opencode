@@ -98,6 +98,7 @@ export async function loadContext(): Promise<ContextResult> {
         "PAIAGENTSYSTEM.md",        // Agent system
         "THEPLUGINSYSTEM.md",       // Plugin system (OpenCode specific)
         "PAISYSTEMARCHITECTURE.md", // v2.4: System architecture
+        "AISTEERINGRULES.md",       // System steering rules
         "RESPONSEFORMAT.md",        // v2.4: Response format rules
       ];
 
@@ -139,6 +140,8 @@ export async function loadContext(): Promise<ContextResult> {
       "ABOUTME.md",           // User profile
       "BASICINFO.md",         // v2.4: Basic information
       "DAIDENTITY.md",        // v2.4: AI identity configuration
+      "AISTEERINGRULES.md",   // Personal steering rules
+      "SOUL.md",              // Personal identity/voice context
       "TECHSTACKPREFERENCES.md", // v2.4: Tech stack preferences
       "RESPONSEFORMAT.md",    // v2.4: Response format preferences
     ];
@@ -152,6 +155,14 @@ export async function loadContext(): Promise<ContextResult> {
       }
     }
 
+    // 5. Load root soul.md (outside PAI skill tree) if present
+    const rootSoulPath = join(opencodeDir, "soul.md");
+    const rootSoulContent = readFileSafe(rootSoulPath);
+    if (rootSoulContent) {
+      contextParts.push(`--- ROOT/soul.md ---\n${rootSoulContent}`);
+      fileLog("Loaded root soul.md");
+    }
+
     // Combine all context
     if (contextParts.length === 0) {
       fileLog("No context files found", "warn");
@@ -162,8 +173,15 @@ export async function loadContext(): Promise<ContextResult> {
       };
     }
 
+    const identityLock = `--- IDENTITY LOCK ---
+You are Kirito, Bunni's personal AI assistant.
+Never present yourself as OpenCode.
+If asked who you are, answer: "Je suis Kirito."`;
+
     const context = `<system-reminder>
 PAI CONTEXT (Auto-loaded by PAI-OpenCode Plugin)
+
+${identityLock}
 
 ${contextParts.join("\n\n")}
 

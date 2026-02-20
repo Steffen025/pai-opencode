@@ -1,216 +1,25 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "theme": "dark",
-  "model": "anthropic/claude-sonnet-4-5",
+  "model": "openai/gpt-5.3-codex",
   "snapshot": true,
-  "username": "User",
-  "permission": {
-    "*": "allow",
-    "websearch": "allow",
-    "codesearch": "allow",
-    "webfetch": "allow",
-    "doom_loop": "ask",
-    "external_directory": "ask"
-  },
-  "mode": {
-    "build": {
-      "prompt": "You are a Personal AI assistant powered by PAI-OpenCode infrastructure."
-    },
-    "plan": {
-      "prompt": "You are a Personal AI assistant powered by PAI-OpenCode infrastructure."
-    }
-  },
+  "username": "Bunni",
   "agent": {
-    "Algorithm": {
-      "model": "anthropic/claude-opus-4-6"
-    },
-    "Architect": {
-      "model": "anthropic/claude-sonnet-4-5",
-      "model_tiers": {
-        "quick": {
-          "model": "anthropic/claude-haiku-4-5"
-        },
-        "standard": {
-          "model": "anthropic/claude-sonnet-4-5"
-        },
-        "advanced": {
-          "model": "anthropic/claude-opus-4-6"
-        }
-      }
-    },
-    "Engineer": {
-      "model": "anthropic/claude-sonnet-4-5",
-      "model_tiers": {
-        "quick": {
-          "model": "anthropic/claude-haiku-4-5"
-        },
-        "standard": {
-          "model": "anthropic/claude-sonnet-4-5"
-        },
-        "advanced": {
-          "model": "anthropic/claude-opus-4-6"
-        }
-      }
-    },
-    "general": {
-      "model": "anthropic/claude-sonnet-4-5",
-      "model_tiers": {
-        "quick": {
-          "model": "anthropic/claude-haiku-4-5"
-        },
-        "standard": {
-          "model": "anthropic/claude-sonnet-4-5"
-        },
-        "advanced": {
-          "model": "anthropic/claude-opus-4-6"
-        }
-      }
-    },
-    "explore": {
-      "model": "anthropic/claude-haiku-4-5"
-    },
-    "Intern": {
-      "model": "anthropic/claude-haiku-4-5",
-      "model_tiers": {
-        "quick": {
-          "model": "anthropic/claude-haiku-4-5"
-        },
-        "standard": {
-          "model": "anthropic/claude-haiku-4-5"
-        },
-        "advanced": {
-          "model": "anthropic/claude-sonnet-4-5"
-        }
-      }
-    },
-    "Writer": {
-      "model": "anthropic/claude-sonnet-4-5",
-      "model_tiers": {
-        "quick": {
-          "model": "anthropic/claude-haiku-4-5"
-        },
-        "standard": {
-          "model": "anthropic/claude-sonnet-4-5"
-        },
-        "advanced": {
-          "model": "anthropic/claude-opus-4-6"
-        }
-      }
-    },
-    "DeepResearcher": {
-      "model": "anthropic/claude-sonnet-4-5",
-      "model_tiers": {
-        "quick": {
-          "model": "anthropic/claude-haiku-4-5"
-        },
-        "standard": {
-          "model": "anthropic/claude-sonnet-4-5"
-        },
-        "advanced": {
-          "model": "anthropic/claude-opus-4-6"
-        }
-      }
-    },
-    "GeminiResearcher": {
-      "model": "google/gemini-2.5-flash",
-      "model_tiers": {
-        "quick": {
-          "model": "anthropic/claude-haiku-4-5"
-        },
-        "standard": {
-          "model": "anthropic/claude-sonnet-4-5"
-        },
-        "advanced": {
-          "model": "anthropic/claude-opus-4-6"
-        }
-      }
-    },
-    "GrokResearcher": {
-      "model": "xai/grok-4-1-fast",
-      "model_tiers": {
-        "quick": {
-          "model": "anthropic/claude-haiku-4-5"
-        },
-        "standard": {
-          "model": "anthropic/claude-sonnet-4-5"
-        },
-        "advanced": {
-          "model": "anthropic/claude-opus-4-6"
-        }
-      }
-    },
-    "PerplexityResearcher": {
-      "model": "perplexity/sonar",
-      "model_tiers": {
-        "quick": {
-          "model": "anthropic/claude-haiku-4-5"
-        },
-        "standard": {
-          "model": "anthropic/claude-sonnet-4-5"
-        },
-        "advanced": {
-          "model": "anthropic/claude-opus-4-6"
-        }
-      }
-    },
-    "CodexResearcher": {
-      "model": "anthropic/claude-sonnet-4-5",
-      "model_tiers": {
-        "quick": {
-          "model": "anthropic/claude-haiku-4-5"
-        },
-        "standard": {
-          "model": "anthropic/claude-sonnet-4-5"
-        },
-        "advanced": {
-          "model": "anthropic/claude-opus-4-6"
-        }
-      }
-    },
-    "QATester": {
-      "model": "anthropic/claude-sonnet-4-5"
-    },
-    "Pentester": {
-      "model": "anthropic/claude-sonnet-4-5",
-      "model_tiers": {
-        "quick": {
-          "model": "anthropic/claude-haiku-4-5"
-        },
-        "standard": {
-          "model": "anthropic/claude-sonnet-4-5"
-        },
-        "advanced": {
-          "model": "anthropic/claude-opus-4-6"
-        }
-      }
-    },
-    "Designer": {
-      "model": "anthropic/claude-sonnet-4-5",
-      "model_tiers": {
-        "quick": {
-          "model": "anthropic/claude-haiku-4-5"
-        },
-        "standard": {
-          "model": "anthropic/claude-sonnet-4-5"
-        },
-        "advanced": {
-          "model": "anthropic/claude-opus-4-6"
-        }
-      }
-    },
-    "Artist": {
-      "model": "anthropic/claude-sonnet-4-5",
-      "model_tiers": {
-        "quick": {
-          "model": "anthropic/claude-haiku-4-5"
-        },
-        "standard": {
-          "model": "anthropic/claude-sonnet-4-5"
-        },
-        "advanced": {
-          "model": "anthropic/claude-opus-4-6"
-        }
-      }
-    }
+    "Algorithm": { "model": "anthropic/claude-opus-4-6" },
+    "Architect": { "model": "anthropic/claude-opus-4-6" },
+    "Engineer": { "model": "anthropic/claude-opus-4-6" },
+    "general": { "model": "anthropic/claude-sonnet-4-6" },
+    "explore": { "model": "anthropic/claude-sonnet-4-6" },
+    "Intern": { "model": "anthropic/claude-sonnet-4-6" },
+    "Writer": { "model": "anthropic/claude-opus-4-6" },
+    "DeepResearcher": { "model": "anthropic/claude-sonnet-4-6" },
+    "GeminiResearcher": { "model": "anthropic/claude-sonnet-4-6" },
+    "GrokResearcher": { "model": "anthropic/claude-sonnet-4-6" },
+    "PerplexityResearcher": { "model": "anthropic/claude-sonnet-4-6" },
+    "CodexResearcher": { "model": "anthropic/claude-sonnet-4-6" },
+    "QATester": { "model": "anthropic/claude-sonnet-4-6" },
+    "Pentester": { "model": "anthropic/claude-sonnet-4-6" },
+    "Designer": { "model": "anthropic/claude-opus-4-6" },
+    "Artist": { "model": "anthropic/claude-sonnet-4-6" }
   }
 }

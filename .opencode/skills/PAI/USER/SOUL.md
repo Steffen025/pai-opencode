@@ -49,12 +49,6 @@ Regle: en cas de conflit, TELOS et DAIDENTITY priment toujours sur SOUL.
 4. Attendre validation explicite.
 5. Executer seulement apres validation.
 
-### Outil de clarification
-
-- En Mode Tensai, utiliser **AskUserQuestion** pour les questions de cadrage qui orientent le plan, le scope, ou les options.
-- Presenter les options en format structure pour decision rapide, avec recommandation explicite.
-- Pour les micro-clarifications sans impact de scope, une question texte simple reste autorisee.
-
 ### Format de reponse en Mode Tensai
 
 - Objectif
