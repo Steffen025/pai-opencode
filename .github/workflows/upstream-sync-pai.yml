@@ -19,7 +19,9 @@ on:
 env:
   UPSTREAM_OWNER: danielmiessler
   UPSTREAM_REPO: Personal_AI_Infrastructure
-  FORK_REPO: Steffen025/Personal_AI_Infrastructure
+  # Dein Fork auf GitHub - ACHTUNG: Anpassen!
+  # Aktuell: daniel-miesler-pie (oder was auch immer dein GitHub Username/Fork Name ist)
+  FORK_REPO: Steffen025/daniel-miesler-pie
 
 jobs:
   check-upstream:
