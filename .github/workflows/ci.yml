@@ -67,16 +67,17 @@ jobs:
           for dir in $SEARCH_DIRS; do
             if [ -d "$dir" ]; then
               echo "  Scanning $dir..."
-              # Find potential secrets
-              RESULT=$(grep -rEin "sk-[a-zA-Z0-9._-]{20,}|(api[_-]?key|client[_-]?secret|password|token)[[:space:]]*[:=][[:space:]]*['\"]?[a-zA-Z0-9._-]{20,}['\"]?" "$dir" --include="*.ts" --include="*.js" --include="*.json" --exclude-dir="node_modules" 2>/dev/null || true)
+              # Find potential secrets (include YAML configs, exclude Data directories with public URLs)
+              RESULT=$(grep -rEin "sk-[a-zA-Z0-9._-]{20,}|(api[_-]?key|client[_-]?secret|password|token)[[:space:]]*[:=][[:space:]]*['\"]?[a-zA-Z0-9._-]{20,}['\"]?" "$dir" --include="*.ts" --include="*.js" --include="*.json" --include="*.yaml" --include="*.yml" --exclude-dir="node_modules" --exclude="*/Data/BountyPrograms.json" 2>/dev/null || true)
               
               if [ -n "$RESULT" ]; then
                 # Filter out process.env references (environment variable lookups, not hardcoded secrets)
                 FILTERED=$(echo "$RESULT" | grep -vi "process\.env" | grep -vi "\.env\.example" || true)
                 
                 if [ -n "$FILTERED" ]; then
-                  echo "❌ Potential hardcoded secret found in $dir:"
-                  echo "$FILTERED"
+                  # Only show file:line, not the content (to avoid exposing secrets in logs)
+                  echo "❌ Potential hardcoded secret found:"
+                  echo "$FILTERED" | cut -d: -f1,2
                   FOUND=1
                 fi
               fi
