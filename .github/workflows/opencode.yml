@@ -1,0 +1,40 @@
+name: OpenCode Agent
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+jobs:
+  opencode:
+    # Only trigger on /opencode or /oc commands
+    if: |
+      contains(github.event.comment.body, '/opencode') ||
+      contains(github.event.comment.body, '/oc')
+    
+    runs-on: ubuntu-latest
+    
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+      issues: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Run OpenCode
+        uses: anomalyco/opencode/github@latest
+        env:
+          # Optional: Falls du einen API Key hast, als Secret konfigurieren
+          # ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+        with:
+          # Model kann überschrieben werden — default kommt aus opencode.json
+          model: anthropic/claude-sonnet-4-5

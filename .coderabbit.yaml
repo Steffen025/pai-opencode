@@ -1,0 +1,93 @@
+# CodeRabbit Configuration — PAI-OpenCode
+# Free Tier (OSS/personal project)
+# Docs: https://docs.coderabbit.ai/getting-started/configure-coderabbit
+
+language: "de"
+
+# Review profile: assertive = flags everything, chill = only critical issues
+# For active AI development, "chill" prevents review noise on AI-generated code
+reviews:
+  profile: "chill"
+  request_changes_workflow: false  # CodeRabbit flags but humans decide merge
+
+  # Auto-review all PRs targeting dev or main
+  auto_review:
+    enabled: true
+    drafts: false  # don't review draft PRs
+    base_branches:
+      - "dev"
+      - "main"
+
+  # Path-specific instructions for CodeRabbit
+  path_instructions:
+    - path: ".opencode/skills/**"
+      instructions: |
+        PAI Skills — Domain-specific sub-algorithms.
+        Verify:
+        - SKILL.md follows PAI v3.0 format (USE WHEN triggers, MANDATORY/OPTIONAL sections)
+        - Tools/ directory has CLI tools for automation
+        - Workflows/ directory has operational procedures
+        - No hardcoded API keys in tool implementations
+    - path: ".opencode/agents/**"
+      instructions: |
+        PAI Agent Definitions — Persona, traits, voice configuration.
+        Verify:
+        - Frontmatter has required fields (name, description, model_tier mapping)
+        - First-person voice convention followed ("I can help" not "Jeremy can help")
+        - Color codes in hex format for UI consistency
+    - path: ".opencode/plugins/**"
+      instructions: |
+        OpenCode Plugins — Lifecycle automation.
+        Verify:
+        - Hooks follow OpenCode plugin API
+        - No blocking operations in init hooks
+        - Proper error handling with fallbacks
+    - path: "Tools/**"
+      instructions: |
+        CLI Tools — Pure execution (no LLM inside).
+        Verify:
+        - Uses Bun runtime (package.json has "type": "module")
+        - No AI/LLM calls inside tools (Opus orchestrates, tools execute)
+        - Proper CLI argument parsing with validation
+        - Exit codes follow UNIX conventions (0=success, non-zero=error)
+    - path: "skill-packs/**"
+      instructions: |
+        Modular Skill Packs — Optional PAI extensions.
+        Verify:
+        - Self-contained structure (SKILL.md + Agents/ + Workflows/)
+        - Clear activation instructions
+        - No dependencies on other skill-packs unless documented
+    - path: "docs/**"
+      instructions: |
+        Documentation — Markdown with Obsidian conventions.
+        Verify:
+        - Frontmatter for Dataview queries where appropriate
+        - ASCII diagrams for quick overview
+        - Mermaid diagrams in collapsible sections for detail
+        - Voice-safe text (no markdown in spoken summaries)
+    - path: "**/*.md"
+      instructions: |
+        Markdown files — Obsidian-formatted documentation.
+        Verify:
+        - Callouts use `> [!type]` syntax
+        - Frontmatter for important documents
+        - German language: Use generic masculine (Teilnehmer, nicht Teilnehmer*innen)
+        - Tables for structured comparisons
+
+  # What to ignore in reviews
+  path_filters:
+    - "!node_modules/**"
+    - "!bun.lock"
+    - "!**/*.lock"
+    - "!dist/**"
+    - "!coverage/**"
+    - "!.git/**"
+
+# Chat configuration (when you @coderabbit in comments)
+chat:
+  auto_reply: true
+
+# Code generation (for future use)
+code_generation:
+  docstrings:
+    language: "en"

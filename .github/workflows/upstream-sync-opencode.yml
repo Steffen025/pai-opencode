@@ -1,0 +1,192 @@
+name: Upstream Sync — OpenCode (Anomaly Co)
+
+# Dieser Workflow überwacht anomalyco/opencode
+# und erstellt Issues wenn neue Commits oder Releases verfügbar sind
+
+on:
+  schedule:
+    # Täglich um 8:30 UTC (30min nach PAI check)
+    - cron: "30 8 * * *"
+  
+  # Manuelles Triggern für Tests
+  workflow_dispatch:
+    inputs:
+      force_check:
+        description: "Force sync check (ignore cache)"
+        type: boolean
+        default: false
+
+env:
+  UPSTREAM_OWNER: anomalyco
+  UPSTREAM_REPO: opencode
+  FORK_REPO: Steffen025/opencode
+
+jobs:
+  check-upstream:
+    name: Check OpenCode Upstream
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.FORK_REPO }}
+          token: ${{ secrets.UPSTREAM_SYNC_TOKEN }}
+          fetch-depth: 0
+
+      - name: Fetch upstream
+        run: |
+          git remote add upstream https://github.com/${{ env.UPSTREAM_OWNER }}/${{ env.UPSTREAM_REPO }}.git
+          git fetch upstream --tags
+
+      - name: Check for new commits
+        id: check_commits
+        run: |
+          NEW_COMMITS=$(git log HEAD..upstream/main --oneline --no-merges | head -20)
+          COMMIT_COUNT=$(echo "$NEW_COMMITS" | grep -c . || true)
+          
+          if [ -z "$NEW_COMMITS" ]; then
+            echo "commits_behind=0" >> $GITHUB_OUTPUT
+            echo "No new commits found"
+          else
+            echo "commits_behind=$COMMIT_COUNT" >> $GITHUB_OUTPUT
+            echo "new_commits<<EOF" >> $GITHUB_OUTPUT
+            echo "$NEW_COMMITS" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "Found $COMMIT_COUNT new commits"
+          fi
+
+      - name: Check for new releases
+        id: check_releases
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const upstreamOwner = process.env.UPSTREAM_OWNER;
+            const upstreamRepo = process.env.UPSTREAM_REPO;
+            
+            try {
+              const { data: upstreamRelease } = await github.rest.repos.getLatestRelease({
+                owner: upstreamOwner,
+                repo: upstreamRepo
+              });
+              
+              const { data: issues } = await github.rest.issues.listForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: 'upstream-sync,opencode',
+                state: 'open'
+              });
+              
+              const existingIssue = issues.find(issue => 
+                issue.title.includes(`OpenCode ${upstreamRelease.tag_name}`)
+              );
+              
+              if (!existingIssue) {
+                core.setOutput('new_release', 'true');
+                core.setOutput('release_tag', upstreamRelease.tag_name);
+                core.setOutput('release_name', upstreamRelease.name);
+                core.setOutput('release_url', upstreamRelease.html_url);
+                core.setOutput('release_body', upstreamRelease.body || 'No release notes');
+              } else {
+                core.setOutput('new_release', 'false');
+              }
+            } catch (error) {
+              core.setOutput('new_release', 'false');
+            }
+
+      - name: Create sync issue (commits)
+        if: steps.check_commits.outputs.commits_behind != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const commitCount = '${{ steps.check_commits.outputs.commits_behind }}';
+            const newCommits = `${{ steps.check_commits.outputs.new_commits }}`;
+            
+            const title = `[Upstream Sync] OpenCode — ${commitCount} neue Commits verfügbar`;
+            
+            const bodyParts = [
+              '## 🔁 Upstream Sync Benachrichtigung',
+              '',
+              '**Repository:** anomalyco/opencode',
+              `**Status:** ${commitCount} Commits hinter dem Original`,
+              '',
+              '### Neue Commits',
+              '```',
+              newCommits,
+              '```',
+              '',
+              '### Aktionen erforderlich',
+              '- [ ] Commits reviewen: https://github.com/anomalyco/opencode/compare/main...HEAD',
+              '- [ ] Prüfen ob Breaking Changes für PAI-OpenCode',
+              '- [ ] Relevante Änderungen in PAI-OpenCode integrieren',
+              '',
+              '**Wichtige Dateien zu prüfen:**',
+              '- SDK Änderungen (wir nutzen OpenCode SDK/Action)',
+              '- Plugin API Änderungen',
+              '- Konfigurations-Schema Änderungen (opencode.json)',
+              '',
+              '---',
+              '*Automatisch erstellt von Upstream Sync Workflow*'
+            ];
+            const body = bodyParts.join('\n');
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['upstream-sync', 'opencode', 'automated']
+            });
+
+      - name: Create sync issue (release)
+        if: steps.check_releases.outputs.new_release == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const releaseTag = '${{ steps.check_releases.outputs.release_tag }}';
+            const releaseName = '${{ steps.check_releases.outputs.release_name }}';
+            const releaseUrl = '${{ steps.check_releases.outputs.release_url }}';
+            const releaseBody = `${{ steps.check_releases.outputs.release_body }}`;
+            
+            const title = `[Release] OpenCode ${releaseTag} verfügbar — ${releaseName}`;
+            
+            const bodyParts = [
+              '## 🎉 Neues Upstream Release',
+              '',
+              '**Repository:** anomalyco/opencode',
+              `**Version:** ${releaseTag}`,
+              `**Name:** ${releaseName}`,
+              '',
+              '### Release Notes',
+              releaseBody,
+              '',
+              '### Links',
+              `- [Release ansehen](${releaseUrl})`,
+              '- [Changelog](https://github.com/anomalyco/opencode/blob/main/CHANGELOG.md)',
+              '',
+              '### Aktionen erforderlich',
+              '- [ ] Release Notes auf Breaking Changes prüfen',
+              '- [ ] SDK/Action Kompatibilität verifizieren',
+              '- [ ] PAI-OpenCode .github/workflows/opencode.yml aktualisieren falls nötig',
+              '- [ ] Neue Features für PAI-OpenCode evaluieren',
+              '',
+              '---',
+              '*Automatisch erstellt von Upstream Sync Workflow*'
+            ];
+            const body = bodyParts.join('\n');
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['upstream-sync', 'opencode', 'release', 'automated']
+            });
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "=== OpenCode Upstream Sync Summary ==="
+          echo "Commits behind: ${{ steps.check_commits.outputs.commits_behind }}"
+          echo "New release: ${{ steps.check_releases.outputs.new_release }}"
+          echo "======================================"

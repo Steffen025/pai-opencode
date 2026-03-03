@@ -1,0 +1,190 @@
+name: Upstream Sync — PAI (Daniel Miessler)
+
+# Dieser Workflow überwacht danielmiessler/Personal_AI_Infrastructure
+# und erstellt Issues wenn neue Commits oder Releases verfügbar sind
+
+on:
+  schedule:
+    # Täglich um 8:00 UTC (9:00 CET / 10:00 CEST)
+    - cron: "0 8 * * *"
+  
+  # Manuelles Triggern für Tests
+  workflow_dispatch:
+    inputs:
+      force_check:
+        description: "Force sync check (ignore cache)"
+        type: boolean
+        default: false
+
+env:
+  UPSTREAM_OWNER: danielmiessler
+  UPSTREAM_REPO: Personal_AI_Infrastructure
+  FORK_REPO: Steffen025/Personal_AI_Infrastructure
+
+jobs:
+  check-upstream:
+    name: Check PAI Upstream
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.FORK_REPO }}
+          token: ${{ secrets.UPSTREAM_SYNC_TOKEN }}
+          fetch-depth: 0  # Full history für Vergleich
+
+      - name: Fetch upstream
+        run: |
+          git remote add upstream https://github.com/${{ env.UPSTREAM_OWNER }}/${{ env.UPSTREAM_REPO }}.git
+          git fetch upstream --tags
+
+      - name: Check for new commits
+        id: check_commits
+        run: |
+          # Vergleiche upstream/main mit origin/main
+          NEW_COMMITS=$(git log HEAD..upstream/main --oneline --no-merges | head -20)
+          COMMIT_COUNT=$(echo "$NEW_COMMITS" | grep -c . || true)
+          
+          if [ -z "$NEW_COMMITS" ]; then
+            echo "commits_behind=0" >> $GITHUB_OUTPUT
+            echo "No new commits found"
+          else
+            echo "commits_behind=$COMMIT_COUNT" >> $GITHUB_OUTPUT
+            echo "new_commits<<EOF" >> $GITHUB_OUTPUT
+            echo "$NEW_COMMITS" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "Found $COMMIT_COUNT new commits"
+          fi
+
+      - name: Check for new releases
+        id: check_releases
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const upstreamOwner = process.env.UPSTREAM_OWNER;
+            const upstreamRepo = process.env.UPSTREAM_REPO;
+            
+            // Get latest upstream release
+            try {
+              const { data: upstreamRelease } = await github.rest.repos.getLatestRelease({
+                owner: upstreamOwner,
+                repo: upstreamRepo
+              });
+              
+              // Check if we have an issue for this release already
+              const { data: issues } = await github.rest.issues.listForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: 'upstream-sync,pai',
+                state: 'open'
+              });
+              
+              const existingIssue = issues.find(issue => 
+                issue.title.includes(`PAI ${upstreamRelease.tag_name}`)
+              );
+              
+              if (!existingIssue) {
+                core.setOutput('new_release', 'true');
+                core.setOutput('release_tag', upstreamRelease.tag_name);
+                core.setOutput('release_name', upstreamRelease.name);
+                core.setOutput('release_url', upstreamRelease.html_url);
+                core.setOutput('release_body', upstreamRelease.body || 'No release notes');
+              } else {
+                core.setOutput('new_release', 'false');
+              }
+            } catch (error) {
+              // No releases exist yet
+              core.setOutput('new_release', 'false');
+            }
+
+      - name: Create sync issue (commits)
+        if: steps.check_commits.outputs.commits_behind != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const commitCount = '${{ steps.check_commits.outputs.commits_behind }}';
+            const newCommits = `${{ steps.check_commits.outputs.new_commits }}`;
+            
+            const title = `[Upstream Sync] PAI — ${commitCount} neue Commits verfügbar`;
+            
+            const bodyParts = [
+              '## 🔁 Upstream Sync Benachrichtigung',
+              '',
+              '**Repository:** danielmiessler/Personal_AI_Infrastructure',
+              `**Status:** ${commitCount} Commits hinter dem Original`,
+              '',
+              '### Neue Commits',
+              '```',
+              newCommits,
+              '```',
+              '',
+              '### Aktionen erforderlich',
+              '- [ ] Commits reviewen: https://github.com/danielmiessler/Personal_AI_Infrastructure/compare/main...HEAD',
+              '- [ ] PAI-OpenCode prüfen ob Änderungen relevant sind',
+              '- [ ] Falls ja: Fork aktualisieren und PAI-OpenCode updaten',
+              '',
+              '---',
+              '*Automatisch erstellt von Upstream Sync Workflow*'
+            ];
+            const body = bodyParts.join('\n');
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['upstream-sync', 'pai', 'automated']
+            });
+
+      - name: Create sync issue (release)
+        if: steps.check_releases.outputs.new_release == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const releaseTag = '${{ steps.check_releases.outputs.release_tag }}';
+            const releaseName = '${{ steps.check_releases.outputs.release_name }}';
+            const releaseUrl = '${{ steps.check_releases.outputs.release_url }}';
+            const releaseBody = `${{ steps.check_releases.outputs.release_body }}`;
+            
+            const title = `[Release] PAI ${releaseTag} verfügbar — ${releaseName}`;
+            
+            const bodyParts = [
+              '## 🎉 Neues Upstream Release',
+              '',
+              '**Repository:** danielmiessler/Personal_AI_Infrastructure',
+              `**Version:** ${releaseTag}`,
+              `**Name:** ${releaseName}`,
+              '',
+              '### Release Notes',
+              releaseBody,
+              '',
+              '### Links',
+              `- [Release ansehen](${releaseUrl})`,
+              `- [Commits seit letztem Release](https://github.com/danielmiessler/Personal_AI_Infrastructure/compare/${releaseTag}...main)`,
+              '',
+              '### Aktionen erforderlich',
+              '- [ ] Release Notes lesen und relevante Änderungen identifizieren',
+              '- [ ] Prüfen ob PAI-OpenCode aktualisiert werden muss',
+              '- [ ] Falls Breaking Changes: PAI-OpenCode Migration planen',
+              '',
+              '---',
+              '*Automatisch erstellt von Upstream Sync Workflow*'
+            ];
+            const body = bodyParts.join('\n');
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['upstream-sync', 'pai', 'release', 'automated']
+            });
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "=== Upstream Sync Summary ==="
+          echo "Commits behind: ${{ steps.check_commits.outputs.commits_behind }}"
+          echo "New release: ${{ steps.check_releases.outputs.new_release }}"
+          echo "============================="

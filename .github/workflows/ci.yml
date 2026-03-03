@@ -1,0 +1,91 @@
+name: CI — Lint, Typecheck, Secrets
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - main
+  push:
+    branches:
+      - dev
+      - main
+
+jobs:
+  ci:
+    name: Lint + Typecheck + Secrets
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ⚠️ CRITICAL: Bun only — NEVER use npm/pnpm (per TECHSTACKPREFERENCES.md)
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      # Typecheck nur wenn tsconfig.json existiert
+      - name: Typecheck (if TypeScript configured)
+        run: |
+          if [ -f "tsconfig.json" ]; then
+            echo "TypeScript config found — running typecheck..."
+            bunx tsc --noEmit
+          else
+            echo "No tsconfig.json — skipping typecheck"
+          fi
+
+      # Biome lint/format nur wenn biome.json existiert
+      - name: Biome Check (if configured)
+        run: |
+          if [ -f "biome.json" ]; then
+            echo "Biome config found — running check..."
+            bunx @biomejs/biome check .
+          else
+            echo "No biome.json — skipping Biome check"
+          fi
+
+      # Secret Scan — case-insensitive für common patterns
+      - name: Scan for hardcoded secrets
+        run: |
+          # Case-insensitive check for common secret patterns with 20+ char values.
+          # Covers: sk- prefixes (OpenAI-style keys), api_key/api-key/API_KEY/API-KEY/
+          # client_secret with = or : assignments, values may contain letters, digits,
+          # hyphens, underscores, dots.
+          # Short values (< 20 chars) are excluded to avoid false positives from
+          # module names like 'task-manager', 'publishTask', 'publish-task-model', etc.
+          
+          # Search in common code directories
+          SEARCH_DIRS="Tools .opencode skill-packs"
+          
+          FOUND=0
+          for dir in $SEARCH_DIRS; do
+            if [ -d "$dir" ]; then
+              if grep -rEin "sk-[a-zA-Z0-9._-]{20,}|(api[_-]?key|client[_-]?secret|password|token)[[:space:]]*[:=][[:space:]]*['\"]?[a-zA-Z0-9._-]{20,}['\"]?" "$dir" --include="*.ts" --include="*.js" --include="*.json" 2>/dev/null; then
+                FOUND=1
+              fi
+            fi
+          done
+          
+          if [ $FOUND -eq 1 ]; then
+            echo "❌ Potential hardcoded secret found!"
+            exit 1
+          fi
+          
+          echo "✅ No obvious hardcoded secrets found"
+
+      # Test job — vorbereitet für wenn Tests existieren
+      - name: Tests (if tests exist)
+        run: |
+          if find . -name "*.test.ts" -o -name "*.spec.ts" | grep -q .; then
+            echo "Test files found — running tests..."
+            bun test
+          else
+            echo "No test files found — skipping (add tests to enable)"
+          fi
+        env:
+          NODE_ENV: test
