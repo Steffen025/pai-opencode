@@ -107,21 +107,19 @@ function extractTextContent(message: any): string {
 }
 
 /**
- * Read a file safely, returning null if not found
+ * Read a file safely, returning null if not found (async)
  */
-function readFileSafe(filePath: string): string | null {
+async function readFileSafe(filePath: string): Promise<string | null> {
 	try {
-		if (!fs.existsSync(filePath)) {
-			return null;
-		}
-		return fs.readFileSync(filePath, "utf-8");
+		await fs.promises.access(filePath);
+		return await fs.promises.readFile(filePath, "utf-8");
 	} catch (error) {
 		return null;
 	}
 }
 
 /**
- * Load minimal bootstrap context — WP2: Minimal Nützlich
+ * Load minimal bootstrap context — WP2: Minimal Useful
  *
  * Loads:
  * 1. MINIMAL_BOOTSTRAP.md (core Algorithm + Steering Rules)
@@ -136,20 +134,23 @@ async function loadMinimalBootstrap(): Promise<string> {
 		const paiDir = path.join(cwd, ".opencode", "PAI");
 		const bootstrapPath = path.join(paiDir, "MINIMAL_BOOTSTRAP.md");
 
-		if (!fs.existsSync(bootstrapPath)) {
+		// Check if bootstrap exists (async)
+		try {
+			await fs.promises.access(bootstrapPath);
+		} catch {
 			fileLog("MINIMAL_BOOTSTRAP.md not found, using fallback", "warn");
 			return "# PAI Bootstrap\nMinimal context loaded.";
 		}
 
 		const contextParts: string[] = [];
 
-		// 1. Core bootstrap
-		const bootstrapContent = fs.readFileSync(bootstrapPath, "utf-8");
+		// 1. Core bootstrap (async)
+		const bootstrapContent = await fs.promises.readFile(bootstrapPath, "utf-8");
 		contextParts.push(`--- PAI BOOTSTRAP ---\n${bootstrapContent}`);
 
 		// 2. System Steering Rules (if exists)
 		const systemSteeringPath = path.join(paiDir, "AISTEERINGRULES.md");
-		const systemSteering = readFileSafe(systemSteeringPath);
+		const systemSteering = await readFileSafe(systemSteeringPath);
 		if (systemSteering) {
 			contextParts.push(`--- System Steering Rules ---\n${systemSteering}`);
 			fileLog("Loaded System AISTEERINGRULES.md");
@@ -167,7 +168,7 @@ async function loadMinimalBootstrap(): Promise<string> {
 		let userContextLoaded = 0;
 		for (const { file, label } of userFiles) {
 			const filePath = path.join(userDir, file);
-			const content = readFileSafe(filePath);
+			const content = await readFileSafe(filePath);
 			if (content) {
 				contextParts.push(`--- ${label} ---\n${content}`);
 				fileLog(`Loaded USER/${file}`);
@@ -183,17 +184,7 @@ async function loadMinimalBootstrap(): Promise<string> {
 		return `<system-reminder>\nPAI CONTEXT (Lazy Loading Bootstrap)\n\n${fullContext}\n\n---\nSkills load on-demand via OpenCode skill tool. User context auto-loaded if exists.\n</system-reminder>`;
 	} catch (error) {
 		fileLogError("Failed to load minimal bootstrap", error);
-		return "# PAI Bootstrap\nError loading context.";
-	}
-}
-
-		const content = fs.readFileSync(bootstrapPath, "utf-8");
-		const size = Buffer.byteLength(content, "utf-8");
-		fileLog(`Bootstrap loaded: ${size} bytes`);
-
-		return `<system-reminder>\nPAI CONTEXT (Lazy Loading Bootstrap)\n\n${content}\n\n---\nSkills load on-demand via OpenCode skill tool.\n</system-reminder>`;
-	} catch (error) {
-		fileLogError("Failed to load minimal bootstrap", error);
+		// Return null to signal failure - caller should handle
 		return "# PAI Bootstrap\nError loading context.";
 	}
 }
@@ -210,16 +201,11 @@ async function appendEffortToMeta(
 	budget: string
 ): Promise<void> {
 	const metaPath = path.join(sessionPath, "META.yaml");
-	try {
-		let content = await fs.promises.readFile(metaPath, "utf-8");
-		// Only append if not already present
-		if (!content.includes("effort_level:")) {
-			content = content.trimEnd() + `\neffort_level: ${level}\neffort_budget: ${budget}\n`;
-			await fs.promises.writeFile(metaPath, content);
-		}
-	} catch (error) {
-		// Non-blocking — session continues without effort metadata
-		throw error;
+	let content = await fs.promises.readFile(metaPath, "utf-8");
+	// Only append if not already present
+	if (!content.includes("effort_level:")) {
+		content = content.trimEnd() + `\neffort_level: ${level}\neffort_budget: ${budget}\n`;
+		await fs.promises.writeFile(metaPath, content);
 	}
 }
 

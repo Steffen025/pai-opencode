@@ -8,7 +8,7 @@
 **Before (WP1):** 233KB static context loaded at session start
 **After (WP2):** ~7KB bootstrap + on-demand skill loading
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    SESSION START                              │
 │                     (~7KB load)                               │
@@ -72,7 +72,8 @@ Loaded at every session start:
 const skill = await skill_find("Research");
 
 // Use the skill (loads its full SKILL.md)
-await skill_use(skill.id);
+// Note: skill_use expects the skill name, not ID
+await skill_use(skill.name);
 ```
 
 ### 3. Lazy Loading Trigger Examples

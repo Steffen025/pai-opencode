@@ -51,14 +51,14 @@ See full rules: `PAI/AISTEERINGRULES.md`
 
 ## User Identity
 
-Your personal context (loaded when files exist):
+Your personal context (loaded when files exist in `.opencode/PAI/USER/`):
 
 | File | Purpose | Loaded |
 |------|---------|--------|
-| `PAI/USER/ABOUTME.md` | Your background, expertise, goals | ✅ If exists |
-| `PAI/USER/TELOS/TELOS.md` | Life goals, mission, values | ✅ If exists |
-| `PAI/USER/DAIDENTITY.md` | AI assistant name, personality | ✅ If exists |
-| `PAI/USER/AISTEERINGRULES.md` | Personal behavior rules | ✅ If exists |
+| `.opencode/PAI/USER/ABOUTME.md` | Your background, expertise, goals | ✅ If exists |
+| `.opencode/PAI/USER/TELOS/TELOS.md` | Life goals, mission, values | ✅ If exists |
+| `.opencode/PAI/USER/DAIDENTITY.md` | AI assistant name, personality | ✅ If exists |
+| `.opencode/PAI/USER/AISTEERINGRULES.md` | Personal behavior rules | ✅ If exists |
 
 ---
 
@@ -131,7 +131,8 @@ const userInput = "Research this topic for me";
 // 3. Load the skill
 const skill = await skill_find("Research");
 if (skill) {
-  await skill_use(skill.id);
+  // Note: skill_use expects the skill name
+  await skill_use(skill.name);
   // Skill is now available
 }
 ```
@@ -144,7 +145,7 @@ if (skill) {
 
 - **Immediate:** This bootstrap (~7KB)
 - **On-demand:** Skills via `skill_find`/`skill_use`
-- **User context:** Auto-loaded if files exist in `PAI/USER/`
+- **User context:** Auto-loaded if files exist in `.opencode/PAI/USER/`
 - **System docs:** Lazy load from `PAI/` when referenced
 
 ---
