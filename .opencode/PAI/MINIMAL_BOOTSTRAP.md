@@ -64,27 +64,79 @@ Your personal context (loaded when files exist):
 
 ## Lazy Loading — On-Demand Skills
 
-Everything else loads via OpenCode `skill` tool when referenced:
+**CRITICAL: Skill Discovery Registry**
 
-| When User Says | Skill Loaded |
-|----------------|--------------|
-| "Research this topic" | Research SKILL.md |
-| "Agents discuss this" | Agents SKILL.md |
-| "Use Council" | Council SKILL.md |
-| "Create skill for X" | CreateSkill SKILL.md |
-| "Build CLI tool" | CreateCLI SKILL.md |
-| "Process document" | Documents SKILL.md |
-| "Security scan" | WebAssessment SKILL.md |
+Das System muss wissen, welche Skills existieren, um sie nachladen zu können:
 
-## Using the Skill Tool
+### Verfügbare Skills (Discovery Index)
+
+| Skill | Trigger (wann laden) | Pfad |
+|-------|---------------------|------|
+| **Research** | "Research", "investigate", "find information" | `skills/Research/SKILL.md` |
+| **Agents** | "Agents", "spawn agent", "subagent" | `skills/Agents/SKILL.md` |
+| **Council** | "Council", "debate", "discuss", "perspectives" | `skills/Council/SKILL.md` |
+| **CreateSkill** | "Create skill", "new skill", "build skill" | `skills/CreateSkill/SKILL.md` |
+| **CreateCLI** | "Build CLI", "create CLI", "command line tool" | `skills/CreateCLI/SKILL.md` |
+| **Documents** | "Process document", "PDF", "Word", "Excel" | `skills/Documents/SKILL.md` |
+| **KnowledgeExtraction** | "Extract course", "transcribe", "wisdom" | `skills/KnowledgeExtraction/SKILL.md` |
+| **FirstPrinciples** | "First principles", "decompose", "root cause" | `skills/FirstPrinciples/SKILL.md` |
+| **BeCreative** | "Be creative", "deep thinking", "extended reasoning" | `skills/BeCreative/SKILL.md` |
+| **RedTeam** | "Red team", "attack", "critique", "stress test" | `skills/RedTeam/SKILL.md` |
+| **WebAssessment** | "Security scan", "pentest", "vulnerability" | `skills/WebAssessment/SKILL.md` |
+| **Fabric** | "Fabric pattern", "extract wisdom", "summarize" | `skills/Fabric/SKILL.md` |
+| **Blog** | "Blog post", "article", "write content" | `skills/Blog/SKILL.md` |
+| **ContactEnrichment** | "Enrich contact", "verify email", "OSINT" | `skills/ContactEnrichment/SKILL.md` |
+| **OSINT** | "OSINT", "due diligence", "investigate person" | `skills/OSINT/SKILL.md` |
+| **Recon** | "Recon", "reconnaissance", "bug bounty" | `skills/Recon/SKILL.md` |
+| **Apify** | "Scrape Twitter", "Instagram", "LinkedIn", "Google Maps" | `skills/Apify/SKILL.md` |
+| **BrightData** | "Bright Data", "scrape URL", "web scraping" | `skills/BrightData/SKILL.md` |
+| **AnnualReports** | "Annual report", "security report", "threat report" | `skills/AnnualReports/SKILL.md` |
+| **SECUpdates** | "Security news", "breaches", "security updates" | `skills/SECUpdates/SKILL.md` |
+| **PrivateInvestigator** | "Find person", "locate", "skip trace" | `skills/PrivateInvestigator/SKILL.md` |
+| **WarriorPatterns** | "Warrior patterns", "business analysis", "positioning" | `skills/WarriorPatterns/SKILL.md` |
+| **WarriorsWay** | "Warriors Way", "Core 4", "4Ps", "breakthrough" | `skills/WarriorsWay/SKILL.md` |
+| **Telos** | "TELOS", "life goals", "projects", "books" | `skills/Telos/SKILL.md` |
+| **Aphorisms** | "Aphorism", "quote", "saying" | `skills/Aphorisms/SKILL.md` |
+
+### Agent Types (via Task Tool)
+
+| Agent | Verwendung | Invocation |
+|-------|-----------|------------|
+| **Algorithm** | ISC-specialized work | `Task: subagent_type=Algorithm` |
+| **Engineer** | Build, implement, code | `Task: subagent_type=Engineer` |
+| **Architect** | Design, structure, system thinking | `Task: subagent_type=Architect` |
+| **Pentester** | Security testing, vuln scan | `Task: subagent_type=Pentester` |
+| **Designer** | UI/UX design, Figma | `Task: subagent_type=Designer` |
+| **QATester** | Testing, verification | `Task: subagent_type=QATester` |
+| **BrowserAgent** | Browser automation, screenshots | `Task: subagent_type=BrowserAgent` |
+| **UIReviewer** | UI review, accessibility | `Task: subagent_type=UIReviewer` |
+| **Artist** | Visual content, images | `Task: subagent_type=Artist` |
+| **Writer** | Technical writing, content | `Task: subagent_type=Writer` |
+| **DeepResearcher** | Multi-model research | `Task: subagent_type=DeepResearcher` |
+| **CodexResearcher** | Code archaeology, technical research | `Task: subagent_type=CodexResearcher` |
+| **ClaudeResearcher** | Anthropic ecosystem research | `Task: subagent_type=ClaudeResearcher` |
+| **GeminiResearcher** | Multi-perspective research | `Task: subagent_type=GeminiResearcher` |
+| **PerplexityResearcher** | Real-time web research | `Task: subagent_type=PerplexityResearcher` |
+| **GrokResearcher** | Contrarian, fact-based research | `Task: subagent_type=GrokResearcher` |
+
+### Skill Discovery Pattern
 
 ```typescript
-// Find and use a skill
+// 1. User Input analysieren auf Skill-Trigger
+const userInput = "Research this topic for me";
+
+// 2. Passenden Skill aus Registry identifizieren
+// Trigger "Research" → Skill: Research
+
+// 3. Skill nachladen
 const skill = await skill_find("Research");
-await skill_use(skill.id);
+if (skill) {
+  await skill_use(skill.id);
+  // Skill ist jetzt verfügbar
+}
 ```
 
-Skills auto-discover from `.opencode/skills/<name>/SKILL.md`.
+**Wichtig:** Ohne diese Registry weiß das System nicht, dass es z.B. "Research" oder "Agents" gibt!
 
 ---
 

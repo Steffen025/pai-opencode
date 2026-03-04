@@ -1,6 +1,7 @@
 # Context Routing System
 
 > Lazy-loading context routing for PAI-OpenCode v3.0+
+> **CRITICAL:** Das Bootstrap enthält einen "Skill Discovery Index" - ohne diesen weiß das System nicht, welche Skills existieren!
 
 ## Architecture Overview
 
@@ -14,11 +15,13 @@
 ├─────────────────────────────────────────────────────────────┤
 │  MINIMAL_BOOTSTRAP.md                                       │
 │  ├── Algorithm Core (OBSERVE→LEARN)                         │
-│  ├── Identity Reference                                     │
-│  └── Routing Instructions                                   │
+│  ├── System Steering Rules                                  │
+│  ├── User Identity (if exists)                              │
+│  └── SKILL DISCOVERY INDEX ⬅️ Wichtig!                       │
+│      (Liste aller Skills mit Triggern)                       │
 └─────────────────────────────────────────────────────────────┘
                               │
-                              ▼ (on-demand)
+                              ▼ (on-demand via Trigger-Erkennung)
         ┌─────────────────────┼─────────────────────┐
         ▼                     ▼                     ▼
    ┌─────────┐          ┌─────────┐          ┌─────────┐
@@ -30,6 +33,15 @@
    SKILL.md             SKILL.md             SKILL.md
 ```
 
+## Warum Skill Discovery Index im Bootstrap?
+
+**Problem:** Wenn das System nicht weiß, dass es z.B. "Research" oder "Agents" gibt, kann es diese Skills nicht nachladen!
+
+**Lösung:** Der Bootstrap enthält eine kompakte Registry aller verfügbaren Skills mit:
+- Skill-Name
+- Trigger-Wörter (wann laden)
+- Pfad zur SKILL.md
+
 ## Loading Strategies
 
 ### 1. Bootstrap Loading (Immediate)
@@ -38,16 +50,82 @@ Loaded at every session start:
 
 | File | Size | Purpose |
 |------|------|---------|
-| `MINIMAL_BOOTSTRAP.md` | ~5KB | Routing and identity reference |
-| Algorithm v3.7.0 | ~15KB | Core 7-phase methodology |
-| **Total** | **~20KB** | Essential only |
+| `MINIMAL_BOOTSTRAP.md` | ~5KB | Algorithm + Steering Rules + Skill Discovery |
+| System AISTEERINGRULES.md | ~2KB | Verhaltensregeln (wenn vorhanden) |
+| User Identity | ~3-8KB | ABOUTME, TELOS, DAIDENTITY (wenn vorhanden) |
+| **Total** | **~10-15KB** | Minimal Nützlich |
 
-### 2. Skill Loading (On-Demand)
+### 2. Skill Discovery & Loading (On-Demand)
 
-Use OpenCode native `skill` tool:
-
+**Schritt 1: Trigger-Erkennung**
 ```typescript
-// Find a skill by name
+// User Input: "Research this topic for me"
+// ↓
+// Pattern-Match gegen Skill Discovery Index
+// ↓
+// Trigger "Research" gefunden → Lade Research Skill
+```
+
+**Schritt 2: Skill nachladen**
+```typescript
+// Find a skill by name (aus Discovery Index bekannt)
+const skill = await skill_find("Research");
+
+// Use the skill (loads its full SKILL.md)
+await skill_use(skill.id);
+```
+
+### 3. Lazy Loading Trigger-Beispiele
+
+| User sagt | Skill geladen | Trigger-Wort |
+|-----------|--------------|--------------|
+| "Research this topic" | Research | "Research" |
+| "Agents discuss this" | Agents | "Agents" |
+| "Use Council" | Council | "Council" |
+| "Build CLI tool" | CreateCLI | "CLI" |
+| "Security scan" | WebAssessment | "Security" |
+
+## Skill Discovery Index im Bootstrap
+
+Der Bootstrap enthält eine kompakte Tabelle:
+
+```markdown
+| Skill | Trigger | Pfad |
+|-------|---------|------|
+| Research | "Research", "investigate" | skills/Research/SKILL.md |
+| Agents | "Agents", "spawn agent" | skills/Agents/SKILL.md |
+| Council | "Council", "debate" | skills/Council/SKILL.md |
+| ... | ... | ... |
+```
+
+**Vorteile:**
+- ✅ System weiß, welche Skills existieren
+- ✅ Pattern-Matching gegen User-Input möglich
+- ✅ Lazy Loading funktioniert
+- ✅ Keine 233KB statische Loading nötig
+
+## Migration from WP1
+
+### Was sich geändert hat
+
+| Vorher | Nachher |
+|--------|---------|
+| 233KB alles geladen | ~15KB Bootstrap + Lazy Loading |
+| Kein Discovery-Mechanismus | Skill Discovery Index im Bootstrap |
+| Skills immer da | Skills nur bei Bedarf geladen |
+
+### Was im Bootstrap bleibt (Minimal Nützlich)
+
+1. **Algorithm Core** - Wie PAI funktioniert
+2. **System Steering Rules** - Verhaltensregeln
+3. **User Identity** - Wer der User ist (wenn vorhanden)
+4. **Skill Discovery Index** - Welche Skills gibt es
+
+### Was Lazy-Loaded wird
+
+- Einzelne Skills (nur wenn Trigger erkannt)
+- System-Dokumente (MemorySystem, HookSystem, etc.)
+- Projekt-spezifische Kontexte
 const researchSkill = await skill_find("Research");
 
 // Use the skill (loads its context)
