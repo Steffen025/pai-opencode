@@ -330,7 +330,7 @@ After migration, verify:
 - [ ] Agents work (`@Intern hello`)
 - [ ] Security blocks dangerous commands
 - [ ] MEMORY preserved (check `.opencode/MEMORY/`)
-- [ ] USER customizations intact (check `.opencode/USER/`)
+- [ ] USER customizations intact (check `.opencode/skills/PAI/USER/`)
 - [ ] Debug log shows plugin loaded
 
 ---
