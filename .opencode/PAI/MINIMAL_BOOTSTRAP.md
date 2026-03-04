@@ -19,7 +19,18 @@
 - Voice curls at every phase (main agent only)
 - Direct tools before agents (Grep/Glob/Read <2s)
 
-See full Algorithm: `PAI/Algorithm/v3.7.0.md`
+**Full Algorithm:** This bootstrap contains the Algorithm essence. For complex tasks requiring detailed decomposition, PRD formatting, or extended effort levels:
+
+```typescript
+// Load full Algorithm details when needed:
+const algorithmSkill = await skill_find("Algorithm");
+if (algorithmSkill) {
+  await skill_use(algorithmSkill.name);
+  // Full 383-line Algorithm v3.7.0 now available
+}
+```
+
+Or directly read: `PAI/Algorithm/v3.7.0.md`
 
 ---
 
@@ -97,6 +108,7 @@ The system must know which skills exist to load them:
 | **WarriorsWay** | "Warriors Way", "Core 4", "4Ps", "breakthrough" | `skills/WarriorsWay/SKILL.md` |
 | **Telos** | "TELOS", "life goals", "projects", "books" | `skills/Telos/SKILL.md` |
 | **Aphorisms** | "Aphorism", "quote", "saying" | `skills/Aphorisms/SKILL.md` |
+| **Algorithm** | "Algorithm details", "full algorithm", "PRD format", "ISC decomposition", "Extended effort", "Advanced effort" | `PAI/Algorithm/v3.7.0.md` |
 
 ### Agent Types (via Task Tool)
 

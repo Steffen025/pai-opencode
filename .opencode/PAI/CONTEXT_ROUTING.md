@@ -50,10 +50,12 @@ Loaded at every session start:
 
 | File | Size | Purpose |
 |------|------|---------|
-| `MINIMAL_BOOTSTRAP.md` | ~5KB | Algorithm + Steering Rules + Skill Discovery |
+| `MINIMAL_BOOTSTRAP.md` | ~7KB | Algorithm **Essence** + Steering Rules + Skill Discovery |
 | System AISTEERINGRULES.md | ~2KB | Behavior rules (if exists) |
 | User Identity | ~3-8KB | ABOUTME, TELOS, DAIDENTITY (if exists) |
-| **Total** | **~10-15KB** | Minimal Useful |
+| **Total** | **~12-17KB** | Minimal Useful |
+
+**Note:** The Algorithm essence covers 95% of use cases. For Extended/Advanced/Deep effort requiring detailed ISC decomposition, the full Algorithm v3.7.0 (383 lines) loads on-demand via `skill_find("Algorithm")` or by reading `PAI/Algorithm/v3.7.0.md`.
 
 ### 2. Skill Discovery & Loading (On-Demand)
 
