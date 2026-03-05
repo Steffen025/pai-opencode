@@ -86,14 +86,14 @@ The system must know which skills exist to load them:
 |-------|------------------------|------|
 | **Research** | "Research", "investigate", "find information" | `skills/Research/SKILL.md` |
 | **Agents** | "Agents", "spawn agent", "subagent" | `skills/Agents/SKILL.md` |
-| **Council** | "Council", "debate", "discuss", "perspectives" | `skills/Council/SKILL.md` |
-| **CreateSkill** | "Create skill", "new skill", "build skill" | `skills/CreateSkill/SKILL.md` |
-| **CreateCLI** | "Build CLI", "create CLI", "command line tool" | `skills/CreateCLI/SKILL.md` |
-| **Documents** | "Process document", "PDF", "Word", "Excel" | `skills/Documents/SKILL.md` |
+| **Council** | "Council", "debate", "discuss", "perspectives" | `skills/Thinking/Council/SKILL.md` |
+| **CreateSkill** | "Create skill", "new skill", "build skill" | `skills/Utilities/CreateSkill/SKILL.md` |
+| **CreateCLI** | "Build CLI", "create CLI", "command line tool" | `skills/Utilities/CreateCLI/SKILL.md` |
+| **Documents** | "Process document", "PDF", "Word", "Excel" | `skills/Utilities/Documents/SKILL.md` |
 | **KnowledgeExtraction** | "Extract course", "transcribe", "wisdom" | `skills/KnowledgeExtraction/SKILL.md` |
-| **FirstPrinciples** | "First principles", "decompose", "root cause" | `skills/FirstPrinciples/SKILL.md` |
-| **BeCreative** | "Be creative", "deep thinking", "extended reasoning" | `skills/BeCreative/SKILL.md` |
-| **RedTeam** | "Red team", "attack", "critique", "stress test" | `skills/RedTeam/SKILL.md` |
+| **FirstPrinciples** | "First principles", "decompose", "root cause" | `skills/Thinking/FirstPrinciples/SKILL.md` |
+| **BeCreative** | "Be creative", "deep thinking", "extended reasoning" | `skills/Thinking/BeCreative/SKILL.md` |
+| **RedTeam** | "Red team", "attack", "critique", "stress test" | `skills/Thinking/RedTeam/SKILL.md` |
 | **WebAssessment** | "Security scan", "pentest", "vulnerability" | `skills/Security/WebAssessment/SKILL.md` |
 | **Recon** | "Recon", "reconnaissance", "bug bounty" | `skills/Security/Recon/SKILL.md` |
 | **Apify** | "Scrape Twitter", "Instagram", "LinkedIn", "Google Maps" | `skills/Scraping/Apify/SKILL.md` |
