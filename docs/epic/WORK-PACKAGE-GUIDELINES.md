@@ -182,16 +182,17 @@ grep -r "skills/OldSkillName/" .opencode/ --include="*.md" --include="*.ts"
 - ✅ Duplicate content blocks
 
 **Likely Hallucinations (Verify Against PAI 4.0.3):**
-- ❌ "MANDATORY/OPTIONAL sections required" - Not in PAI 4.0.3
-- ❌ "YAML frontmatter required" - Not in PAI 4.0.3
-- ❌ "Mermaid diagrams required" - Nice-to-have, not required
-- ❌ "Strict formatting requirements" - Check reference first
+- ⚠️ "MANDATORY/OPTIONAL sections required" - Verify in PAI 4.0.3 first
+- ⚠️ "YAML frontmatter required" - Verify in PAI 4.0.3 first  
+- ⚠️ "Mermaid diagrams required" - Verify if required or nice-to-have
+- ⚠️ "Strict formatting requirements" - Always check reference first
 
 ### Response Protocol
 
 1. **Verify against PAI 4.0.3** - Does the reference have it?
-2. **If reference doesn't have it** - Likely hallucination, document why not fixing
-3. **If reference has it** - Real issue, fix it
+2. **If reference doesn't have it** - Verify if it's a legitimate requirement or PAI-OpenCode specific
+3. **If legitimate for PAI-OpenCode** - Consider implementing
+4. **If not in reference and not needed** - Document why not fixing
 4. **If unsure** - Document in commit message, proceed cautiously
 
 ---
@@ -215,11 +216,11 @@ grep -r "skills/OldSkillName/" .opencode/ --include="*.md" --include="*.ts"
 
 | Metric | WP3 Target | WP3 Actual |
 |--------|------------|------------|
-| Categories | 11 (all) | 8 (A + B) |
-| Skills moved | ~25 | 14 |
-| Files changed | ~300 | 327 |
-| Commits | 3 planned | 8 actual |
-| Review cycles | 3 | 2 |
+| Categories | 11 (all) | **10 (A + B + C)** |
+| Skills moved | ~25 | **32** |
+| Files changed | ~300 | **881** |
+| Commits | 3 planned | **10** |
+| Review cycles | 3 | **3** |
 
 ---
 
@@ -246,12 +247,9 @@ grep -r "skills/OldSkillName/" .opencode/ --include="*.md" --include="*.ts"
 ## 9. Quick Reference: Common Commands
 
 ```bash
-# Check current skill structure
-ls .opencode/skills/ | sort
-
 # Create category and move skills
 mkdir -p .opencode/skills/CategoryName
-mv .opencode/skills/SkillName .opencode/skills/CategoryName/
+git mv .opencode/skills/SkillName .opencode/skills/CategoryName/
 
 # Find path references that need updating
 grep -r "skills/OldName/" .opencode/ --include="*.md" --include="*.ts"
