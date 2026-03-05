@@ -97,7 +97,7 @@ The bootstrap contains a compact table:
 |-------|---------|------|
 | Research | "Research", "investigate" | skills/Research/SKILL.md |
 | Agents | "Agents", "spawn agent" | skills/Agents/SKILL.md |
-| Council | "Council", "debate" | skills/Thinking/Council/SKILL.md |
+| Council | "Council", "debate" | skills/Council/SKILL.md |
 | ... | ... | ... |
 ```
 
