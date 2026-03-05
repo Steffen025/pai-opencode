@@ -79,19 +79,19 @@ WebAssessment uses tools from the Recon skill:
 
 ```bash
 # Corporate structure for scope
-bun ~/.opencode/skills/Recon/Tools/CorporateStructure.ts target.com
+bun ~/.opencode/skills/Security/Recon/Tools/CorporateStructure.ts target.com
 
 # Subdomain enumeration
-bun ~/.opencode/skills/Recon/Tools/SubdomainEnum.ts target.com
+bun ~/.opencode/skills/Security/Recon/Tools/SubdomainEnum.ts target.com
 
 # Endpoint discovery from JavaScript
-bun ~/.opencode/skills/Recon/Tools/EndpointDiscovery.ts https://target.com
+bun ~/.opencode/skills/Security/Recon/Tools/EndpointDiscovery.ts https://target.com
 
 # Port scanning
-bun ~/.opencode/skills/Recon/Tools/PortScan.ts target.com
+bun ~/.opencode/skills/Security/Recon/Tools/PortScan.ts target.com
 
 # Path discovery
-bun ~/.opencode/skills/Recon/Tools/PathDiscovery.ts https://target.com
+bun ~/.opencode/skills/Security/Recon/Tools/PathDiscovery.ts https://target.com
 ```
 
 ## UnderstandApplication Output
