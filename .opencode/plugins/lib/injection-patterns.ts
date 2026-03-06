@@ -115,7 +115,30 @@ export type InjectionCategory =
 export interface InjectionMatch {
 	category: InjectionCategory;
 	pattern: RegExp;
-	matchedText: string;
+	matchedText: string; // REDACTED - never stores full secrets
+	matchPosition: { start: number; end: number };
+	originalLength: number;
+}
+
+/**
+ * Redact sensitive content from matched text
+ * Shows only first/last 4 chars with length info for PII patterns
+ *
+ * @param text - The matched text to redact
+ * @param category - The injection category
+ * @returns Redacted preview
+ */
+function redactMatchedText(text: string, category: InjectionCategory): string {
+	// Only redact PII category (API keys, tokens)
+	if (category !== "pii_credential_leak") {
+		return text.length > 50 ? `${text.slice(0, 50)}...` : text;
+	}
+
+	// For PII: show first 4 + ... + last 4 + length info
+	if (text.length <= 12) {
+		return "[REDACTED]";
+	}
+	return `${text.slice(0, 4)}...[REDACTED:${text.length}]...${text.slice(-4)}`;
 }
 
 /**
@@ -139,7 +162,16 @@ export function detectInjections(content: string): InjectionMatch[] {
 		for (const pattern of patterns) {
 			const match = content.match(pattern);
 			if (match) {
-				matches.push({ category, pattern, matchedText: match[0] });
+				// Calculate position
+				const start = match.index ?? 0;
+				const end = start + match[0].length;
+				matches.push({
+					category,
+					pattern,
+					matchedText: redactMatchedText(match[0], category),
+					matchPosition: { start, end },
+					originalLength: match[0].length,
+				});
 				break; // One match per category is enough
 			}
 		}
