@@ -1,21 +1,37 @@
 /**
  * PAI-OpenCode Unified Plugin
  *
- * Single plugin that combines all PAI v2.4 hook functionality:
- * - Context injection (SessionStart equivalent)
- * - Security validation (PreToolUse blocking equivalent)
- * - Work tracking (AutoWorkCreation + SessionSummary)
- * - Rating capture (ExplicitRatingCapture)
- * - Agent output capture (AgentOutputCapture)
- * - Learning extraction (WorkCompletionLearning)
+ * Single plugin that combines all PAI hook functionality across two layers:
+ *
+ * SCHICHT 1 — Hooks (active, blocking):
+ * - Context injection       (session.systemPrompt)
+ * - Security validation     (permission.ask + tool.execute.before)
+ * - Work tracking           (chat.message)
+ * - Tool capture            (tool.execute.after)
+ *
+ * SCHICHT 2 — Event Bus (passive, via event handler):
+ * Session lifecycle:
+ * - session.created         → skill-restore, version-check, session-info logging
+ * - session.ended/idle      → learnings, integrity, work-complete, cleanup, relationship-memory
+ * - session.compacted       → urgent learning rescue before context loss
+ * - session.updated         → session title tracking
+ * - session.error           → error diagnostics
+ *
+ * Message events:
+ * - message.updated         → ISC validation, voice, response-capture, rating, sentiment
+ *
+ * System events:
+ * - permission.asked        → full permission audit log
+ * - command.executed        → /command usage tracking
+ * - installation.update.available → native OpenCode update notification
  *
  * v3.0 HANDLERS (added 2026-02-17):
- * - Algorithm state tracking
- * - Agent execution validation
- * - Skill invocation validation
- * - Version update checking
- * - System integrity checks
- * - Effort level detection
+ * - Algorithm state tracking, agent execution guard, skill guard,
+ *   version check, integrity check, effort level detection
+ *
+ * v3.0-WP-A HANDLERS (added 2026-03-06):
+ * - PRD sync, session cleanup, last response cache,
+ *   relationship memory, question tracking
  *
  * IMPORTANT: This plugin NEVER uses console.log!
  * All logging goes through file-logger.ts to prevent TUI corruption.
@@ -75,6 +91,18 @@ import {
 	isTrivialMessage,
 } from "./handlers/work-tracker";
 import { clearLog, fileLog, fileLogError } from "./lib/file-logger";
+// WP-A: New handlers (PR #A)
+import { syncPRDToRegistry } from "./handlers/prd-sync";
+import { cleanupSession } from "./handlers/session-cleanup";
+import {
+	cacheLastResponse,
+	readLastResponse,
+} from "./handlers/last-response-cache";
+import { captureRelationshipMemory } from "./handlers/relationship-memory";
+import {
+	trackQuestionAnswered,
+	extractAskUserQuestionAnswer,
+} from "./handlers/question-tracking";
 
 /**
  * MESSAGE DEDUPLICATION CACHE
@@ -502,6 +530,53 @@ export const PaiUnified: Plugin = async (ctx) => {
 						error,
 					);
 				}
+
+				// === PRD SYNC (WP-A) ===
+				// When AI writes/edits a PRD.md in MEMORY/WORK/, sync frontmatter
+				// to prd-registry.json for dashboard and session continuity.
+				// See ADR-009.
+				if (
+					input.tool === "write_file" ||
+					input.tool === "edit_file" ||
+					input.tool === "str_replace_based_edit_tool" ||
+					input.tool.toLowerCase().includes("write") ||
+					input.tool.toLowerCase().includes("edit")
+				) {
+					try {
+						const filePath =
+							(output as any).args?.file_path ||
+							(output as any).args?.path ||
+							(input as any).args?.file_path ||
+							"";
+						if (filePath) {
+							await syncPRDToRegistry(filePath);
+						}
+					} catch (error) {
+						fileLogError("[PRDSync] Sync failed (non-blocking)", error);
+					}
+				}
+
+				// === QUESTION TRACKING (WP-A) ===
+				// When AskUserQuestion tool completes, record the Q&A pair.
+				try {
+					const args = (output as any).args || (input as any).args || {};
+					const qa = extractAskUserQuestionAnswer(
+						input.tool,
+						args,
+						output.result,
+					);
+					if (qa) {
+						const sessionId = (input as any).sessionId || "unknown";
+						await trackQuestionAnswered(
+							qa.question,
+							qa.answer,
+							sessionId,
+							(input as any).callID,
+						);
+					}
+				} catch (error) {
+					fileLogError("[QuestionTracking] Track failed (non-blocking)", error);
+				}
 			} catch (error) {
 				fileLogError("Tool after hook failed", error);
 			}
@@ -768,6 +843,26 @@ export const PaiUnified: Plugin = async (ctx) => {
 						fileLogError("Update counts failed (non-blocking)", error);
 					}
 
+					// === SESSION CLEANUP (WP-A) ===
+					// Mark work directory as COMPLETED, clear state, clean session-names.
+					// Runs AFTER learning extraction (uses state before clear). See ADR-009.
+					try {
+						const sessionId = (input as any).sessionID || undefined;
+						await cleanupSession(sessionId);
+					} catch (error) {
+						fileLogError("[SessionCleanup] Cleanup failed (non-blocking)", error);
+					}
+
+					// === RELATIONSHIP MEMORY (WP-A) ===
+					// Extract relationship notes from session into MEMORY/RELATIONSHIP/
+					// Note: Minimal context for now — future enhancement can collect
+					// session messages in a buffer and pass them here.
+					try {
+						await captureRelationshipMemory([], []);
+					} catch (error) {
+						fileLogError("[RelationshipMemory] Capture failed (non-blocking)", error);
+					}
+
 					// Emit session end
 					emitSessionEnd().catch(() => {});
 				}
@@ -886,6 +981,16 @@ export const PaiUnified: Plugin = async (ctx) => {
 									error,
 								);
 							}
+
+							// === LAST RESPONSE CACHE (WP-A) ===
+							// Cache response so ImplicitSentiment has context on next user message.
+							// OpenCode-native replacement for Claude-Code transcript_path pattern.
+							// See ADR-009.
+							try {
+								await cacheLastResponse(responseText);
+							} catch (error) {
+								fileLogError("[LastResponseCache] Cache write failed (non-blocking)", error);
+							}
 						}
 					}
 				}
@@ -954,9 +1059,13 @@ export const PaiUnified: Plugin = async (ctx) => {
 							// Only run if NOT an explicit rating
 							try {
 								const sessionId = (input as any).sessionID || "unknown";
+								// Read last response for context (ADR-009: OpenCode-native replacement
+								// for Claude-Code's transcriptPath pattern)
+								const lastResponse = await readLastResponse().catch(() => null) ?? undefined;
 								const sentimentResult = await handleImplicitSentiment(
 									userText,
 									sessionId,
+									lastResponse,
 								);
 
 								// Emit implicit sentiment if captured
@@ -1016,6 +1125,98 @@ export const PaiUnified: Plugin = async (ctx) => {
 						}
 					}
 				}
+
+				// ─── BUS EVENTS (WP-A) ───────────────────────────────────────────────
+
+				// === SESSION COMPACTED ===
+				// OpenCode compresses context when token limit reached.
+				// CRITICAL moment — rescue learnings BEFORE context is lost.
+				if (eventType === "session.compacted") {
+					fileLog("=== Context Compaction Detected — rescuing learnings ===", "info");
+					try {
+						const learningResult = await extractLearningsFromWork();
+						if (learningResult.success && learningResult.learnings.length > 0) {
+							fileLog(
+								`[Compaction] Rescued ${learningResult.learnings.length} learnings`,
+								"info",
+							);
+						} else {
+							fileLog("[Compaction] No learnings to rescue", "debug");
+						}
+					} catch (error) {
+						fileLogError("[Compaction] Learning rescue failed", error);
+					}
+					fileLog(`[Compaction] Compacted at ${new Date().toISOString()}`, "info");
+				}
+
+				// === SESSION ERROR ===
+				// Track session errors for debugging and resilience monitoring.
+				if (eventType === "session.error") {
+					const eventData = input.event as any;
+					const errMsg =
+						eventData?.properties?.error ||
+						eventData?.properties?.message ||
+						"unknown error";
+					const sessionId =
+						eventData?.properties?.sessionID ||
+						eventData?.properties?.id ||
+						"unknown";
+					fileLog(`[SessionError] Session ${sessionId}: ${errMsg}`, "error");
+				}
+
+				// === PERMISSION AUDIT LOG ===
+				// Full audit log of ALL permission requests (not just blocked ones).
+				// Gives complete picture of what OpenCode is doing. Complements
+				// permission.ask hook (Schicht 1) which only sees blocking decisions.
+				if (eventType === "permission.asked") {
+					const eventData = input.event as any;
+					const props = eventData?.properties || {};
+					const permId = props.id || "unknown";
+					const permission = props.permission || "unknown";
+					const patterns = (props.patterns || []).slice(0, 3).join(", ") || "none";
+					const via = props.tool ? `tool/${props.tool.callID}` : "no-tool";
+					fileLog(
+						`[PermissionAudit] id=${permId} permission=${permission} patterns=[${patterns}] via=${via}`,
+						"info",
+					);
+				}
+
+				// === COMMAND TRACKING ===
+				// Track /command usage for analytics and debugging.
+				if (eventType === "command.executed") {
+					const eventData = input.event as any;
+					const props = eventData?.properties || {};
+					const cmdName = props.name || "unknown";
+					const cmdArgs = (props.arguments || "").slice(0, 100);
+					fileLog(
+						`[CommandTracker] /${cmdName}${cmdArgs ? ` ${cmdArgs}` : ""}`,
+						"info",
+					);
+				}
+
+				// === OPENCODE UPDATE AVAILABLE ===
+				// Native push notification when a new OpenCode version is available.
+				// Complements our check-version.ts (which checks PAI-OpenCode releases).
+				if (eventType === "installation.update.available") {
+					const eventData = input.event as any;
+					const version =
+						eventData?.properties?.version ||
+						eventData?.properties?.tag ||
+						"unknown";
+					fileLog(`[UpdateAvailable] OpenCode ${version} available`, "info");
+				}
+
+				// === SESSION UPDATED (title tracking) ===
+				// When OpenCode renames/updates a session, capture the new title.
+				if (eventType === "session.updated") {
+					const eventData = input.event as any;
+					const info = eventData?.properties?.info || {};
+					if (info.title) {
+						fileLog(`[SessionTitle] Updated to: "${info.title}"`, "info");
+					}
+				}
+
+				// ─── END BUS EVENTS ──────────────────────────────────────────────────
 
 				// Log all events for debugging
 				fileLog(`Event: ${eventType}`, "debug");

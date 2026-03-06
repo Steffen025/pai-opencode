@@ -146,59 +146,24 @@ function isExplicitRating(prompt: string): boolean {
 }
 
 /**
- * Get recent conversation context from transcript
+ * Format last assistant response as conversation context.
+ *
+ * OpenCode-native replacement for Claude-Code's transcript_path pattern.
+ * Instead of reading a JSONL file, we receive the last response directly
+ * from last-response-cache.ts (captured via message.updated event).
+ *
+ * See ADR-009 for rationale.
  */
-function getRecentContext(transcriptPath: string, maxTurns: number = 3): string {
-  try {
-    if (!transcriptPath || !existsSync(transcriptPath)) return '';
+function formatLastResponseAsContext(lastResponse?: string): string {
+  if (!lastResponse || lastResponse.trim().length === 0) return '';
 
-    const content = readFileSync(transcriptPath, 'utf-8');
-    const lines = content.trim().split('\n');
+  // Extract SUMMARY line if present (most informative snippet)
+  const summaryMatch = lastResponse.match(/(?:📋\s*SUMMARY:|SUMMARY:)\s*([^\n]+)/i);
+  const snippet = summaryMatch
+    ? summaryMatch[1].trim()
+    : lastResponse.slice(0, 200).trim();
 
-    const turns: { role: string; text: string }[] = [];
-
-    for (const line of lines) {
-      if (!line.trim()) continue;
-      try {
-        const entry = JSON.parse(line);
-
-        if (entry.type === 'user' && entry.message?.content) {
-          let text = '';
-          if (typeof entry.message.content === 'string') {
-            text = entry.message.content;
-          } else if (Array.isArray(entry.message.content)) {
-            text = entry.message.content
-              .filter((c: any) => c.type === 'text')
-              .map((c: any) => c.text)
-              .join(' ');
-          }
-          if (text.trim()) {
-            turns.push({ role: 'User', text: text.slice(0, 200) });
-          }
-        }
-
-        if (entry.type === 'assistant' && entry.message?.content) {
-          const text = typeof entry.message.content === 'string'
-            ? entry.message.content
-            : Array.isArray(entry.message.content)
-              ? entry.message.content.filter((c: any) => c.type === 'text').map((c: any) => c.text).join(' ')
-              : '';
-          if (text) {
-            const summaryMatch = text.match(/SUMMARY:\s*([^\n]+)/i);
-            const shortText = summaryMatch ? summaryMatch[1] : text.slice(0, 150);
-            turns.push({ role: 'Assistant', text: shortText });
-          }
-        }
-      } catch {}
-    }
-
-    const recentTurns = turns.slice(-maxTurns);
-    if (recentTurns.length === 0) return '';
-
-    return recentTurns.map(t => `${t.role}: ${t.text}`).join('\n');
-  } catch {
-    return '';
-  }
+  return `Assistant (previous response): ${snippet}`;
 }
 
 /**
@@ -248,7 +213,7 @@ function captureLowRatingLearning(
   rating: number,
   sentimentSummary: string,
   detailedContext: string,
-  transcriptPath: string
+  lastResponse?: string  // OpenCode-native: direct response text (see ADR-009)
 ): void {
   if (rating >= 6) return;
 
@@ -260,28 +225,10 @@ function captureLowRatingLearning(
     mkdirSync(learningsDir, { recursive: true });
   }
 
-  // Get response context
-  let responseContext = '';
-  try {
-    if (transcriptPath && existsSync(transcriptPath)) {
-      const content = readFileSync(transcriptPath, 'utf-8');
-      const lines = content.trim().split('\n');
-      for (const line of lines) {
-        try {
-          const entry = JSON.parse(line);
-          if (entry.type === 'assistant' && entry.message?.content) {
-            const text = typeof entry.message.content === 'string'
-              ? entry.message.content
-              : Array.isArray(entry.message.content)
-                ? entry.message.content.filter((c: any) => c.type === 'text').map((c: any) => c.text).join(' ')
-                : '';
-            if (text) responseContext = text;
-          }
-        } catch {}
-      }
-      responseContext = responseContext.slice(0, 500);
-    }
-  } catch {}
+  // Use last response directly (OpenCode-native, from last-response-cache.ts)
+  const responseContext = lastResponse
+    ? lastResponse.slice(0, 500)
+    : '';
 
   const timestamp = getFilenameTimestamp();
   const filename = `${timestamp}_LEARNING_sentiment-rating-${rating}.md`;
@@ -338,17 +285,20 @@ This response triggered a ${rating}/10 implicit rating based on detected user se
 }
 
 /**
- * Handle implicit sentiment capture for a user prompt
+ * Handle implicit sentiment capture for a user prompt.
+ *
+ * OpenCode-native version: receives lastResponse directly instead of
+ * a transcriptPath (Claude-Code pattern). See ADR-009.
  *
  * @param prompt - The user's message text
  * @param sessionId - Current session identifier
- * @param transcriptPath - Optional path to conversation transcript (for context)
+ * @param lastResponse - Optional: last assistant response (from last-response-cache.ts)
  * @returns Sentiment analysis result or null
  */
 export async function handleImplicitSentiment(
   prompt: string,
   sessionId: string,
-  transcriptPath?: string
+  lastResponse?: string  // OpenCode-native (replaces transcriptPath — see ADR-009)
 ): Promise<{ rating: number | null; sentiment: string; confidence: number } | null> {
   try {
     fileLog('[ImplicitSentiment] Handler started', 'info');
@@ -364,7 +314,11 @@ export async function handleImplicitSentiment(
       return null;
     }
 
-    const context = transcriptPath ? getRecentContext(transcriptPath) : '';
+    // Build context from last response (OpenCode-native, no JSONL parsing needed)
+    const context = formatLastResponseAsContext(lastResponse);
+    if (context) {
+      fileLog('[ImplicitSentiment] Using last-response context for analysis', 'debug');
+    }
 
     const analysisPromise = analyzeSentiment(prompt, context);
     const timeoutPromise = new Promise<null>((resolve) =>
@@ -402,12 +356,12 @@ export async function handleImplicitSentiment(
 
     writeImplicitRating(entry);
 
-    if (sentiment.rating < 6 && transcriptPath) {
+    if (sentiment.rating < 6) {
       captureLowRatingLearning(
         sentiment.rating,
         sentiment.summary,
         sentiment.detailed_context || '',
-        transcriptPath
+        lastResponse  // Pass directly (OpenCode-native)
       );
     }
 

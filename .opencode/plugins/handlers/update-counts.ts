@@ -182,7 +182,6 @@ export async function handleUpdateCounts(): Promise<void> {
   }
 }
 
-// Allow running standalone to seed initial counts
-if (import.meta.main) {
-  handleUpdateCounts().then(() => process.exit(0));
-}
+// NOTE: In OpenCode, this module is always imported (never run directly).
+// import.meta.main is always false — standalone execution not supported.
+// Run: bun .opencode/skills/PAI/Tools/GetCounts.ts to update counts manually.
