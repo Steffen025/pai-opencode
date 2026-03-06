@@ -112,17 +112,90 @@ export const MyPlugin: Plugin = async (ctx) => {
 export default MyPlugin;
 ```
 
-### 2. Available Events
+### 2. Available Hooks (Full Interface)
 
-| Event | When Triggered | Use For |
-|-------|----------------|---------|
-| `experimental.chat.system.transform` | Session start | Context injection |
-| `tool.execute.before` | Before tool runs | Validation, blocking |
-| `tool.execute.after` | After tool runs | Logging, learning |
-| `chat.message` | User/assistant message | Message processing |
-| `event` | Session lifecycle | Session management |
+```typescript
+export interface Hooks {
+  // Universal event subscriber — all 16+ Bus events
+  event?: (input: { event: BusEvent }) => Promise<void>
 
-### 3. File Logging (Critical)
+  // Custom tools added to AI toolkit
+  tool?: { [key: string]: ToolDefinition }
+
+  // Provider authentication (Copilot, Codex, etc.)
+  auth?: AuthHook
+
+  // Inject env vars into EVERY bash call (stateless shell fix)
+  "shell.env"?: (input: ShellEnvInput, output: ShellEnvOutput) => Promise<void>
+
+  // Intercept tools before execution (can block with throw)
+  "tool.execute.before"?: (input, output) => Promise<void>
+
+  // React after tool execution
+  "tool.execute.after"?: (input, output) => Promise<void>
+
+  // Modify tool descriptions sent to LLM
+  "tool.definition"?: (input, output) => Promise<void>
+
+  // Override permission decisions
+  "permission.ask"?: (info, output) => Promise<void>
+
+  // Modify LLM parameters (temperature, max tokens, etc.)
+  "chat.parameters"?: (input, output) => Promise<void>
+}
+```
+
+### Available Bus Events (via `event` hook)
+
+| Event | Payload | PAI Usage |
+|-------|---------|-----------|
+| `session.created` | `{ info: { id, title, directory } }` | Work session start |
+| `session.updated` | `{ info: { title } }` | Title tracking |
+| `session.error` | `{ error, sessionID }` | Error diagnostics |
+| `session.compacted` | — | **🔴 CRITICAL: Learning rescue** |
+| `message.updated` | message data | Sentiment, ISC validation |
+| `tool.execute.before` | tool, args | Security validation |
+| `tool.execute.after` | tool, result | PRD sync, observability |
+| `file.edited` | filepath, diff | PRD auto-sync |
+| `file.watcher.updated` | filepath, event | External change detection |
+| `command.executed` | name, arguments | `/command` tracking |
+| `permission.asked` | id, permission, patterns | Full audit log |
+| `permission.replied` | — | Response tracking |
+| `lsp.client.diagnostics` | diagnostics | Code error detection |
+| `installation.update.available` | version | Update notification |
+| `tui.prompt.append` | text | TUI injection |
+| `pty.created/updated/exited` | pty data | Terminal events |
+
+### 3. The shell.env Hook (OpenCode-native Pattern)
+
+> **Architecture Decision:** [ADR-010 - Shell.env Two-Layer System](architecture/adr/ADR-010-shell-env-two-layer-system.md)
+
+OpenCode Bash is **stateless** — every call spawns a fresh process. The `shell.env` hook runs before EACH bash call and injects context:
+
+```typescript
+"shell.env": async (input, output) => {
+  output.env = output.env || {};
+
+  // Runtime context (computed per call — not in .env)
+  output.env["PAI_CONTEXT"] = "1";
+  output.env["PAI_SESSION_ID"] = input.sessionID ?? "unknown";
+  output.env["PAI_WORK_DIR"] = input.cwd ?? "";
+  output.env["PAI_VERSION"] = "3.0";
+
+  // Explicit passthrough for bash scripts that need these keys
+  // API keys come from .opencode/.env → process.env (Bun auto-loads)
+  const PASSTHROUGH_KEYS = ["GOOGLE_API_KEY", "TTS_PROVIDER", "DA", "TIME_ZONE"];
+  for (const key of PASSTHROUGH_KEYS) {
+    if (process.env[key]) output.env[key] = process.env[key];
+  }
+}
+```
+
+**Two-layer env system:**
+- **`.env` layer:** API keys → Bun loads at startup → `process.env` → TypeScript code reads directly
+- **`shell.env` layer:** Runtime context + selected passthrough → each bash child process
+
+### 4. File Logging (Critical)
 
 > **Architecture Decision:** [ADR-004 - Plugin Logging (File-Based)](architecture/adr/ADR-004-plugin-logging-file-based.md)
 
@@ -254,36 +327,56 @@ cat /tmp/pai-opencode-debug.log | grep DEBUG
 
 ## Unified Plugin Architecture
 
-PAI-OpenCode uses **one plugin** for all functionality with **20 handlers**:
+PAI-OpenCode uses **one plugin** for all functionality with **25 handlers**:
 
 ```
 plugins/
-├── pai-unified.ts              # Main plugin (exports all hooks)
+├── pai-unified.ts              # Main plugin — all hooks + event routing
 ├── handlers/
+│   │
+│   ├── ── CORE ──
 │   ├── context-loader.ts       # Context injection at session start
 │   ├── security-validator.ts   # Security validation before commands
+│   │
+│   ├── ── LEARNING ──
 │   ├── rating-capture.ts       # User rating capture (1-10)
 │   ├── isc-validator.ts        # ISC criteria validation
 │   ├── learning-capture.ts     # Learning to MEMORY/LEARNING/
+│   ├── last-response-cache.ts  # Cache last assistant response [WP-A]
+│   │
+│   ├── ── OBSERVABILITY ──
 │   ├── work-tracker.ts         # Work session tracking
-│   ├── skill-restore.ts        # Skill context restore
 │   ├── agent-capture.ts        # Agent output capture
+│   ├── response-capture.ts     # ISC tracking + learning
+│   ├── observability-emitter.ts # Fire-and-forget event emission [v1.2]
+│   │
+│   ├── ── SESSION LIFECYCLE ──
+│   ├── session-cleanup.ts      # Mark COMPLETED, clear state [WP-A]
+│   ├── prd-sync.ts             # Sync PRD frontmatter → registry [WP-A]
+│   ├── question-tracking.ts    # Record AskUserQuestion Q&A [WP-A]
+│   ├── relationship-memory.ts  # Extract W/B/O notes → MEMORY/ [WP-A]
+│   │
+│   ├── ── UX ──
 │   ├── voice-notification.ts   # TTS (ElevenLabs/Google/macOS) [v1.1]
 │   ├── implicit-sentiment.ts   # Sentiment detection [v1.1]
 │   ├── tab-state.ts            # Kitty terminal tab updates [v1.1]
 │   ├── update-counts.ts        # Skill/workflow counting [v1.1]
-│   └── response-capture.ts     # ISC tracking + learning [v1.1]
-│   ├── observability-emitter.ts  # Fire-and-forget event emission to observability server [v1.2]
-│   ├── algorithm-tracker.ts      # Algorithm phase & ISC tracking [v2.0]
-│   ├── agent-execution-guard.ts  # Agent pattern validation [v2.0]
-│   ├── skill-guard.ts            # Skill invocation validation [v2.0]
-│   ├── check-version.ts          # GitHub release update check [v2.0]
-│   ├── integrity-check.ts        # System health validation [v2.0]
-│   └── format-reminder.ts        # 8-tier effort level detection [v2.0]
+│   │
+│   ├── ── MAINTENANCE ──
+│   ├── skill-restore.ts        # Skill context restore
+│   ├── check-version.ts        # GitHub release update check [v2.0]
+│   ├── integrity-check.ts      # System health validation [v2.0]
+│   │
+│   └── ── ALGORITHM ──
+│       ├── algorithm-tracker.ts   # Phase & ISC tracking [v2.0]
+│       ├── format-reminder.ts     # 8-tier effort level detection [v2.0]
+│       ├── agent-execution-guard.ts # Agent pattern validation [v2.0]
+│       └── skill-guard.ts         # Skill invocation validation [v2.0]
+│
 ├── adapters/
 │   └── types.ts                # Shared type definitions
 └── lib/
-    ├── file-logger.ts          # Logging utilities
+    ├── file-logger.ts          # Logging utilities (NEVER console.log!)
     ├── paths.ts                # Path resolution
     ├── identity.ts             # User/AI identity
     ├── time.ts                 # Timestamp utilities [v1.1]
@@ -292,24 +385,31 @@ plugins/
 ```
 
 **Why unified?**
-- Single configuration point
-- Shared state between handlers
-- Simpler plugin management
+- Single configuration point in `opencode.json`
+- Shared state between handlers (`sessionUserMessages`, `sessionAssistantMessages`)
+- All 16 Bus events handled in one place
 - Easier to reason about execution order
 
 ### Handler Categories
 
-| Category | Handlers | Purpose |
-|----------|----------|---------|
-| **Core** | context-loader, security-validator | Essential session management |
-| **Learning** | rating-capture, learning-capture, isc-validator | Quality feedback loops |
-| **Observability** | work-tracker, agent-capture, response-capture | Session tracking |
-| **UX** | voice-notification, tab-state, implicit-sentiment | User experience |
-| **Observability** | observability-emitter | Event emission to external systems |
-| **Maintenance** | skill-restore, update-counts | System upkeep |
-| **v3.0 Algorithm** | algorithm-tracker, format-reminder | Algorithm state & effort levels |
-| **v3.0 Guards** | agent-execution-guard, skill-guard | Execution validation |
-| **v3.0 System** | check-version, integrity-check | Update & health checks |
+| Category | Handlers | Key Events |
+|----------|----------|-----------|
+| **Core** | context-loader, security-validator | `experimental.chat.system.transform`, `tool.execute.before` |
+| **Learning** | rating-capture, learning-capture, isc-validator, last-response-cache | `message.updated` |
+| **Observability** | work-tracker, agent-capture, response-capture, observability-emitter | `tool.execute.after`, `message.updated` |
+| **Session Lifecycle** | session-cleanup, prd-sync, question-tracking, relationship-memory | `session.ended`, `session.compacted`, `tool.execute.after` |
+| **UX** | voice-notification, tab-state, implicit-sentiment | `message.updated`, `session.created` |
+| **Maintenance** | skill-restore, update-counts, check-version, integrity-check | `session.ended` |
+| **Algorithm** | algorithm-tracker, format-reminder, agent-execution-guard, skill-guard | `tool.execute.before/after` |
+
+### Plugin Hooks Active in PAI-Unified
+
+| Hook | Purpose | Status |
+|------|---------|--------|
+| `event` | Routes all 16 Bus events to handlers | ✅ Active |
+| `tool.execute.before` | Security validation, guard checks | ✅ Active |
+| `experimental.chat.system.transform` | Context injection | ✅ Active |
+| `shell.env` | PAI context + key passthrough per bash call | ✅ Active (WP-A) |
 
 ---
 

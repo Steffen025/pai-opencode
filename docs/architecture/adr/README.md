@@ -23,16 +23,18 @@ Architecture Decision Records document **WHY** we made specific technical choice
 
 ## ADR Index
 
-| ADR | Title | Status | Category |
-|-----|-------|--------|----------|
-| [ADR-001](ADR-001-hooks-to-plugins-architecture.md) | Hooks → Plugins Architecture | ✅ Accepted | Platform Adaptation |
-| [ADR-002](ADR-002-directory-structure-claude-to-opencode.md) | Directory Structure (.claude/ → .opencode/) | ✅ Accepted | Platform Convention |
-| [ADR-003](ADR-003-skills-system-unchanged.md) | Skills System - 100% Unchanged | ✅ Accepted | Compatibility |
-| [ADR-004](ADR-004-plugin-logging-file-based.md) | Plugin Logging (console.log → File-Based) | ✅ Accepted | Platform Adaptation |
-| [ADR-005](ADR-005-configuration-dual-file-approach.md) | Configuration - Dual File Approach | ✅ Accepted | Platform Convention |
-| [ADR-006](ADR-006-security-validation-preservation.md) | Security Validation Pattern Preservation | ✅ Accepted | Security |
-| [ADR-007](ADR-007-memory-system-structure-preserved.md) | Memory System Structure Preserved | ✅ Accepted | Compatibility |
-| [ADR-008](ADR-008-opencode-bash-workdir-parameter.md) | OpenCode Bash workdir Parameter | ✅ Accepted | Platform Adaptation |
+| ADR | Title | Status | Category | PR |
+|-----|-------|--------|----------|----|
+| [ADR-001](ADR-001-hooks-to-plugins-architecture.md) | Hooks → Plugins Architecture | ✅ Accepted | Platform Adaptation | v1.0 |
+| [ADR-002](ADR-002-directory-structure-claude-to-opencode.md) | Directory Structure (.claude/ → .opencode/) | ✅ Accepted | Platform Convention | v1.0 |
+| [ADR-003](ADR-003-skills-system-unchanged.md) | Skills System - 100% Unchanged | ✅ Accepted | Compatibility | v1.0 |
+| [ADR-004](ADR-004-plugin-logging-file-based.md) | Plugin Logging (console.log → File-Based) | ✅ Accepted | Platform Adaptation | v1.0 |
+| [ADR-005](ADR-005-configuration-dual-file-approach.md) | Configuration - Dual File Approach | ✅ Accepted | Platform Convention | v1.0 |
+| [ADR-006](ADR-006-security-validation-preservation.md) | Security Validation Pattern Preservation | ✅ Accepted | Security | v1.0 |
+| [ADR-007](ADR-007-memory-system-structure-preserved.md) | Memory System Structure Preserved | ✅ Accepted | Compatibility | v1.0 |
+| [ADR-008](ADR-008-opencode-bash-workdir-parameter.md) | OpenCode Bash workdir Parameter | ✅ Accepted | Platform Adaptation | v1.0 |
+| [ADR-009](ADR-009-handler-audit-opencode-adaptation.md) | Handler Audit — Claude-Code-specific Patterns | ✅ Accepted | Platform Adaptation | PR #42 |
+| [ADR-010](ADR-010-shell-env-two-layer-system.md) | Shell.env + .env Two-Layer Env Variable System | ✅ Accepted | Platform Adaptation | PR #42 |
 
 ---
 
@@ -42,7 +44,9 @@ Architecture Decision Records document **WHY** we made specific technical choice
 Decisions about translating Claude Code patterns to OpenCode platform.
 - ADR-001: Hooks → Plugins
 - ADR-004: File-based logging
-- ADR-008: Bash workdir parameter
+- ADR-008: Bash workdir parameter (stateless shell)
+- ADR-009: Handler audit — Claude-Code-specific patterns fixed
+- ADR-010: shell.env + .env two-layer environment variable system
 
 ### Platform Convention
 Decisions about following OpenCode conventions vs PAI patterns.
@@ -136,13 +140,13 @@ When adding new ADRs, use this structure:
 
 Potential topics for future documentation:
 
-| Topic | Why It Matters |
-|-------|----------------|
-| Voice Server Implementation | When adding in v1.1 |
-| Observability Dashboard Port | When adding in v1.2 |
-| Model Name Mapping Strategy | If changing provider system |
-| Agent Type Mapping | If OpenCode adds native agents |
-| Memory System Evolution | If changing from file-based |
+| Topic | Why It Matters | Target |
+|-------|----------------|--------|
+| DB Archive Strategy (WP-F) | opencode.db grows to 2+ GB without cleanup | PR #D |
+| file.edited → PRD Sync (WP-G) | Event-driven instead of polling | PR #B |
+| Config Hierarchy (6-Level) | Understanding override precedence | PR #C docs |
+| Relationship Memory Names | Hardcoded @Jeremy/@Steffen → config-based | PR #C |
+| Session-Scoped Response Cache | Global cache causes cross-session pollution | PR #B |
 
 ---
 
@@ -175,5 +179,5 @@ Potential topics for future documentation:
 
 ---
 
-*Last Updated: 2026-03-05*
-*ADRs Created: 8*
+*Last Updated: 2026-03-06*
+*ADRs Created: 10 (ADR-009: Handler Audit, ADR-010: Shell.env Two-Layer System)*
