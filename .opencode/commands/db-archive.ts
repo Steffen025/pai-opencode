@@ -12,10 +12,10 @@ import { join } from "node:path";
 import { homedir } from "node:os";
 import { existsSync, statSync } from "node:fs";
 import {
-  getDbSizeMB,
-  getSessionsOlderThan,
-  formatBytes,
-  checkDbHealth,
+	getDbSizeMB,
+	getSessionsOlderThan,
+	formatBytes,
+	checkDbHealth,
 } from "../plugins/lib/db-utils";
 
 const PAI_DIR = join(homedir(), ".opencode");
@@ -23,72 +23,77 @@ const ARCHIVE_DIR = join(PAI_DIR, "archives");
 const LAST_ARCHIVE_FILE = join(ARCHIVE_DIR, ".last-archive");
 
 interface CommandArgs {
-  days: number;
-  dryRun: boolean;
-  vacuum: boolean;
-  help: boolean;
+	days: number;
+	dryRun: boolean;
+	vacuum: boolean;
+	help: boolean;
 }
 
 function parseCommandArgs(input: string): CommandArgs {
-  const parts = input.trim().split(/\s+/);
-  const daysArg = parts.find((p) => /^\d+$/.test(p));
+	const parts = input.trim().split(/\s+/);
+	const daysArg = parts.find((p) => /^\d+$/.test(p));
 
-  return {
-    days: daysArg ? parseInt(daysArg, 10) : 90,
-    dryRun: parts.includes("--dry-run"),
-    vacuum: parts.includes("--vacuum"),
-    help: parts.includes("--help") || parts.includes("-h"),
-  };
+	return {
+		days: daysArg ? parseInt(daysArg, 10) : 90,
+		dryRun: parts.includes("--dry-run"),
+		vacuum: parts.includes("--vacuum"),
+		help: parts.includes("--help") || parts.includes("-h"),
+	};
 }
 
 async function getLastArchiveTime(): Promise<string | null> {
-  if (!existsSync(LAST_ARCHIVE_FILE)) return null;
-  try {
-    const content = await Bun.file(LAST_ARCHIVE_FILE).text();
-    const date = new Date(content.trim());
-    return date.toLocaleDateString();
-  } catch {
-    return null;
-  }
+	if (!existsSync(LAST_ARCHIVE_FILE)) return null;
+	try {
+		const content = await Bun.file(LAST_ARCHIVE_FILE).text();
+		const date = new Date(content.trim());
+		return date.toLocaleDateString();
+	} catch {
+		return null;
+	}
 }
 
-async function getArchiveStats(): Promise<{ count: number; totalSize: string }> {
-  if (!existsSync(ARCHIVE_DIR)) {
-    return { count: 0, totalSize: "0 B" };
-  }
+async function getArchiveStats(): Promise<{
+	count: number;
+	totalSize: string;
+}> {
+	if (!existsSync(ARCHIVE_DIR)) {
+		return { count: 0, totalSize: "0 B" };
+	}
 
-  const files = await Array.fromAsync(new Bun.Glob("*.db").scan({ cwd: ARCHIVE_DIR }));
-  let totalBytes = 0;
+	const files = await Array.fromAsync(
+		new Bun.Glob("*.db").scan({ cwd: ARCHIVE_DIR }),
+	);
+	let totalBytes = 0;
 
-  for (const file of files) {
-    const path = join(ARCHIVE_DIR, file);
-    try {
-      const stats = statSync(path);
-      totalBytes += stats.size;
-    } catch {
-      // ignore
-    }
-  }
+	for (const file of files) {
+		const path = join(ARCHIVE_DIR, file);
+		try {
+			const stats = statSync(path);
+			totalBytes += stats.size;
+		} catch {
+			// ignore
+		}
+	}
 
-  return {
-    count: files.length,
-    totalSize: formatBytes(totalBytes),
-  };
+	return {
+		count: files.length,
+		totalSize: formatBytes(totalBytes),
+	};
 }
 
 function formatBytes(bytes: number): string {
-  if (bytes === 0) return "0 B";
-  const k = 1024;
-  const sizes = ["B", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+	if (bytes === 0) return "0 B";
+	const k = 1024;
+	const sizes = ["B", "KB", "MB", "GB"];
+	const i = Math.floor(Math.log(bytes) / Math.log(k));
+	return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
 
 export default async function dbArchiveCommand(input: string): Promise<string> {
-  const args = parseCommandArgs(input);
+	const args = parseCommandArgs(input);
 
-  if (args.help) {
-    return `
+	if (args.help) {
+		return `
 ## /db-archive — Database Maintenance Command
 
 **Usage:**
@@ -105,55 +110,56 @@ export default async function dbArchiveCommand(input: string): Promise<string> {
 
 **Archives location:** \`~/.opencode/archives/\`
 `;
-  }
+	}
 
-  // Get current stats
-  const { sizeMB, oldSessions, warnings } = await checkDbHealth();
-  const lastArchive = await getLastArchiveTime();
-  const archiveStats = await getArchiveStats();
+	// Get current stats
+	const { sizeMB, oldSessions, warnings } = await checkDbHealth();
+	const lastArchive = await getLastArchiveTime();
+	const archiveStats = await getArchiveStats();
 
-  let output = "## 📊 Database Health\n\n";
+	let output = "## 📊 Database Health\n\n";
 
-  // Status table
-  output += "| Metric | Value |\n";
-  output += "|--------|-------|\n";
-  output += `| DB Size | ${sizeMB.toFixed(2)} MB |\n`;
-  output += `| Sessions > 90 days | ${oldSessions} |\n`;
-  output += `| Last archive | ${lastArchive || "Never"} |\n`;
-  output += `| Archive files | ${archiveStats.count} (${archiveStats.totalSize}) |\n`;
-  output += "\n";
+	// Status table
+	output += "| Metric | Value |\n";
+	output += "|--------|-------|\n";
+	output += `| DB Size | ${sizeMB.toFixed(2)} MB |\n`;
+	output += `| Sessions > 90 days | ${oldSessions} |\n`;
+	output += `| Last archive | ${lastArchive || "Never"} |\n`;
+	output += `| Archive files | ${archiveStats.count} (${archiveStats.totalSize}) |\n`;
+	output += "\n";
 
-  // Warnings
-  if (warnings.length > 0) {
-    output += "### ⚠️ Warnings\n\n";
-    for (const warning of warnings) {
-      output += `- ${warning}\n`;
-    }
-    output += "\n";
-  }
+	// Warnings
+	if (warnings.length > 0) {
+		output += "### ⚠️ Warnings\n\n";
+		for (const warning of warnings) {
+			output += `- ${warning}\n`;
+		}
+		output += "\n";
+	}
 
-  // Show next steps
-  if (oldSessions > 0) {
-    output += `**💡 Tip:** Run \`bun Tools/db-archive.ts ${args.days}\` to archive ${oldSessions} old sessions.\n\n`;
-  }
+	// Show next steps
+	if (oldSessions > 0) {
+		output += `**💡 Tip:** Run \`bun Tools/db-archive.ts ${args.days}\` to archive ${oldSessions} old sessions.\n\n`;
+	}
 
-  if (args.dryRun || args.vacuum) {
-    output += "⚠️ **Note:** Use the standalone tool for --dry-run and --vacuum operations:\n";
-    output += "\`\`\`bash\n";
-    if (args.dryRun) {
-      output += `bun Tools/db-archive.ts ${args.days} --dry-run\n`;
-    }
-    if (args.vacuum) {
-      output += "bun Tools/db-archive.ts --vacuum\n";
-    }
-    output += "\`\`\`\n";
-  }
+	if (args.dryRun || args.vacuum) {
+		output +=
+			"⚠️ **Note:** Use the standalone tool for --dry-run and --vacuum operations:\n";
+		output += "\`\`\`bash\n";
+		if (args.dryRun) {
+			output += `bun Tools/db-archive.ts ${args.days} --dry-run\n`;
+		}
+		if (args.vacuum) {
+			output += "bun Tools/db-archive.ts --vacuum\n";
+		}
+		output += "\`\`\`\n";
+	}
 
-  return output;
+	return output;
 }
 
 // If run directly (for testing)
 if (import.meta.main) {
-  const input = process.argv.slice(2).join(" ");
-  dbArchiveCommand(input).then(console.log);
+	const input = process.argv.slice(2).join(" ");
+	dbArchiveCommand(input).then(console.log);
 }
