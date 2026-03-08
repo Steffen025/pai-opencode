@@ -1,18 +1,19 @@
 ---
-title: PAI-OpenCode v3.0 — Aufgabenliste
-description: Granulare, sofort umsetzbare Aufgaben für die verbleibenden 4 PRs bis v3.0 Release
+title: PAI-OpenCode v3.0 — Task List
+description: Granular, immediately actionable tasks for the remaining PRs until v3.0 release
 status: active
-date: 2026-03-06
+date: 2026-03-08
 ---
 
 # PAI-OpenCode v3.0 — TODO
 
 > [!NOTE]
-> **Basis:** Gap-Analyse 2026-03-06 | Referenz: `GAP-ANALYSIS-v3.0.md` | Plan: `OPTIMIZED-PR-PLAN.md`
+> **Basis:** Gap-Analysis 2026-03-06 | Reference: `GAP-ANALYSIS-v3.0.md` | Plan: `OPTIMIZED-PR-PLAN.md`
+> **Updated:** 2026-03-08 — WP-A (PR #42) and WP-B (PR #43) merged. WP-C verified against v4.0.3 upstream.
 
 ---
 
-## Gesamtfortschritt
+## Overall Progress
 
 ```text
 WP1 ████████████ 100% ✅
@@ -20,494 +21,337 @@ WP2 ████████████ 100% ✅
 WP3 ████████████ 100% ✅
 WP4 ████████████ 100% ✅
 ─────────────────────────
-WP-A  ████████████  90% 🔄  ← PR #42 in review
-WP-B  ░░░░░░░░░░░░   0% 🔄
-WP-C  ░░░░░░░░░░░░   0% 🔄
-WP-D  ░░░░░░░░░░░░   0% 🔄
-WP-E  ░░░░░░░░░░░░   0% 🔄
+WP-A  ████████████ 100% ✅  ← PR #42 merged
+WP-B  ████████████ 100% ✅  ← PR #43 merged
+WP-C  ░░░░░░░░░░░░   0% 🔄  ← next up
+WP-D  ░░░░░░░░░░░░   0% ⏳
+WP-E  ░░░░░░░░░░░░   0% ⏳
 ```
 
 ---
 
-## 🔴 PR #A — WP3-Completion: Plugin-System & Hooks
+## ✅ PR #A — WP3-Completion: Plugin System & Hooks — MERGED (#42)
 
-**Branch:** `feature/wp-a-plugin-hooks`  
-**Geschätzter Aufwand:** 1–2 Tage  
-**Abhängigkeiten:** Keine (WP1+WP2 fertig)  
-**Priorität:** KRITISCH — alle anderen PRs hängen davon ab
+**Branch:** `feature/wp-a-plugin-hooks` — **MERGED into `dev`**
 
-### Setup
-- [ ] Branch `feature/wp-a-plugin-hooks` von `dev` erstellen
-- [ ] PAI v4.0.3 Hooks als Referenz lesen: `/Releases/v4.0.3/.claude/hooks/`
+All handlers ported and integrated into `pai-unified.ts`:
 
-### Neue Handler (HOCH-Priorität — alle 6 müssen rein)
-
-- [x] **`plugins/handlers/prd-sync.ts`** ✅ portiert (PR #A)
-  - Referenz: `PRDSync.hook.ts`
-  - Funktion: PRD-Frontmatter → `prd-registry.json` synchronisieren
-  - Event: `tool.execute.after` (Write/Edit auf PRD.md)
-
-- [x] **`plugins/handlers/session-cleanup.ts`** ✅ portiert (PR #A)
-  - Referenz: `SessionCleanup.hook.ts`
-  - Funktion: Work-Directory COMPLETED markieren, State bereinigen
-  - Event: `session.ended` / `session.idle`
-
-- [x] **`plugins/handlers/last-response-cache.ts`** ✅ portiert (PR #A)
-  - Referenz: `LastResponseCache.hook.ts`
-  - Funktion: Letzten AI-Response cachen für ImplicitSentiment-Kontext
-  - Event: `message.updated` (assistant)
-
-- [x] **`plugins/handlers/relationship-memory.ts`** ✅ portiert (PR #A)
-  - Referenz: `RelationshipMemory.hook.ts`
-  - Funktion: W/B/O-Notizen → `MEMORY/RELATIONSHIP/` schreiben
-  - Event: `session.ended` / `session.idle`
-
-- [x] **`plugins/handlers/question-tracking.ts`** ✅ portiert (PR #A)
-  - Referenz: `QuestionAnswered.hook.ts` (OpenCode-Semantik: Q&A-Tracking, kein Tab-Reset)
-  - Funktion: AskUserQuestion Q&A-Pairs → `STATE/questions.jsonl`
-  - Event: `tool.execute.after` (AskUserQuestion)
-
-- [ ] `session-autoname` → **KEIN separater Handler nötig**
-  - OpenCode setzt `info.title` nativ im `session.created` Event → wird bereits geloggt
-
-### Neue Handler (MITTEL-Priorität — nice to have für PR #A)
-
-- [ ] **`plugins/handlers/doc-integrity.ts`** portieren
-  - Referenz: `DocIntegrity.hook.ts`
-  - Funktion: Dokumentations-Integrität prüfen (Cross-References, fehlende Sections)
-
-- [ ] **`plugins/handlers/response-tab-reset.ts`** + **`set-question-tab.ts`**
-  - Referenz: `ResponseTabReset.hook.ts`, `SetQuestionTab.hook.ts`
-  - Funktion: Tab-State-Management (Response/Question Tabs zurücksetzen)
-  - Hinweis: `tab-state.ts` existiert bereits — prüfen ob ausreichend oder erweitern
-
-### Neue Handler in `pai-unified.ts` einbinden (Pragmatisch — Option B)
-
-- [ ] Alle 6 neuen Handler-Module in `pai-unified.ts` importieren
-- [ ] Event-Handler-Registrierungen für neue Hooks hinzufügen (gleiche Struktur wie bestehende)
-- [ ] Kommentar-Header in `pai-unified.ts` aktualisieren (Handler-Liste vollständig)
-- [ ] **KEINE** komplette Umstrukturierung — Handler-Module bleiben (Option B)
-
-### Ungenutzte Bus-Events implementieren (direkt im `event`-Handler)
-
-> [!info]
-> **Warum hier:** Diese Events brauchen keine eigenen Handler-Dateien — sie sind einfaches
-> Event-Logging/Tracking direkt im bestehenden `event: async (input) => {}` Block.
-> Alle non-blocking, alle via file-logger.
-
-- [ ] **`session.compacted`** — KRITISCH: Learnings VOR Kontextverlust retten
-  ```typescript
-  if (eventType === "session.compacted") {
-    await extractLearningsFromWork(); // urgent rescue before context shrinks
-    fileLog(`[Compaction] Context compacted at ${new Date().toISOString()}`);
-  }
-  ```
-
-- [ ] **`session.error`** — Error-Tracking für Debugging & Resilienz
-  ```typescript
-  if (eventType === "session.error") {
-    const { error, sessionID } = eventData.properties;
-    fileLog(`[SessionError] ${sessionID}: ${error}`, "error");
-  }
-  ```
-
-- [ ] **`permission.asked`** — Vollständiges Audit-Log ALLER Permissions (nicht nur blockierte)
-  ```typescript
-  if (eventType === "permission.asked") {
-    const { id, permission, patterns, tool } = eventData.properties;
-    fileLog(`[PermissionAudit] id=${id} permission=${permission} patterns=[${patterns}]`);
-  }
-  ```
-
-- [ ] **`command.executed`** — Tracking welche `/commands` wie oft genutzt werden
-  ```typescript
-  if (eventType === "command.executed") {
-    const { name, arguments: args } = eventData.properties;
-    fileLog(`[CommandTracker] /${name} ${args}`.trim());
-  }
-  ```
-
-- [ ] **`installation.update.available`** — Native OpenCode-Update-Notification (ersetzt unseren polling check-version für OpenCode selbst)
-  ```typescript
-  if (eventType === "installation.update.available") {
-    const { version } = eventData.properties;
-    fileLog(`[UpdateAvailable] OpenCode ${version} verfügbar`);
-  }
-  ```
-
-- [ ] **`session.updated`** — Session-Titel-Änderungen für Work-Log tracken
-  ```typescript
-  if (eventType === "session.updated") {
-    const { info } = eventData.properties;
-    if (info?.title) fileLog(`[SessionTitle] "${info.title}"`);
-  }
-  ```
-
-- [ ] **`session.created` info-Objekt nutzen** — `info.id`, `info.title`, `info.directory` für präziseres AutoName-Logging
-  ```typescript
-  // Bereits: eventType.includes("session.created")
-  // ERGÄNZEN: session info auslesen
-  const info = eventData?.properties?.info || {};
-  fileLog(`[SessionStart] id=${info.id} title="${info.title}" dir=${info.directory}`);
-  ```
-
-### Abschluss PR #A
-- [ ] `biome check --write .` ausführen
-- [ ] `bun test` ausführen
-- [ ] PR gegen `dev` erstellen mit Beschreibung: Hooks portiert + Bus-Events implementiert
+- [x] `plugins/handlers/prd-sync.ts` ✅
+- [x] `plugins/handlers/session-cleanup.ts` ✅
+- [x] `plugins/handlers/last-response-cache.ts` ✅
+- [x] `plugins/handlers/relationship-memory.ts` ✅
+- [x] `plugins/handlers/question-tracking.ts` ✅
+- [x] All 6 handlers integrated into `pai-unified.ts` ✅
+- [x] Bus events implemented: `session.compacted`, `session.error`, `permission.asked`, `command.executed`, `installation.update.available`, `session.updated`, `session.created` ✅
+- [x] `biome check --write .` ✅
+- [x] `bun test` ✅
 
 ---
 
-## 🟠 PR #B — WP3.5: Security Hardening / Prompt Injection
+## ✅ PR #B — WP3.5: Security Hardening / Prompt Injection — MERGED (#43)
 
-**Branch:** `feature/wp-b-security-hardening`  
-**Geschätzter Aufwand:** 0.5–1 Tag  
-**Abhängigkeiten:** PR #A (Plugin-System vollständig)  
-**Priorität:** HOCH
+**Branch:** `feature/wp-b-security-hardening` — **MERGED into `dev`**
 
-### Prompt Injection Detection
-
-- [ ] **`plugins/lib/injection-patterns.ts`** erstellen
-  ```typescript
-  export const INJECTION_PATTERNS = [
-    /ignore (previous|all prior) (instructions|commands|context)/i,
-    /system (prompt|instructions)/i,
-    /you are (now|from now on)/i,
-    /new (role|personality|identity):/i,
-    /(pretend|act as if|imagine) you (are|were)/i,
-    /DAN|jailbreak/i,
-    /<\|(system|assistant|user)\|>/i,
-  ];
-  ```
-
-- [ ] **`plugins/handlers/prompt-injection-guard.ts`** erstellen
-  - Inputs vor LLM-Verarbeitung scannen
-  - Suspicious patterns loggen (in MEMORY/SECURITY/)
-  - Bei hochem Confidence-Score: blockieren + User informieren
-
-- [ ] **`plugins/lib/sanitizer.ts`** erstellen
-  - Gefährliche Sequences escapen/entfernen
-  - Audit-Log aller Sanitisierungen
-
-### Security Logging
-- [ ] MEMORY/SECURITY/ Verzeichnis in MINIMAL_BOOTSTRAP registrieren
-- [ ] Log-Format definieren: timestamp, pattern, confidence, action
-
-### Integration
-- [ ] In `pai-unified.ts` einbinden (event: `tool.execute.before` + `message.received`)
-- [ ] Settings-Option für Sensitivity-Level (low/medium/high)
-
-### Abschluss PR #B
-- [ ] Manuelle Tests mit bekannten Injection-Patterns
-- [ ] `biome check --write .`
-- [ ] PR gegen `dev`
+- [x] `plugins/lib/injection-patterns.ts` ✅
+- [x] `plugins/handlers/prompt-injection-guard.ts` ✅
+- [x] `plugins/lib/sanitizer.ts` ✅
+- [x] `MEMORY/SECURITY/` directory registered ✅
+- [x] Integrated into `pai-unified.ts` (`tool.execute.before` + `message.received`) ✅
+- [x] Sensitivity-level setting (low/medium/high) ✅
+- [x] Manual tests with known injection patterns ✅
+- [x] `biome check --write .` ✅
 
 ---
 
-## 🟡 PR #C — WP5: Core PAI System + Skill-Fixes + PAI Tools
+## 🟡 PR #C — WP5: Core PAI System + Skill Fixes
 
-**Branch:** `feature/wp-c-core-pai-system`  
-**Geschätzter Aufwand:** 2–3 Tage  
-**Abhängigkeiten:** PR #A  
-**Priorität:** KRITISCH
+**Branch:** `feature/wp-c-core-pai-system`
+**Estimated effort:** ~3–3.5h (verified against v4.0.3 upstream — many items already done)
+**Dependencies:** PR #A ✅ (done)
+**Priority:** CRITICAL
 
-### C.1 — Fehlende PAI-Docs portieren (`.opencode/PAI/`)
+> [!NOTE]
+> **Verified 2026-03-08:** Many items from the original TODO were already completed in earlier WPs.
+> This section reflects only the **actual remaining gaps** confirmed against v4.0.3 at:
+> `/Users/steffen/workspace/github.com/danielmiessler/Personal_AI_Infrastructure/Releases/v4.0.3/.claude/`
 
-Referenz: `/Releases/v4.0.3/.claude/PAI/`
+---
 
-- [ ] `PAIAGENTSYSTEM.md` → `.opencode/PAI/PAIAGENTSYSTEM.md`
+### C.1 — Structural Fixes: Flatten Nested Skills
+
+Two skills have the same incorrect nested structure — content exists one level too deep.
+
+**USMetrics — flatten:**
+```bash
+# Move contents up, merge SKILL.md, delete inner dir
+cp -r .opencode/skills/USMetrics/USMetrics/Tools      .opencode/skills/USMetrics/
+cp -r .opencode/skills/USMetrics/USMetrics/Workflows  .opencode/skills/USMetrics/
+# Manually merge the two SKILL.md files (outer=category-wrapper, inner=actual skill content)
+rm -rf .opencode/skills/USMetrics/USMetrics/
+```
+
+- [ ] Move `USMetrics/USMetrics/Tools/` → `USMetrics/Tools/`
+- [ ] Move `USMetrics/USMetrics/Workflows/` → `USMetrics/Workflows/`
+- [ ] Merge inner `USMetrics/USMetrics/SKILL.md` into outer `USMetrics/SKILL.md`
+- [ ] Delete `USMetrics/USMetrics/` directory
+
+**Telos — flatten:**
+```bash
+mv .opencode/skills/Telos/Telos/DashboardTemplate  .opencode/skills/Telos/
+mv .opencode/skills/Telos/Telos/ReportTemplate     .opencode/skills/Telos/
+mv .opencode/skills/Telos/Telos/Tools              .opencode/skills/Telos/
+mv .opencode/skills/Telos/Telos/Workflows          .opencode/skills/Telos/
+rm -rf .opencode/skills/Telos/Telos/
+```
+
+- [ ] Move `Telos/Telos/DashboardTemplate/` → `Telos/DashboardTemplate/`
+- [ ] Move `Telos/Telos/ReportTemplate/` → `Telos/ReportTemplate/`
+- [ ] Move `Telos/Telos/Tools/` → `Telos/Tools/`
+- [ ] Move `Telos/Telos/Workflows/` → `Telos/Workflows/`
+- [ ] Delete `Telos/Telos/` directory
+- [ ] Verify `Telos/SKILL.md` references point to `Telos/` not `Telos/Telos/`
+
+---
+
+### C.2 — Missing Skill Content: Port from v4.0.3
+
+Reference source: `.../Releases/v4.0.3/.claude/skills/`
+
+**Utilities — 2 skills missing:**
+- [ ] `skills/Utilities/AudioEditor/` — port from v4.0.3 (`SKILL.md`, `Tools/`, `Workflows/`)
+- [ ] `skills/Utilities/Delegation/` — port from v4.0.3 (`SKILL.md` only)
+- [ ] Update `skills/Utilities/SKILL.md` — add AudioEditor + Delegation entries
+- [ ] Replace any `.claude/` references with `.opencode/` in ported files
+
+**Research — 2 items missing:**
+- [ ] `skills/Research/MigrationNotes.md` — port from v4.0.3
+- [ ] `skills/Research/Templates/` — port directory (contains `MarketResearch.md`, `ThreatLandscape.md`)
+
+**Agents — 1 file missing:**
+- [ ] `skills/Agents/ClaudeResearcherContext.md` — port from v4.0.3
+
+---
+
+### C.3 — Missing PAI/ Docs: Port from v4.0.3
+
+Reference source: `.../Releases/v4.0.3/.claude/PAI/`
+
+**9 flat docs missing from `.opencode/PAI/`:**
+
+```bash
+SRC=".../Releases/v4.0.3/.claude/PAI"
+DST=".opencode/PAI"
+
+for f in CLI.md CLIFIRSTARCHITECTURE.md DOCUMENTATIONINDEX.md FLOWS.md \
+          PAIAGENTSYSTEM.md README.md SYSTEM_USER_EXTENDABILITY.md \
+          THEFABRICSYSTEM.md THENOTIFICATIONSYSTEM.md; do
+  cp $SRC/$f $DST/$f
+  sed -i '' 's/\.claude\//\.opencode\//g' $DST/$f
+done
+```
+
+- [ ] `CLI.md` → `.opencode/PAI/CLI.md`
 - [ ] `CLIFIRSTARCHITECTURE.md` → `.opencode/PAI/CLIFIRSTARCHITECTURE.md`
+- [ ] `DOCUMENTATIONINDEX.md` → `.opencode/PAI/DOCUMENTATIONINDEX.md`
 - [ ] `FLOWS.md` → `.opencode/PAI/FLOWS.md`
-- [ ] `FLOWS/` → `.opencode/PAI/FLOWS/` (gesamtes Verzeichnis)
-- [ ] `PIPELINES.md` → `.opencode/PAI/PIPELINES.md`
-- [ ] `PIPELINES/` → `.opencode/PAI/PIPELINES/`
+- [ ] `PAIAGENTSYSTEM.md` → `.opencode/PAI/PAIAGENTSYSTEM.md`
+- [ ] `README.md` → `.opencode/PAI/README.md`
+- [ ] `SYSTEM_USER_EXTENDABILITY.md` → `.opencode/PAI/SYSTEM_USER_EXTENDABILITY.md`
 - [ ] `THEFABRICSYSTEM.md` → `.opencode/PAI/THEFABRICSYSTEM.md`
 - [ ] `THENOTIFICATIONSYSTEM.md` → `.opencode/PAI/THENOTIFICATIONSYSTEM.md`
-- [ ] `DOCUMENTATIONINDEX.md` → `.opencode/PAI/DOCUMENTATIONINDEX.md`
-- [ ] `CLI.md` → `.opencode/PAI/CLI.md`
-- [ ] `SYSTEM_USER_EXTENDABILITY.md` → `.opencode/PAI/SYSTEM_USER_EXTENDABILITY.md`
-- [ ] `ACTIONS/` → `.opencode/PAI/ACTIONS/` (Verzeichnis, nicht nur ACTIONS.md)
-- [ ] `README.md` → `.opencode/PAI/README.md`
+- [ ] All 9 files: replace `.claude/` → `.opencode/` after copy
 
-Jede Datei nach Port prüfen:
-- [ ] `.claude/` Referenzen → `.opencode/` ersetzen
-- [ ] Absolut-Pfade entfernen/anpassen
+**3 subdirectories missing from `.opencode/PAI/`:**
+- [ ] `ACTIONS/` — port from v4.0.3 (contains `A_EXAMPLE_FORMAT/`, `A_EXAMPLE_SUMMARIZE/`, `lib/`, `pai.ts`, `README.md`)
+- [ ] `FLOWS/` — port from v4.0.3 (contains `README.md`)
+- [ ] `PIPELINES/` — port from v4.0.3 (contains `P_EXAMPLE_SUMMARIZE_AND_FORMAT.yaml`, `README.md`)
+- [ ] All ported files: replace `.claude/` → `.opencode/` after copy
 
-### C.2 — Fehlende PAI Tools portieren (`.opencode/skills/PAI/Tools/`)
+> [!NOTE]
+> Already present in `.opencode/PAI/` (no action needed): `ACTIONS.md`, `AISTEERINGRULES.md`,
+> `CONTEXT_ROUTING.md`, `MEMORYSYSTEM.md`, `MINIMAL_BOOTSTRAP.md`, `PAISYSTEMARCHITECTURE.md`,
+> `PRDFORMAT.md`, `SKILL.md`, `SKILLSYSTEM.md`, `THEDELEGATIONSYSTEM.md`, `THEHOOKSYSTEM.md`, `TOOLS.md`
 
-Referenz: `/Releases/v4.0.3/.claude/PAI/Tools/`
+> [!NOTE]
+> Already present in `.opencode/skills/PAI/SYSTEM/` (docs exist, also belong in PAI/ per v4.0.3 arch):
+> `PAIAGENTSYSTEM.md`, `CLIFIRSTARCHITECTURE.md`, `THEFABRICSYSTEM.md`, `THENOTIFICATIONSYSTEM.md`,
+> `DOCUMENTATIONINDEX.md`, `SYSTEM_USER_EXTENDABILITY.md` — copy to PAI/ as well.
 
-**Priorität 1 — Essential:**
-- [ ] `algorithm.ts` portieren → CLI zum Ausführen des Algorithms
-- [ ] `RebuildPAI.ts` portieren → PAI-Struktur neu aufbauen
-- [ ] `IntegrityMaintenance.ts` portieren → Health Checks
-- [ ] `AlgorithmPhaseReport.ts` portieren → Phase-Reporting
-- [ ] `FailureCapture.ts` portieren → Failure-Tracking
+---
 
-**Priorität 2 — Valuable:**
-- [ ] `GetCounts.ts` portieren (wir haben GenerateSkillIndex — prüfen ob redundant)
-- [ ] `BuildCLAUDE.ts` → **als `BuildOpenCode.ts` neu schreiben** (Claude-Code-spezifisch, für OpenCode adaptieren)
+### C.4 — PAI Tools: BuildCLAUDE.ts → BuildOpenCode.ts
 
-**Priorität 3 — Nice to have (nach v3.0 ok):**
-- [ ] `PipelineMonitor.ts`, `PipelineOrchestrator.ts` (komplex, zurückstellen)
-- [ ] `OpinionTracker.ts`, `RelationshipReflect.ts` (Spezialtools)
-- [ ] `WisdomCrossFrameSynthesizer.ts`, `WisdomDomainClassifier.ts`
+> [!NOTE]
+> All other PAI Tools are already present in `.opencode/PAI/Tools/` — identical to v4.0.3.
+> Only `BuildCLAUDE.ts` needs adaptation for OpenCode.
 
-### C.3 — Skill-Struktur-Fixes
+- [ ] Copy `.opencode/PAI/Tools/BuildCLAUDE.ts` → `.opencode/PAI/Tools/BuildOpenCode.ts`
+- [ ] In `BuildOpenCode.ts`: replace all `.claude/` → `.opencode/`
+- [ ] In `BuildOpenCode.ts`: replace all `CLAUDE.md` → `AGENTS.md`
+- [ ] In `BuildOpenCode.ts`: replace all `claude` CLI references → `opencode`
+- [ ] Update file header comment: `// BuildOpenCode.ts — OpenCode-native version of BuildCLAUDE.ts`
 
-**Telos/ — 3 Einträge fehlen:**
-- [ ] `skills/Telos/DashboardTemplate/` erstellen (aus v4.0.3 portieren)
-- [ ] `skills/Telos/ReportTemplate/` erstellen (aus v4.0.3 portieren)
-- [ ] `skills/Telos/Tools/` erstellen (aus v4.0.3 portieren)
-- [ ] `skills/Telos/Workflows/` erstellen (aus v4.0.3 portieren)
-- [ ] `skills/Telos/SKILL.md` aktualisieren (neue Entries referenzieren)
+---
 
-**USMetrics/ — falsche Nested-Struktur:**
-- [ ] `skills/USMetrics/USMetrics/` Inhalt nach `skills/USMetrics/` verschieben
-- [ ] `skills/USMetrics/USMetrics/` Verzeichnis löschen (flache Struktur wie v4.0.3)
-- [ ] `skills/USMetrics/SKILL.md` prüfen und anpassen
+### C.5 — Bootstrap & Index Update
 
-**Utilities/ — 2 Einträge fehlen:**
-- [ ] `skills/Utilities/AudioEditor/` erstellen (aus v4.0.3 portieren)
-- [ ] `skills/Utilities/Delegation/` erstellen (aus v4.0.3 portieren)
-- [ ] `skills/Utilities/SKILL.md` aktualisieren
+- [ ] Update `MINIMAL_BOOTSTRAP.md` — fix USMetrics path (remove `/USMetrics/USMetrics/` nesting)
+- [ ] Update `MINIMAL_BOOTSTRAP.md` — add AudioEditor and Delegation entries
+- [ ] Regenerate skill index: `bun GenerateSkillIndex.ts`
 
-**Research/ — 2 Einträge fehlen:**
-- [ ] `skills/Research/MigrationNotes.md` erstellen (aus v4.0.3 portieren)
-- [ ] `skills/Research/Templates/` erstellen (aus v4.0.3 portieren)
+---
 
-**Agents/ — 1 fehlende Context-Datei:**
-- [ ] `skills/Agents/ClaudeResearcherContext.md` aus v4.0.3 prüfen + portieren
+### PR #C Completion
 
-### C.4 — MINIMAL_BOOTSTRAP.md aktualisieren
-- [ ] Neue Skills (Telos-Tools, AudioEditor, Delegation) eintragen
-- [ ] USMetrics-Pfad korrigieren (nach Strukturfix)
-- [ ] Neue PAI-Docs-Einträge (falls nötig)
-
-### Abschluss PR #C
 - [ ] `bun run skills:validate` (ValidateSkillStructure.ts)
 - [ ] `bun run skills:index` (GenerateSkillIndex.ts)
 - [ ] `biome check --write .`
-- [ ] PR gegen `dev`
-
----
-
-## 🔵 WP-F — DB Health & Session Archivierung (in PR #D integriert)
-
-**Branch:** `feature/wp6-installer-migration` (gleicher Branch wie PR #D)  
-**Geschätzter Aufwand:** 0.5–1 Tag (zusätzlich zu WP6)  
-**Abhängigkeiten:** PR #A (session-cleanup.ts bereits Grundlage)  
-**Priorität:** WICHTIG — verhindert DB-Wachstum auf 2+ GB
-
-> [!warning]
-> **Hintergrund:** OpenCode hat keine automatische Session-Retention.  
-> Die `opencode.db` wächst unendlich. Nach 3 Monaten: 2.4 GB, 234k Parts.  
-> Beim ersten Start blockiert das DB-Lock den Start (Startup-Race).  
-> PAI-OpenCode 3.0 braucht eine OpenCode-native Lösung.
-
-### WP-F.1 — Plugin Event: Automatische DB-Warnung
-
-- [ ] **`plugins/handlers/session-cleanup.ts`** (bereits in WP-A geplant) **ERWEITERN:**
-  ```typescript
-  // Nach Session-Ende: DB-Health prüfen
-  async function checkDbHealth(): Promise<void> {
-    const sizeMB = getDbSizeMB();
-    const oldSessions = getSessionsOlderThan(90);
-    if (sizeMB > 500 || oldSessions > 100) {
-      fileLog(`[DBWarning] DB ${sizeMB}MB | ${oldSessions} Sessions > 90d → /db-archive empfohlen`);
-      // Optional: UI-Notification wenn OpenCode Notification-API verfügbar
-    }
-  }
-  ```
-- [ ] `getDbSizeMB()` Utility in `plugins/lib/db-utils.ts` implementieren
-- [ ] `getSessionsOlderThan(days)` Utility ebenfalls in `db-utils.ts`
-
-### WP-F.2 — Standalone Tool: `Tools/db-archive.ts`
-
-- [ ] **`Tools/db-archive.ts`** erstellen (Bun-Script, standalone):
-  ```bash
-  # Usage:
-  bun db-archive.ts           # Archive sessions > 90 days (default)
-  bun db-archive.ts 180       # Archive sessions > 180 days
-  bun db-archive.ts --dry-run # Zeige was archiviert werden würde
-  bun db-archive.ts --vacuum  # VACUUM nach Archivierung
-  bun db-archive.ts --restore archive-2025-Q4.db  # Archiv wiederherstellen
-  ```
-- [ ] **Interface definieren:**
-  ```typescript
-  interface ArchiveConfig {
-    daysToKeep: number;   // Default: 90
-    archiveDir: string;   // Default: ~/.opencode/archives/
-    autoVacuum: boolean;  // Default: false (OpenCode muss aus sein!)
-    dryRun: boolean;
-  }
-  interface ArchiveResult {
-    sessionsArchived: number;
-    messagesArchived: number;
-    partsArchived: number;
-    spaceSaved: string;   // "1.2 GB"
-    archivePath: string;
-  }
-  ```
-- [ ] **Export-Logik:** `ATTACH DATABASE ... AS archive` → kopiere session/message/part
-- [ ] **Lösch-Logik:** `DELETE FROM session WHERE time_created < cutoff` (CASCADE löscht Messages+Parts)
-- [ ] **VACUUM-Logik:** `PRAGMA wal_checkpoint(TRUNCATE)` + `VACUUM` (nur wenn OpenCode nicht läuft)
-- [ ] **Restore-Logik:** `INSERT OR IGNORE INTO main.session SELECT * FROM archive.session`
-- [ ] **`~/.opencode/archives/archive-index.json`** pflegen (Datum, Count, Größe, Pfad)
-
-### WP-F.3 — Custom Command: `/db-archive` in OpenCode
-
-- [ ] **`.opencode/commands/db-archive.ts`** erstellen (OpenCode Custom Command):
-  - Aufrufbar direkt im TUI: `/db-archive`
-  - Zeigt: DB-Größe, Session-Anzahl, älteste 5 Sessions
-  - Fragt: "Archiviere Sessions älter als 90 Tage? (j/n)"
-  - Führt aus: Export → Löschen → WAL Checkpoint (kein VACUUM da OpenCode läuft)
-  - Meldet: "X Sessions archiviert, Y MB freigegeben"
-- [ ] **VACUUM-Hinweis im Command:** "Für vollständige Defragmentation: OpenCode beenden → `bun db-archive.ts --vacuum`"
-
-### WP-F.4 — Electron GUI: "DB Health" Tab im Installer
-
-- [ ] In `PAI-Install/electron/` einen **"DB Health"** Tab hinzufügen:
-  - **Status-Panel:** DB-Größe, Session-Count, WAL-Größe, Wachstumstrend
-  - **Archiv-Aktion:** Slider "Sessions älter als N Tage archivieren"
-  - **VACUUM-Button:** Setzt voraus dass OpenCode beendet ist → Prüfung + Hinweis
-  - **Archiv-Browser:** Liste der vorhandenen Archive + Restore-Button pro Session
-- [ ] Electron ruft `db-archive.ts` als Child-Process auf
-- [ ] **Sicherheitshinweis im GUI:** "VACUUM erfordert dass OpenCode beendet ist"
-
-### WP-F.5 — Dokumentation
-
-- [ ] **`docs/DB-MAINTENANCE.md`** erstellen:
-  - Was ist das Problem (DB-Wachstum, Lock-Error beim Start)
-  - Die drei Lösungsebenen (Plugin / CLI / GUI)
-  - VACUUM Erklärung (analog Defragmentation)
-  - Wie Client-Side Pruning und Server-Side DB sich unterscheiden
-  - Empfohlener Rhythmus: Archivierung quartalsweise, VACUUM nach Archivierung
-
-### Abschluss WP-F
-- [ ] `bun Tools/db-archive.ts --dry-run` auf echter DB testen
-- [ ] Custom Command `/db-archive` in frischer Session testen
-- [ ] Archiv-Restore testen (eine Session wiederherstellen)
-- [ ] `biome check --write .`
+- [ ] `bun test`
+- [ ] Create PR against `dev`
 
 ---
 
 ## 🟢 PR #D — WP6: Installer & Migration
 
-**Branch:** `feature/wp-d-installer-migration`  
-**Geschätzter Aufwand:** 1–2 Tage  
-**Abhängigkeiten:** PR #C  
-**Priorität:** KRITISCH (Release-Blocker)
+**Branch:** `feature/wp-d-installer-migration`
+**Estimated effort:** 1–2 days
+**Dependencies:** PR #C
+**Priority:** CRITICAL (release blocker)
 
-### PAI-Install portieren
+### Port PAI-Install
 
-Referenz: `/Releases/v4.0.3/.claude/PAI-Install/`
+Reference: `.../Releases/v4.0.3/.claude/PAI-Install/`
 
-- [ ] `PAI-Install/install.sh` portieren + für OpenCode anpassen
+- [ ] `PAI-Install/install.sh` — port + adapt for OpenCode
   - `~/.claude/` → `~/.opencode/`
-  - `CLAUDE.md` → `AGENTS.md` (OpenCode-Konvention)
-- [ ] `PAI-Install/cli/` portieren
-- [ ] `PAI-Install/engine/` portieren
-- [ ] `PAI-Install/electron/` portieren + für OpenCode anpassen (**Pflicht für v3.0**)
-  - Electron-App als GUI-Installer: "PAI-OpenCode installieren" mit Schritt-für-Schritt UI
-  - Alle Referenzen auf Claude Code → OpenCode anpassen
-- [ ] `PAI-Install/web/` portieren (Electron-Web-UI)
-- [ ] `PAI-Install/main.ts` für OpenCode anpassen
-- [ ] `PAI-Install/README.md` schreiben
+  - `CLAUDE.md` → `AGENTS.md`
+- [ ] `PAI-Install/cli/` — port
+- [ ] `PAI-Install/engine/` — port
+- [ ] `PAI-Install/electron/` — port + adapt for OpenCode (**required for v3.0**)
+  - Electron app as GUI installer: step-by-step "Install PAI-OpenCode" UI
+  - Replace all Claude Code references → OpenCode
+- [ ] `PAI-Install/web/` — port (Electron web UI)
+- [ ] `PAI-Install/main.ts` — adapt for OpenCode
+- [ ] `PAI-Install/README.md` — write
 
-> [!important]
-> **Electron-GUI ist Pflicht für v3.0** — CLI-Installer UND Electron-GUI beide required
+> [!IMPORTANT]
+> **Electron GUI is required for v3.0** — both CLI installer AND Electron GUI
 
 ### Migration Script
 
-- [ ] **`tools/migration-v2-to-v3.ts`** erstellen:
+- [ ] Create `tools/migration-v2-to-v3.ts`:
   ```text
   1. Backup ~/.opencode/ → ~/.opencode-backup-YYYYMMDD/
   2. Detect current version (v2.x vs v3.x)
-  3. Move flat skills → hierarchical structure (wenn noch nicht)
+  3. Move flat skills → hierarchical structure (if not already done)
   4. Update MINIMAL_BOOTSTRAP.md
   5. Run ValidateSkillStructure.ts
-  6. Report: was migriert, was übersprungen, was manuell zu prüfen
+  6. Report: what was migrated, what was skipped, what needs manual review
   ```
-- [ ] Migration gegen Test-Setup testen (frische v2.x Struktur)
+- [ ] Test migration against a clean v2.x test setup
 
-### Dokumentation
-- [ ] **`UPGRADE.md`** schreiben: Schritt-für-Schritt von v2.x → v3.0
-- [ ] **`INSTALL.md`** schreiben: Frisch-Installation für neue User
-- [ ] **`CHANGELOG.md`** erstellen: Alle Breaking Changes, neue Features, Migrationspfad
-- [ ] **`README.md`** (Root) aktualisieren: v3.0-spezifische Infos
+### DB Health (WP-F — integrated into PR #D)
 
-### Abschluss PR #D
-- [ ] Migration-Script auf sauberem Test-Verzeichnis testen
-- [ ] Install-Script dry-run
-- [ ] PR gegen `dev`
+- [ ] Extend `plugins/handlers/session-cleanup.ts` with `checkDbHealth()` — warn when DB > 500MB or sessions > 90 days old
+- [ ] Implement `plugins/lib/db-utils.ts` — `getDbSizeMB()` and `getSessionsOlderThan(days)`
+- [ ] Create `Tools/db-archive.ts` — standalone Bun script for session archiving
+  - `bun db-archive.ts` — archive sessions > 90 days
+  - `bun db-archive.ts 180` — archive sessions > 180 days
+  - `bun db-archive.ts --dry-run` — preview what would be archived
+  - `bun db-archive.ts --vacuum` — VACUUM after archiving (requires OpenCode to be stopped)
+  - `bun db-archive.ts --restore archive-2025-Q4.db` — restore from archive
+- [ ] Create `.opencode/commands/db-archive.ts` — OpenCode custom command `/db-archive`
+- [ ] Add "DB Health" tab to `PAI-Install/electron/`
+- [ ] Create `docs/DB-MAINTENANCE.md`
+
+### Documentation
+
+- [ ] Write `UPGRADE.md` — step-by-step from v2.x → v3.0
+- [ ] Write `INSTALL.md` — fresh installation for new users
+- [ ] Create `CHANGELOG.md` — all breaking changes, new features, migration path
+- [ ] Update root `README.md` — v3.0-specific info
+
+### PR #D Completion
+
+- [ ] Test migration script on clean test directory
+- [ ] Install script dry-run
+- [ ] `bun Tools/db-archive.ts --dry-run` on a real DB
+- [ ] Test custom command `/db-archive` in a fresh session
+- [ ] Test archive restore (restore one session)
+- [ ] `biome check --write .`
+- [ ] Create PR against `dev`
 
 ---
 
 ## 🏁 PR #E — WP-E: Final Testing & v3.0.0 Release
 
-**Branch:** `release/v3.0.0` von `dev`  
-**Geschätzter Aufwand:** 0.5–1 Tag  
-**Abhängigkeiten:** PRs #A–#D alle gemergt  
-**Priorität:** KRITISCH (letzter Schritt)
+**Branch:** `release/v3.0.0` from `dev`
+**Estimated effort:** 0.5–1 day
+**Dependencies:** PRs #A–#D all merged
+**Priority:** CRITICAL (final step)
 
 ### Pre-Release Tests
-- [ ] `bun test` — alle Tests grün
+
+- [ ] `bun test` — all tests green
 - [ ] `biome check .` — zero errors
-- [ ] `bun run skills:validate` — alle Skills valide
-- [ ] Manuelle End-to-End: Algorithm 7 Phasen durchlaufen
-- [ ] Plugin-Events prüfen: Hooks feuern korrekt (session-start, tool-call, session-end)
-- [ ] Injection-Guard testen: bekannte Patterns blockiert
-- [ ] Migration-Script: frischer Durchlauf von v2 → v3
+- [ ] `bun run skills:validate` — all skills valid
+- [ ] Manual end-to-end: Algorithm 7 phases complete run
+- [ ] Plugin events check: hooks fire correctly (session-start, tool-call, session-end)
+- [ ] Injection guard test: known patterns blocked
+- [ ] Migration script: clean run from v2 → v3
 
 ### GitHub Release
-- [ ] Tag `v3.0.0` erstellen
-- [ ] GitHub Release aus `CHANGELOG.md` befüllen
-- [ ] Release Notes: What's New, Breaking Changes, Migration
 
-### Kommunikation (optional)
-- [ ] PAI Community (Discord/GitHub Discussions) informieren
-- [ ] `CONTRIBUTING.md` prüfen: Sind Guidelines noch aktuell?
+- [ ] Create tag `v3.0.0`
+- [ ] Fill GitHub Release from `CHANGELOG.md`
+- [ ] Release notes: What's New, Breaking Changes, Migration
 
----
+### Communication (optional)
 
-## 📋 Quick Reference: Dateien die wir löschen / umstrukturieren
-
-| Datei | Aktion | Grund |
-|-------|--------|-------|
-| `docs/epic/ARCHITECTURE-PLAN.md` | 🗑️ Gelöscht | Inhalt in EPIC + GAP-ANALYSIS konsolidiert |
-| `docs/epic/WP4-IMPLEMENTATION-PLAN.md` | 🗑️ Gelöscht | WP4 abgeschlossen, veraltet |
-| `docs/epic/WORK-PACKAGE-GUIDELINES.md` | 🗑️ Gelöscht | Wichtige Teile ins EPIC integriert |
-| `.opencode/skills/USMetrics/USMetrics/` | 🔀 Flatten | Falsche Nested-Struktur → in PR #C |
-| `.opencode/PAI/WP2_CONTEXT_COMPARISON.md` | 🗑️ Gelöscht | Build-Artefakt, kein dauerhafter Wert |
+- [ ] Inform PAI Community (Discord/GitHub Discussions)
+- [ ] Review `CONTRIBUTING.md` — are guidelines still current?
 
 ---
 
-## 🗂️ Endstruktur `docs/epic/` (Zielzustand nach Konsolidierung)
+## 📋 Quick Reference: Files to Delete / Restructure
+
+| File | Action | Reason |
+|------|--------|--------|
+| `docs/epic/ARCHITECTURE-PLAN.md` | 🗑️ Deleted | Content consolidated into EPIC + GAP-ANALYSIS |
+| `docs/epic/WP4-IMPLEMENTATION-PLAN.md` | 🗑️ Deleted | WP4 complete, outdated |
+| `docs/epic/WORK-PACKAGE-GUIDELINES.md` | 🗑️ Deleted | Important parts integrated into EPIC |
+| `.opencode/skills/USMetrics/USMetrics/` | 🔀 Flatten → PR #C | Incorrect nested structure |
+| `.opencode/skills/Telos/Telos/` | 🔀 Flatten → PR #C | Incorrect nested structure |
+| `.opencode/PAI/WP2_CONTEXT_COMPARISON.md` | 🗑️ Deleted | Build artifact, no lasting value |
+
+---
+
+## 🗂️ Target Structure `docs/epic/` (after consolidation)
 
 ```text
 docs/epic/
 ├── EPIC-v3.0-Synthesis-Architecture.md   ← Master (Vision + WP-Status + Guidelines)
-├── GAP-ANALYSIS-v3.0.md                  ← Audit-Ergebnis (Referenz für PR-Arbeit)
-├── OPTIMIZED-PR-PLAN.md                  ← Aktiver PR-Plan (A-E)
-└── TODO-v3.0.md                          ← Diese Datei (granulare Tasks)
+├── GAP-ANALYSIS-v3.0.md                  ← Audit result (reference for PR work)
+├── OPTIMIZED-PR-PLAN.md                  ← Active PR plan (A-E)
+└── TODO-v3.0.md                          ← This file (granular tasks)
 ```
 
 <details>
-<summary>Mermaid-Ansicht der Zielstruktur</summary>
+<summary>Mermaid view of target structure</summary>
 
 ```mermaid
 graph TD
     root["docs/epic/"]
     root --> epic["EPIC-v3.0-Synthesis-Architecture.md<br/><i>Master: Vision + WP-Status + Guidelines</i>"]
-    root --> gap["GAP-ANALYSIS-v3.0.md<br/><i>Audit-Ergebnis (3-Wege-Vergleich)</i>"]
-    root --> plan["OPTIMIZED-PR-PLAN.md<br/><i>Aktiver PR-Plan (A–E)</i>"]
-    root --> todo["TODO-v3.0.md<br/><i>Granulare Tasks</i>"]
+    root --> gap["GAP-ANALYSIS-v3.0.md<br/><i>Audit result (3-way comparison)</i>"]
+    root --> plan["OPTIMIZED-PR-PLAN.md<br/><i>Active PR plan (A–E)</i>"]
+    root --> todo["TODO-v3.0.md<br/><i>Granular tasks</i>"]
 ```
 
 </details>
 
 ---
 
-*Erstellt: 2026-03-06*  
-*Basis: GAP-ANALYSIS-v3.0.md + EPIC-v3.0-Synthesis-Architecture.md*
+*Created: 2026-03-06*
+*Updated: 2026-03-08 — WP-A/WP-B merged; WP-C verified against v4.0.3 upstream*
+*Basis: GAP-ANALYSIS-v3.0.md + EPIC-v3.0-Synthesis-Architecture.md + live repo audit*

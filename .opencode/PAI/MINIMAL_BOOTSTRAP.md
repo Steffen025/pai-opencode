@@ -100,7 +100,7 @@ The system must know which skills exist to load them:
 | **BrightData** | "Bright Data", "scrape URL", "web scraping" | `skills/Scraping/BrightData/SKILL.md` |
 | **AnnualReports** | "Annual report", "security report", "threat report" | `skills/Security/AnnualReports/SKILL.md` |
 | **SECUpdates** | "Security news", "breaches", "security updates" | `skills/Security/SECUpdates/SKILL.md` |
-| **Telos** | "TELOS", "life goals", "projects", "books" | `skills/Telos/Telos/SKILL.md` |
+| **Telos** | "TELOS", "life goals", "projects", "books" | `skills/Telos/SKILL.md` |
 | **Aphorisms** | "Aphorism", "quote", "saying" | `skills/Utilities/Aphorisms/SKILL.md` |
 | **Algorithm** | "Algorithm details", "full algorithm", "PRD format", "ISC decomposition", "Extended effort", "Advanced effort" | `PAI/Algorithm/v3.7.0.md` |
 | **Fabric** | "Fabric pattern", "extract wisdom", "summarize" | `skills/Utilities/Fabric/SKILL.md` |
@@ -115,7 +115,6 @@ The system must know which skills exist to load them:
 | **Scraping** | "Scrape", "Twitter", "Instagram", "web scraping" | `skills/Scraping/SKILL.md` |
 | **Thinking** | "Be creative", "first principles", "red team", "council" | `skills/Thinking/SKILL.md` |
 | **Utilities** | "Documents", "Fabric", "Browser", "CLI tools" | `skills/Utilities/SKILL.md` |
-| **USMetrics** | "US metrics", "American data", "statistics" | `skills/USMetrics/USMetrics/SKILL.md` |
 | **WarriorPatterns** | "Warrior patterns", "business analysis", "positioning" | `skills/WarriorPatterns/SKILL.md` |
 | **WarriorsWay** | "Warriors Way", "Core 4", "4Ps", "breakthrough" | `skills/WarriorsWay/SKILL.md` |
 
@@ -136,10 +135,12 @@ The system must know which skills exist to load them:
 | Skill | Trigger | Path |
 |-------|---------|------|
 | **Aphorisms** | "Aphorism", "quote" | `skills/Utilities/Aphorisms/SKILL.md` |
+| **AudioEditor** | "Audio", "edit audio", "process audio" | `skills/Utilities/AudioEditor/SKILL.md` |
 | **Browser** | "Browser", "screenshots" | `skills/Utilities/Browser/SKILL.md` |
 | **Cloudflare** | "Cloudflare", "Workers" | `skills/Utilities/Cloudflare/SKILL.md` |
 | **CreateCLI** | "Create CLI", "build CLI" | `skills/Utilities/CreateCLI/SKILL.md` |
 | **CreateSkill** | "Create skill", "new skill" | `skills/Utilities/CreateSkill/SKILL.md` |
+| **Delegation** | "Delegate", "orchestrate", "assign" | `skills/Utilities/Delegation/SKILL.md` |
 | **Documents** | "Documents", "PDF", "Word" | `skills/Utilities/Documents/SKILL.md` |
 | **Evals** | "Eval", "benchmark" | `skills/Utilities/Evals/SKILL.md` |
 | **Fabric** | "Fabric", "extract wisdom" | `skills/Utilities/Fabric/SKILL.md` |

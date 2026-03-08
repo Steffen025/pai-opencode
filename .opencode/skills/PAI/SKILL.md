@@ -1,13 +1,14 @@
+---
+name: PAI
+description: Personal AI Infrastructure core. The authoritative reference for how PAI works.
+---
+
 <!--
   🔨 GENERATED FILE - Do not edit directly
   Edit:   ~/.opencode/skills/PAI/Components/
   Build:  bun ~/.opencode/skills/PAI/Tools/RebuildPAI.ts
   Built:  2026-03-03 (Upstream sync v3.7.0 | PAI-OpenCode v3.0)
 -->
----
-name: PAI
-description: Personal AI Infrastructure core. The authoritative reference for how PAI works.
----
 
 # ⛔ CRITICAL: WORKING DIRECTORY - READ FIRST ⛔
 

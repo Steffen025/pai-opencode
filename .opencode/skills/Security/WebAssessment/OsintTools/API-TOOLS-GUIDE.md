@@ -143,10 +143,10 @@ Add your API keys to `${PAI_DIR}/.env`:
 nano ${PAI_DIR}/.env
 
 # Add these lines (replace with your actual keys):
-SHODAN_API_KEY=your_actual_shodan_api_key_here
-DEHASHED_API_KEY=your_actual_dehashed_api_key_here
-DEHASHED_EMAIL=your_dehashed_account_email@example.com
-OSINT_INDUSTRIES_API_KEY=your_actual_osint_industries_key_here
+SHODAN_API_KEY=[YOUR_SHODAN_API_KEY]
+DEHASHED_API_KEY=[YOUR_DEHASHED_API_KEY]
+DEHASHED_EMAIL=[YOUR_DEHASHED_EMAIL]
+OSINT_INDUSTRIES_API_KEY=[YOUR_OSINT_INDUSTRIES_API_KEY]
 ```
 
 **CRITICAL:** Ensure `${PAI_DIR}/.env` is in `.gitignore` and NEVER commit it to any repository.

@@ -1,5 +1,5 @@
 ---
-name: USMetrics
+name: USMetricsCore
 description: US economic indicators. USE WHEN GDP, inflation, unemployment, economic metrics, gas prices. SkillSearch('usmetrics') for docs.
 ---
 

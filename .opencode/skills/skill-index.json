@@ -1,11 +1,11 @@
 {
-  "generated": "2026-03-05T23:42:19.981Z",
-  "totalSkills": 49,
-  "categories": 7,
-  "flatSkills": 15,
-  "hierarchicalSkills": 34,
+  "generated": "2026-03-08T23:31:35.392Z",
+  "totalSkills": 54,
+  "categories": 9,
+  "flatSkills": 17,
+  "hierarchicalSkills": 37,
   "alwaysLoadedCount": 2,
-  "deferredCount": 47,
+  "deferredCount": 52,
   "skills": {
     "agents": {
       "name": "Agents",
@@ -126,6 +126,34 @@
       ],
       "tier": "always",
       "isHierarchical": true
+    },
+    "audioeditor": {
+      "name": "AudioEditor",
+      "path": "AudioEditor/SKILL.md",
+      "category": null,
+      "fullDescription": "AI-powered audio/video editing — transcription, intelligent cut detection, automated editing with crossfades, and optional cloud polish. USE WHEN clean audio, edit audio, remove filler words, clean podcast, remove ums, fix audio, cut dead air, polish audio, clean recording, transcribe and edit.",
+      "triggers": [
+        "clean",
+        "audio",
+        "edit",
+        "remove",
+        "filler",
+        "words",
+        "podcast",
+        "ums",
+        "fix",
+        "cut",
+        "dead",
+        "air",
+        "polish",
+        "recording",
+        "transcribe"
+      ],
+      "workflows": [
+        "Clean"
+      ],
+      "tier": "deferred",
+      "isHierarchical": false
     },
     "becreative": {
       "name": "BeCreative",
@@ -287,6 +315,28 @@
       "tier": "deferred",
       "isHierarchical": true
     },
+    "delegation": {
+      "name": "Delegation",
+      "path": "Utilities/Delegation/SKILL.md",
+      "category": "Utilities",
+      "fullDescription": "Parallelize work via background/foreground agents, built-in types, custom agents, or agent teams/swarms. USE WHEN 3+ independent workstreams, parallel execution, agent specialization, Extended+ effort, agent team, swarm, create an agent team.",
+      "triggers": [
+        "independent",
+        "workstreams",
+        "parallel",
+        "execution",
+        "agent",
+        "specialization",
+        "extended+",
+        "effort",
+        "team",
+        "swarm",
+        "create"
+      ],
+      "workflows": [],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
     "documents": {
       "name": "Documents",
       "path": "Utilities/Documents/SKILL.md",
@@ -308,7 +358,7 @@
     },
     "docx": {
       "name": "Docx",
-      "path": "Utilities/Documents/Docx/SKILL.md",
+      "path": "Utilities/Docx/SKILL.md",
       "category": "Utilities",
       "fullDescription": "Word document processing. USE WHEN docx, Word document. SkillSearch('docx') for docs.",
       "triggers": [
@@ -509,6 +559,16 @@
       "tier": "deferred",
       "isHierarchical": true
     },
+    "pai": {
+      "name": "PAI",
+      "path": "PAI/SKILL.md",
+      "category": null,
+      "fullDescription": "Personal AI Infrastructure core. The authoritative reference for how PAI works.",
+      "triggers": [],
+      "workflows": [],
+      "tier": "deferred",
+      "isHierarchical": false
+    },
     "paiupgrade": {
       "name": "PAIUpgrade",
       "path": "Utilities/PAIUpgrade/SKILL.md",
@@ -567,7 +627,7 @@
     },
     "pdf": {
       "name": "Pdf",
-      "path": "Utilities/Documents/Pdf/SKILL.md",
+      "path": "Utilities/Pdf/SKILL.md",
       "category": "Utilities",
       "fullDescription": "PDF processing. USE WHEN pdf, PDF file. SkillSearch('pdf') for docs.",
       "triggers": [
@@ -580,7 +640,7 @@
     },
     "pptx": {
       "name": "Pptx",
-      "path": "Utilities/Documents/Pptx/SKILL.md",
+      "path": "Utilities/Pptx/SKILL.md",
       "category": "Utilities",
       "fullDescription": "PowerPoint processing. USE WHEN pptx, PowerPoint, slides. SkillSearch('pptx') for docs.",
       "triggers": [
@@ -941,6 +1001,29 @@
       "tier": "deferred",
       "isHierarchical": false
     },
+    "teloscore": {
+      "name": "TelosCore",
+      "path": "Telos/Telos/SKILL.md",
+      "category": "Telos",
+      "fullDescription": "\"Life OS and project analysis. USE WHEN TELOS, life goals, projects, dependencies, books, movies. SkillSearch('telos') for docs.\"",
+      "triggers": [
+        "telos",
+        "life",
+        "goals",
+        "projects",
+        "dependencies",
+        "books",
+        "movies"
+      ],
+      "workflows": [
+        "Update",
+        "InterviewExtraction",
+        "CreateNarrativePoints",
+        "WriteReport"
+      ],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
     "thinking": {
       "name": "Thinking",
       "path": "Thinking/SKILL.md",
@@ -991,6 +1074,27 @@
       "workflows": [],
       "tier": "deferred",
       "isHierarchical": false
+    },
+    "usmetricscore": {
+      "name": "USMetricsCore",
+      "path": "USMetrics/USMetrics/SKILL.md",
+      "category": "USMetrics",
+      "fullDescription": "US economic indicators. USE WHEN GDP, inflation, unemployment, economic metrics, gas prices. SkillSearch('usmetrics') for docs.",
+      "triggers": [
+        "gdp",
+        "inflation",
+        "unemployment",
+        "economic",
+        "metrics",
+        "gas",
+        "prices"
+      ],
+      "workflows": [
+        "UpdateData",
+        "GetCurrentState"
+      ],
+      "tier": "deferred",
+      "isHierarchical": true
     },
     "utilities": {
       "name": "Utilities",
@@ -1141,7 +1245,7 @@
     },
     "xlsx": {
       "name": "Xlsx",
-      "path": "Utilities/Documents/Xlsx/SKILL.md",
+      "path": "Utilities/Xlsx/SKILL.md",
       "category": "Utilities",
       "fullDescription": "Excel file processing. USE WHEN xlsx, Excel, spreadsheet. SkillSearch('xlsx') for docs.",
       "triggers": [
@@ -1177,6 +1281,9 @@
       "SECUpdates",
       "WebAssessment"
     ],
+    "Telos": [
+      "TelosCore"
+    ],
     "Thinking": [
       "BeCreative",
       "Council",
@@ -1186,12 +1293,16 @@
       "Science",
       "WorldThreatModelHarness"
     ],
+    "USMetrics": [
+      "USMetricsCore"
+    ],
     "Utilities": [
       "Aphorisms",
       "Browser",
       "Cloudflare",
       "CreateCLI",
       "CreateSkill",
+      "Delegation",
       "Documents",
       "Docx",
       "Evals",

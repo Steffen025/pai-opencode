@@ -12,10 +12,12 @@ description: Utility and helper skills. USE WHEN aphorisms, quotes, browser auto
 | Skill | Purpose | Trigger |
 |-------|---------|---------|
 | **Aphorisms** | Quote and saying management | "aphorisms", "quotes", "sayings" |
+| **AudioEditor** | Audio editing and processing | "audio edit", "process audio", "audio" |
 | **Browser** | Browser automation and screenshots | "browser", "screenshots", "web automation" |
 | **Cloudflare** | Cloudflare Workers, Pages, R2, DNS | "Cloudflare", "Workers", "Pages", "R2" |
 | **CreateCLI** | Build command-line tools | "create CLI", "build CLI", "command line" |
 | **CreateSkill** | Create new PAI skills | "create skill", "new skill", "build skill" |
+| **Delegation** | Task delegation and orchestration | "delegate", "orchestrate", "assign" |
 | **Documents** | Process documents (PDF, Word, Excel) | "process document", "PDF", "Word", "Excel" |
 | **Evals** | Evaluation and benchmarking system | "eval", "evaluate", "benchmark", "test" |
 | **Fabric** | 240+ Fabric patterns for content analysis | "fabric", "extract wisdom", "summarize" |

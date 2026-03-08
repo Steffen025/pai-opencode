@@ -96,7 +96,8 @@ jobs:
       # Test job — vorbereitet für wenn Tests existieren
       - name: Tests (if tests exist)
         run: |
-          if find . -name "*.test.ts" -o -name "*.spec.ts" | grep -q .; then
+          # Exclude node_modules to avoid finding test files in dependencies
+          if find . -name "*.test.ts" -o -name "*.spec.ts" | grep -v node_modules | grep -q .; then
             echo "Test files found — running tests..."
             bun test
           else
