@@ -1,9 +1,9 @@
 {
-  "generated": "2026-03-08T21:38:47.482Z",
+  "generated": "2026-03-08T23:24:20.017Z",
   "totalSkills": 51,
   "categories": 7,
-  "flatSkills": 15,
-  "hierarchicalSkills": 36,
+  "flatSkills": 16,
+  "hierarchicalSkills": 35,
   "alwaysLoadedCount": 2,
   "deferredCount": 49,
   "skills": {
@@ -129,8 +129,8 @@
     },
     "audioeditor": {
       "name": "AudioEditor",
-      "path": "Utilities/AudioEditor/SKILL.md",
-      "category": "Utilities",
+      "path": "AudioEditor/SKILL.md",
+      "category": null,
       "fullDescription": "AI-powered audio/video editing — transcription, intelligent cut detection, automated editing with crossfades, and optional cloud polish. USE WHEN clean audio, edit audio, remove filler words, clean podcast, remove ums, fix audio, cut dead air, polish audio, clean recording, transcribe and edit.",
       "triggers": [
         "clean",
@@ -153,7 +153,7 @@
         "Clean"
       ],
       "tier": "deferred",
-      "isHierarchical": true
+      "isHierarchical": false
     },
     "becreative": {
       "name": "BeCreative",
@@ -1238,7 +1238,6 @@
     ],
     "Utilities": [
       "Aphorisms",
-      "AudioEditor",
       "Browser",
       "Cloudflare",
       "CreateCLI",
