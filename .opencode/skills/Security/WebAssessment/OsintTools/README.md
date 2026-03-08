@@ -128,7 +128,7 @@ geolocation         # Get location data from posts
      ```ini
      [Credentials]
      username = your_instagram_username
-     password = your_instagram_password
+     password = [YOUR_INSTAGRAM_PASSWORD]
      ```
    - **Security Warning:** Use a dedicated OSINT account, not your personal account
 
