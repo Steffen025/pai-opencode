@@ -98,6 +98,7 @@ export interface InstallState {
     voiceEnabled?: boolean;
     voiceProvider?: "elevenlabs" | "google" | "macos" | "none";
     voiceId?: string;
+    backupPath?: string;  // For migration backup
   };
 
   // Results

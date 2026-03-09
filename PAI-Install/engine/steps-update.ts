@@ -139,7 +139,6 @@ export async function runUpdate(
 
   // Step 3: Rebuild & Verify
   emit({ event: "step_start", step: "rebuild" });
-  const { buildOpenCodeBinary } = await import("./build-opencode");
   await buildOpenCodeBinary({
     onProgress: async (message, percent) => {
       emit({ event: "progress", step: "rebuild", percent, detail: message });

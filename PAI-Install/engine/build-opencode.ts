@@ -9,13 +9,14 @@
  * Reference: ~/.opencode/tools/opencode-wrapper (bash implementation)
  */
 
-import { exec } from "node:child_process";
+import { exec, execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { existsSync, symlinkSync, unlinkSync, chmodSync, copyFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
 
 const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 // ═══════════════════════════════════════════════════════════
 // Configuration
@@ -78,7 +79,7 @@ function detectBinaryPath(buildDir: string): string | null {
 
 async function getBuildVersion(buildDir: string): Promise<string> {
 	try {
-		const { stdout } = await execAsync("git log --oneline -1", {
+		const { stdout } = await execFileAsync("git", ["log", "--oneline", "-1"], {
 			cwd: buildDir,
 		});
 		return stdout.trim();
@@ -89,7 +90,7 @@ async function getBuildVersion(buildDir: string): Promise<string> {
 
 async function getBinaryVersion(binaryPath: string): Promise<string> {
 	try {
-		const { stdout } = await execAsync(`"${binaryPath}" --version`);
+		const { stdout } = await execFileAsync(binaryPath, ["--version"]);
 		return stdout.trim();
 	} catch {
 		return "unknown";
@@ -227,9 +228,9 @@ export async function getBuildStatus(): Promise<{
 }
 
 // ═══════════════════════════════════════════════════════════
-// Escape Hatch: Use Homebrew
+// Escape Hatch: Check Homebrew Availability
 // ═══════════════════════════════════════════════════════════
 
-export async function useHomebrewVersion(): Promise<boolean> {
+export async function isHomebrewAvailable(): Promise<boolean> {
 	return existsSync(BREW_BIN_PATH);
 }

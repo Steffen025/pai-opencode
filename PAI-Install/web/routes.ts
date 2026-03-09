@@ -145,8 +145,21 @@ async function requestChoice(
 
 // ─── WebSocket Message Handler ───────────────────────────────────
 
-let detectedMode: "fresh" | "migrate" | "update" | null = null;
-let selectedMode: "fresh" | "migrate" | "update" | null = null;
+// Per-client state to avoid race conditions between multiple connections
+const clientState = new Map<any, {
+  detectedMode: "fresh" | "migrate" | "update" | null;
+  selectedMode: "fresh" | "migrate" | "update" | null;
+}>();
+
+function getClientState(ws: any) {
+  if (!clientState.has(ws)) {
+    clientState.set(ws, {
+      detectedMode: null,
+      selectedMode: null,
+    });
+  }
+  return clientState.get(ws)!;
+}
 
 export function handleWsMessage(ws: any, raw: string): void {
   let msg: ClientMessage;
@@ -155,6 +168,8 @@ export function handleWsMessage(ws: any, raw: string): void {
   } catch {
     return;
   }
+
+  const state = getClientState(ws);
 
   switch (msg.type) {
     case "client_ready":
@@ -169,24 +184,26 @@ export function handleWsMessage(ws: any, raw: string): void {
           ws.send(JSON.stringify({ type: "step_update", step: s.id, status: s.status }));
         }
       }
-      // Detect and broadcast install mode
+      // Detect and broadcast install mode (per-client)
       detectInstallMode().then((mode) => {
-        detectedMode = mode;
-        broadcast({ type: "mode_detected", mode: detectedMode });
+        state.detectedMode = mode;
+        // Send only to this client, not broadcast
+        ws.send(JSON.stringify({ type: "mode_detected", mode: state.detectedMode }));
       });
       break;
 
     case "select_mode":
       if (installationRunning) {
-        broadcast({ type: "error", message: "Installation already in progress" });
+        ws.send(JSON.stringify({ type: "error", message: "Installation already in progress" }));
         break;
       }
       if (msg.mode && ["fresh", "migrate", "update"].includes(msg.mode)) {
-        selectedMode = msg.mode as "fresh" | "migrate" | "update";
-        broadcast({ type: "mode_selected", mode: selectedMode });
+        state.selectedMode = msg.mode as "fresh" | "migrate" | "update";
+        // Send only to this client
+        ws.send(JSON.stringify({ type: "mode_selected", mode: state.selectedMode }));
         // Auto-start installation after mode selection
         installationRunning = true;
-        startInstallation(selectedMode).finally(() => {
+        startInstallation(state.selectedMode).finally(() => {
           installationRunning = false;
         });
       }
@@ -317,10 +334,14 @@ async function detectInstallMode(): Promise<"fresh" | "migrate" | "update" | nul
 
 export function addClient(ws: any): void {
   wsClients.add(ws);
+  // Initialize client state
+  getClientState(ws);
 }
 
 export function removeClient(ws: any): void {
   wsClients.delete(ws);
+  // Clean up client state to prevent memory leaks
+  clientState.delete(ws);
 }
 
 export function getState(): InstallState | null {

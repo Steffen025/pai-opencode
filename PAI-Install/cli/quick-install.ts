@@ -16,12 +16,7 @@ import { join } from "node:path";
 import { homedir } from "node:os";
 import type { InstallState } from "../engine/types";
 import { createFreshState } from "../engine/state";
-import { stepPrerequisites } from "../engine/steps-fresh";
-import { stepBuildOpenCode } from "../engine/steps-fresh";
-import { stepProviderConfig, ZEN_FREE_MODELS } from "../engine/steps-fresh";
-import { stepIdentity } from "../engine/steps-fresh";
-import { stepVoice } from "../engine/steps-fresh";
-import { stepInstallPAI } from "../engine/steps-fresh";
+import { stepPrerequisites, stepBuildOpenCode, stepProviderConfig, ZEN_FREE_MODELS, stepIdentity, stepVoice, stepInstallPAI } from "../engine/steps-fresh";
 import { stepDetectMigration, stepCreateBackup, stepMigrate, stepBinaryUpdate, stepMigrationDone } from "../engine/steps-migrate";
 import { stepDetectUpdate, stepApplyUpdate, stepUpdateDone } from "../engine/steps-update";
 
@@ -159,7 +154,12 @@ async function runFreshInstall(): Promise<void> {
 	// Step 4: Provider Config
 	onProgress(75, "Configuring provider...");
 	const preset = values.preset || "zen";
-	const models = preset === "zen" ? ZEN_FREE_MODELS : {
+	
+	// Type guard for valid presets
+	const validPresets = ["zen", "quick", "standard", "advanced", "anthropic", "openrouter", "openai"];
+	const validatedPreset = validPresets.includes(preset) ? preset : "zen";
+	
+	const models = validatedPreset === "zen" ? ZEN_FREE_MODELS : {
 		quick: "claude-haiku-3.5",
 		standard: "claude-sonnet-4.6",
 		advanced: "claude-opus-4.6",
@@ -168,7 +168,7 @@ async function runFreshInstall(): Promise<void> {
 	await stepProviderConfig(
 		state,
 		{
-			provider: preset as any,
+			provider: validatedPreset,
 			apiKey: values["api-key"] || "",
 			modelTier: "standard",
 			models,
@@ -325,51 +325,54 @@ async function runUpdate(): Promise<void> {
 // ═══════════════════════════════════════════════════════════
 
 async function main(): Promise<void> {
-	// Determine mode
-	const mode = values.migrate ? "migrate" : values.update ? "update" : "fresh";
+	// Determine mode from flags
+	let mode: "fresh" | "migrate" | "update" | null = null;
+	if (values.fresh) mode = "fresh";
+	else if (values.migrate) mode = "migrate";
+	else if (values.update) mode = "update";
 	
-	// Auto-detect if not specified
-	if (!values.fresh && !values.migrate && !values.update) {
+	// Auto-detect if no mode specified
+	if (!mode) {
 		const paiDir = join(homedir(), ".opencode");
 		
 		if (!existsSync(paiDir)) {
-			// Fresh install
-			await runFreshInstall();
+			mode = "fresh";
 		} else {
-			// Check if migration needed
+			// Static imports for sync checks
 			const { isMigrationNeeded } = await import("../engine/migrate");
 			const migrationCheck = isMigrationNeeded();
 			
 			if (migrationCheck.needed) {
-				console.log("Detected v2 installation — running migration");
-				await runMigration();
+				mode = "migrate";
 			} else {
-				// Check for updates
 				const { isUpdateNeeded } = await import("../engine/update");
 				const updateCheck = isUpdateNeeded();
 				
 				if (updateCheck.needed) {
-					console.log("Update available — running update");
-					await runUpdate();
+					mode = "update";
 				} else {
 					console.log("PAI-OpenCode is up to date");
 					process.exit(0);
 				}
 			}
 		}
-	} else {
-		// Explicit mode
-		switch (mode) {
-			case "migrate":
-				await runMigration();
-				break;
-			case "update":
-				await runUpdate();
-				break;
-			default:
-				await runFreshInstall();
-				break;
-		}
+	}
+	
+	// Execute the determined mode
+	switch (mode) {
+		case "migrate":
+			console.log("Running migration...");
+			await runMigration();
+			break;
+		case "update":
+			console.log("Running update...");
+			await runUpdate();
+			break;
+		case "fresh":
+		default:
+			console.log("Running fresh install...");
+			await runFreshInstall();
+			break;
 	}
 }
 

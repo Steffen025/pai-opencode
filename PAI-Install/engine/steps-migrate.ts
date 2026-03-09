@@ -71,8 +71,8 @@ export async function stepCreateBackup(
 		};
 	}
 	
-	// Store backup path in state (using a property that exists)
-	(state as any).backupPath = finalBackupDir;
+	// Store backup path in state
+	state.collected.backupPath = finalBackupDir;
 	
 	return {
 		success: true,
