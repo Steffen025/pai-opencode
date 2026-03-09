@@ -34,7 +34,7 @@ export interface DetectionResult {
   };
   timezone: string;
   homeDir: string;
-  paiDir: string; // resolved ~/.claude
+  paiDir: string; // resolved ~/.opencode
   configDir: string; // resolved ~/.config/PAI
 }
 

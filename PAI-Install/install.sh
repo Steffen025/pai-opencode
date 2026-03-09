@@ -133,7 +133,7 @@ else
 fi
 
 # ─── Check OpenCode ───────────────────────────────────
-if command -v claude &>/dev/null; then
+if command -v opencode &>/dev/null; then
   success "OpenCode found"
 else
   warn "OpenCode not found — will install during setup"

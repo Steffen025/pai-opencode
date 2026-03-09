@@ -31,9 +31,9 @@ export async function checkAndWarnDbHealth(): Promise<void> {
 		const { sizeMB, oldSessions, warnings } = await checkDbHealth();
 
 		if (warnings.length > 0) {
-		fileLog("[SessionCleanup] DB Health warnings: " + warnings.join(", "), "warn");
-		// Note: User-facing warning about DB health is logged to file only
-		// TUI corruption risk: Do not use console.warn here
+			fileLog("[SessionCleanup] DB Health warnings: " + warnings.join(", "), "warn");
+			// Note: User-facing warning about DB health is logged to file only
+			// TUI corruption risk: Do not use console.warn here
 		} else {
 			fileLog(`[SessionCleanup] DB Health OK (${sizeMB}MB, ${oldSessions} old sessions)`, "debug");
 		}

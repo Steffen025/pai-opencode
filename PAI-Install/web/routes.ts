@@ -31,7 +31,26 @@ import { STEPS, getProgress, getStepStatuses } from "../engine/steps";
 let installState: InstallState | null = null;
 let wsClients = new Set<any>();
 let messageHistory: ServerMessage[] = [];
-let pendingRequests = new Map<string, { resolve: (value: string) => void }>();
+let pendingRequests = new Map<string, { resolve: (value: string) => void; timeout: Timer }>();
+
+// Request timeout: 5 minutes (prevent memory leaks from abandoned requests)
+const REQUEST_TIMEOUT_MS = 5 * 60 * 1000;
+
+function setRequestTimeout(id: string): void {
+	const timeout = setTimeout(() => {
+		const pending = pendingRequests.get(id);
+		if (pending) {
+			pending.resolve(""); // Resolve empty on timeout
+			pendingRequests.delete(id);
+		}
+	}, REQUEST_TIMEOUT_MS);
+	
+	const existing = pendingRequests.get(id);
+	if (existing) {
+		clearTimeout(existing.timeout);
+	}
+	pendingRequests.set(id, { resolve: pendingRequests.get(id)?.resolve || (() => {}), timeout });
+}
 
 // ─── Broadcasting ────────────────────────────────────────────────
 
@@ -102,7 +121,12 @@ async function requestInput(
   placeholder?: string
 ): Promise<string> {
   return new Promise<string>((resolve) => {
-    pendingRequests.set(id, { resolve });
+    const timeout = setTimeout(() => {
+      pendingRequests.delete(id);
+      resolve(""); // Resolve empty on timeout
+    }, REQUEST_TIMEOUT_MS);
+    
+    pendingRequests.set(id, { resolve, timeout });
     broadcast({ type: "input_request", id, prompt, inputType: type, placeholder });
   });
 }
@@ -113,7 +137,12 @@ async function requestChoice(
   choices: { label: string; value: string; description?: string }[]
 ): Promise<string> {
   return new Promise<string>((resolve) => {
-    pendingRequests.set(id, { resolve });
+    const timeout = setTimeout(() => {
+      pendingRequests.delete(id);
+      resolve(""); // Resolve empty on timeout
+    }, REQUEST_TIMEOUT_MS);
+    
+    pendingRequests.set(id, { resolve, timeout });
     broadcast({ type: "choice_request", id, prompt, choices });
   });
 }
@@ -146,6 +175,7 @@ export function handleWsMessage(ws: any, raw: string): void {
     case "user_input": {
       const pending = pendingRequests.get(msg.requestId);
       if (pending) {
+        clearTimeout(pending.timeout);
         pending.resolve(msg.value);
         pendingRequests.delete(msg.requestId);
         // Only echo back to the originating socket, don't broadcast to all
@@ -168,6 +198,7 @@ export function handleWsMessage(ws: any, raw: string): void {
     case "user_choice": {
       const pending = pendingRequests.get(msg.requestId);
       if (pending) {
+        clearTimeout(pending.timeout);
         pending.resolve(msg.value);
         pendingRequests.delete(msg.requestId);
       }

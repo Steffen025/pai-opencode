@@ -56,8 +56,18 @@ export function generateSettingsJson(config: PAIConfig): Record<string, any> {
       temperatureUnit: config.temperatureUnit || "fahrenheit",
     },
 
+    permissions: {
+      allowFileOperations: true,
+      allowNetwork: true,
+      allowExecute: true,
+      allowBrowser: false,
+      allowedPaths: [config.paiDir, config.configDir],
+    },
+
+    plansDirectory: `${config.paiDir}/Plans`,
+
     pai: {
-      repoUrl: "https://github.com/danielmiessler/PAI",
+      repoUrl: "https://github.com/Steffen025/pai-opencode",
       version: PAI_VERSION,
       algorithmVersion: ALGORITHM_VERSION,
     },

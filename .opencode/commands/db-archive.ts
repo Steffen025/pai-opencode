@@ -92,8 +92,8 @@ export default async function dbArchiveCommand(input: string): Promise<string> {
 \`\`\`
 /db-archive              Show DB stats
 /db-archive 180          Archive sessions > 180 days
-/db-archive --dry-run   Preview only
-/db-archive --vacuum    VACUUM after archiving
+/db-archive --dry-run    Preview only
+/db-archive --vacuum     VACUUM after archiving
 \`\`\`
 
 **Thresholds:**
@@ -103,6 +103,46 @@ export default async function dbArchiveCommand(input: string): Promise<string> {
 **Archives location:** \`~/.opencode/archives/\`
 `;
 	}
+
+	// Get stats using the requested days threshold
+	const { sizeMB } = await checkDbHealth();
+	const oldSessions = (await getSessionsOlderThan(args.days)).length;
+	const lastArchive = await getLastArchiveTime();
+	const archiveStats = await getArchiveStats();
+
+	let output = "## 📊 Database Health\n\n";
+
+	// Status table
+	output += "| Metric | Value |\n";
+	output += "|--------|-------|\n";
+	output += `| DB Size | ${sizeMB.toFixed(2)} MB |\n`;
+	output += `| Sessions > ${args.days} days | ${oldSessions} |\n`;
+	output += `| Last archive | ${lastArchive || "Never"} |\n`;
+	output += `| Archive files | ${archiveStats.count} (${archiveStats.totalSize}) |\n`;
+	output += "\n";
+
+	// Show preview if dry-run requested
+	if (args.dryRun && oldSessions > 0) {
+		output += "### 🔍 Dry Run Preview\n\n";
+		output += `${oldSessions} sessions would be archived (>${args.days} days).\n\n`;
+	}
+
+	// Show vacuum note if requested
+	if (args.vacuum) {
+		output += "⚠️ **Note:** VACUUM requires the standalone tool:\n";
+		output += "\`\`\`bash\n";
+		output += "bun Tools/db-archive.ts --vacuum\n";
+		output += "\`\`\`\n";
+		output += "*(Requires OpenCode to be stopped)*\n\n";
+	}
+
+	// Show next steps if not vacuum
+	if (!args.vacuum && oldSessions > 0) {
+		output += `**💡 Tip:** Run \`bun Tools/db-archive.ts ${args.days}\` to archive ${oldSessions} old sessions.\n\n`;
+	}
+
+	return output;
+}
 
 	// Get current stats
 	const { sizeMB, oldSessions, warnings } = await checkDbHealth();

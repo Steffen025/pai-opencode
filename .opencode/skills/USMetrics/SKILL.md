@@ -1,6 +1,16 @@
 ---
 name: USMetrics
-description: US metrics and data tracking. USE WHEN US metrics, American data, statistics, demographics, tracking.
+description: US metrics, economic indicators and data tracking. USE WHEN US metrics, American data, statistics, demographics, GDP, inflation, unemployment, economic metrics, gas prices.
+triggers:
+  - "US metrics"
+  - "American data"
+  - "statistics"
+  - "demographics"
+  - "GDP"
+  - "inflation"
+  - "unemployment"
+  - "economic metrics"
+  - "gas prices"
 ---
 
 # USMetrics - US Metrics and Data Tracking
@@ -12,12 +22,14 @@ description: US metrics and data tracking. USE WHEN US metrics, American data, s
 | Skill | Purpose | Trigger |
 |-------|---------|---------|
 | **USMetrics** | US-specific metrics and data tracking | "US metrics", "American data", "statistics" |
+| **USMetricsCore** | US economic indicators | "GDP", "inflation", "unemployment" |
 
 ## When to Use
 
 - Tracking US-specific metrics and statistics
 - Analyzing American demographic data
 - Monitoring US trends and indicators
+- Economic analysis (GDP, inflation, unemployment)
 
 ## Category Philosophy
 
@@ -25,22 +37,10 @@ USMetrics provides focused tracking for US-specific data points and trends.
 
 ## Customization
 
-**Before executing, check for user customizations at:**
-`~/.opencode/skills/PAI/USER/SKILLCUSTOMIZATIONS/USMetrics/`
-
-If this directory exists, load and apply any PREFERENCES.md, configurations, or resources found there.
----
-name: USMetricsCore
-description: US economic indicators. USE WHEN GDP, inflation, unemployment, economic metrics, gas prices. SkillSearch('usmetrics') for docs.
----
-
-## Customization
-
-**Before executing, check for user customizations at:**
+**MANDATORY:** Before executing, check for user customizations at:
 `~/.opencode/skills/PAI/USER/SKILLCUSTOMIZATIONS/USMetrics/`
 
 If this directory exists, load and apply any PREFERENCES.md, configurations, or resources found there. These override default behavior. If the directory does not exist, proceed with skill defaults.
-
 
 ## 🚨 MANDATORY: Voice Notification (REQUIRED BEFORE ANY ACTION)
 
@@ -61,18 +61,10 @@ If this directory exists, load and apply any PREFERENCES.md, configurations, or 
 
 **This is not optional. Execute this curl command immediately upon skill invocation.**
 
-# US Metrics - Economic & Social Indicator Analysis
+## OPTIONAL: Additional Setup
 
-**Purpose:** Analyze U.S. economic and social metrics using the Substrate US-Common-Metrics dataset. Provides trend analysis, cross-metric correlation, pattern detection, and research recommendations.
-
-## Data Source
-
-All metrics sourced from:
-- **Location:** Configure your data directory path (e.g., `${PAI_DIR}/data/US-Common-Metrics/`)
-- **Master Document:** `US-Common-Metrics.md` (68 metrics across 10 categories)
-- **Source Documentation:** `source.md` (full methodology)
-- **Underlying APIs:** FRED, EIA, Treasury FiscalData, BLS, Census, CDC, EPA
-
+- Configure data directory path in `Preferences.md`
+- Set API keys in environment variables
 
 ## Workflow Routing
 

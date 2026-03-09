@@ -126,11 +126,9 @@ export function skipStep(state: InstallState, step: StepId, nextStep?: StepId, r
 	if (nextStep) {
 		state.currentStep = nextStep;
 	}
-	// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-	reason; // Reason stored in potential future error log
+	// Reason reserved for future logging
+	void reason;
 	saveState(state);
-}
-  saveState(state);
 }
 
 /**

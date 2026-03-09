@@ -35,18 +35,45 @@ if (!gotLock) {
 
 // ─── Wait for server to be ready ─────────────────────────────────
 
-function waitForServer(port, timeout = 15000) {
+async function waitForServer(port, timeout = 15000) {
   const start = Date.now();
   return new Promise((resolve, reject) => {
-    function tryConnect() {
+    async function tryConnect() {
       if (Date.now() - start > timeout) {
         return reject(new Error("Server start timeout"));
       }
+      
+      // First: check if socket connects
       const socket = new net.Socket();
       socket.setTimeout(500);
-      socket.once("connect", () => {
+      socket.once("connect", async () => {
         socket.destroy();
-        resolve();
+        
+        // Second: verify it's actually our Bun server by making HTTP request
+        try {
+          const http = require('http');
+          const req = http.get(`http://127.0.0.1:${port}/`, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+              // Check if response contains PAI Installer indicators
+              if (data.includes('PAI') || data.includes('Installer') || res.statusCode === 200) {
+                resolve();
+              } else {
+                setTimeout(tryConnect, 200);
+              }
+            });
+          });
+          req.on('error', () => {
+            setTimeout(tryConnect, 200);
+          });
+          req.setTimeout(1000, () => {
+            req.destroy();
+            setTimeout(tryConnect, 200);
+          });
+        } catch {
+          setTimeout(tryConnect, 200);
+        }
       });
       socket.once("error", () => {
         socket.destroy();

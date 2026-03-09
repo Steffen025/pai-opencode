@@ -137,8 +137,8 @@ export async function runCLI(): Promise<void> {
       printStep(step.number, 8, step.name);
       const detection = await runSystemDetect(state, emit);
       printDetection(detection);
-      completeStep(state, "system-detect");
       state.currentStep = "prerequisites";
+      completeStep(state, "system-detect");
     }
 
     // ── Step 2: Prerequisites ──
@@ -146,8 +146,8 @@ export async function runCLI(): Promise<void> {
       const step = STEPS[1];
       printStep(step.number, 8, step.name);
       await runPrerequisites(state, emit);
-      completeStep(state, "prerequisites");
       state.currentStep = "api-keys";
+      completeStep(state, "prerequisites");
     }
 
     // ── Step 3: API Keys ──
@@ -155,8 +155,8 @@ export async function runCLI(): Promise<void> {
       const step = STEPS[2];
       printStep(step.number, 8, step.name);
       await runApiKeys(state, emit, getInput, getChoice);
-      completeStep(state, "api-keys");
       state.currentStep = "identity";
+      completeStep(state, "api-keys");
     }
 
     // ── Step 4: Identity ──
@@ -164,8 +164,8 @@ export async function runCLI(): Promise<void> {
       const step = STEPS[3];
       printStep(step.number, 8, step.name);
       await runIdentity(state, emit, getInput);
-      completeStep(state, "identity");
       state.currentStep = "repository";
+      completeStep(state, "identity");
     }
 
     // ── Step 5: Repository ──
@@ -173,8 +173,8 @@ export async function runCLI(): Promise<void> {
       const step = STEPS[4];
       printStep(step.number, 8, step.name);
       await runRepository(state, emit);
-      completeStep(state, "repository");
       state.currentStep = "configuration";
+      completeStep(state, "repository");
     }
 
     // ── Step 6: Configuration ──
@@ -182,8 +182,8 @@ export async function runCLI(): Promise<void> {
       const step = STEPS[5];
       printStep(step.number, 8, step.name);
       await runConfiguration(state, emit);
-      completeStep(state, "configuration");
       state.currentStep = "voice";
+      completeStep(state, "configuration");
     }
 
     // ── Step 7: Voice ──
@@ -191,8 +191,8 @@ export async function runCLI(): Promise<void> {
       const step = STEPS[6];
       printStep(step.number, 8, step.name);
       await runVoiceSetup(state, emit, getChoice, getInput);
-      completeStep(state, "voice");
       state.currentStep = "validation";
+      completeStep(state, "voice");
     }
 
     // ── Step 8: Validation ──
@@ -204,11 +204,12 @@ export async function runCLI(): Promise<void> {
       printValidation(checks);
 
       const allCritical = checks.filter((c) => c.critical).every((c) => c.passed);
-      if (allCritical) {
-        completeStep(state, "validation");
-      } else {
+      if (!allCritical) {
         printError("\nSome critical checks failed. Please review and fix the issues above.");
+        printInfo("Your progress has been saved. Run the installer again to resume.");
+        process.exit(1);
       }
+      completeStep(state, "validation");
     }
 
     // ── Summary ──

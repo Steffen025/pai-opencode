@@ -20,7 +20,7 @@ function getVoiceId(): string {
   // Environment variable takes priority
   if (process.env.ELEVENLABS_VOICE_ID) return process.env.ELEVENLABS_VOICE_ID;
 
-  const settingsPath = join(homedir(), ".claude", "settings.json");
+  const settingsPath = join(homedir(), ".opencode", "settings.json");
   if (existsSync(settingsPath)) {
     try {
       const settings = JSON.parse(readFileSync(settingsPath, "utf-8"));

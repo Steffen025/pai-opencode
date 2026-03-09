@@ -33,8 +33,12 @@ function connect() {
   };
 
   ws.onmessage = (event) => {
-    const msg = JSON.parse(event.data);
-    handleServerMessage(msg);
+    try {
+      const msg = JSON.parse(event.data);
+      handleServerMessage(msg);
+    } catch (err) {
+      console.error('Failed to parse WebSocket message:', err);
+    }
   };
 
   ws.onclose = () => {
@@ -128,7 +132,9 @@ function renderSteps() {
   const list = document.getElementById('step-list');
   if (!list) return;
 
-  list.innerHTML = steps.map(s => {
+  list.innerHTML = '';
+  
+  for (const s of steps) {
     let icon = '○';
     let cls = s.status;
     if (s.status === 'completed') icon = '✓';
@@ -136,11 +142,21 @@ function renderSteps() {
     else if (s.status === 'skipped') icon = '–';
     else if (s.status === 'failed') icon = '✗';
 
-    return `<li class="step-item ${cls}">
-      <span class="step-icon ${cls}">${icon}</span>
-      <span class="step-label">${s.number}. ${s.name}</span>
-    </li>`;
-  }).join('');
+    const li = document.createElement('li');
+    li.className = `step-item ${cls}`;
+    
+    const iconSpan = document.createElement('span');
+    iconSpan.className = `step-icon ${cls}`;
+    iconSpan.textContent = icon;
+    
+    const labelSpan = document.createElement('span');
+    labelSpan.className = 'step-label';
+    labelSpan.textContent = `${s.number}. ${s.name}`;
+    
+    li.appendChild(iconSpan);
+    li.appendChild(labelSpan);
+    list.appendChild(li);
+  }
 }
 
 // ─── Chat Rendering ──────────────────────────────────────────────
@@ -418,20 +434,46 @@ function renderSummary(summary) {
 
   const card = document.createElement('div');
   card.className = 'summary-card';
-  card.innerHTML = `
-    <h3>Installation Complete</h3>
-    <div class="summary-row"><span class="s-label">PAI Version</span><span class="s-value">v${summary.paiVersion}</span></div>
-    <div class="summary-row"><span class="s-label">Principal</span><span class="s-value">${summary.principalName}</span></div>
-    <div class="summary-row"><span class="s-label">AI Name</span><span class="s-value">${summary.aiName}</span></div>
-    <div class="summary-row"><span class="s-label">Timezone</span><span class="s-value">${summary.timezone}</span></div>
-    <div class="summary-row"><span class="s-label">Voice</span><span class="s-value">${summary.voiceEnabled ? summary.voiceMode : 'Disabled'}</span></div>
-    <div class="summary-row"><span class="s-label">Install Type</span><span class="s-value">${summary.installType}</span></div>
-    <div class="summary-action">
-      <p>To activate PAI, open a terminal and run:</p>
-      <code>source ~/.zshrc && pai</code>
-      <p class="summary-hint">This reloads your shell config and launches PAI for the first time.</p>
-    </div>
-  `;
+  
+  const h3 = document.createElement('h3');
+  h3.textContent = 'Installation Complete';
+  card.appendChild(h3);
+  
+  function addRow(label, value) {
+    const row = document.createElement('div');
+    row.className = 'summary-row';
+    const labelSpan = document.createElement('span');
+    labelSpan.className = 's-label';
+    labelSpan.textContent = label;
+    const valueSpan = document.createElement('span');
+    valueSpan.className = 's-value';
+    valueSpan.textContent = value;
+    row.appendChild(labelSpan);
+    row.appendChild(valueSpan);
+    card.appendChild(row);
+  }
+  
+  addRow('PAI Version', `v${summary.paiVersion}`);
+  addRow('Principal', summary.principalName);
+  addRow('AI Name', summary.aiName);
+  addRow('Timezone', summary.timezone);
+  addRow('Voice', summary.voiceEnabled ? summary.voiceMode : 'Disabled');
+  addRow('Install Type', summary.installType);
+  
+  const actionDiv = document.createElement('div');
+  actionDiv.className = 'summary-action';
+  const p1 = document.createElement('p');
+  p1.textContent = 'To activate PAI, open a terminal and run:';
+  const code = document.createElement('code');
+  code.textContent = 'source ~/.zshrc && pai';
+  const p2 = document.createElement('p');
+  p2.className = 'summary-hint';
+  p2.textContent = 'This reloads your shell config and launches PAI for the first time.';
+  actionDiv.appendChild(p1);
+  actionDiv.appendChild(code);
+  actionDiv.appendChild(p2);
+  card.appendChild(actionDiv);
+  
   chat.appendChild(card);
   scrollToBottom();
 }

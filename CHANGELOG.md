@@ -37,7 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Installer & Migration (WP-D)
 - **PAI-Install** — Complete port from upstream v4.0.3 (shell, CLI, engine, Electron GUI)
-- **Migration Script** — `tools/migration-v2-to-v3.ts` with `--dry-run`, `--force`, `--backup-dir`
+- **Migration Script** — `Tools/migration-v2-to-v3.ts` with `--dry-run`, `--force`, `--backup-dir`
 - **UPGRADE.md** — Step-by-step v2→v3 migration guide
 
 #### DB Health Tooling (WP-F)
@@ -55,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Migration
 - See [UPGRADE.md](/UPGRADE.md) for detailed migration instructions
-- Run `bun tools/migration-v2-to-v3.ts --dry-run` to preview
+- Run `bun Tools/migration-v2-to-v3.ts --dry-run` to preview
 - Automatic backup created before any changes
 
 ---

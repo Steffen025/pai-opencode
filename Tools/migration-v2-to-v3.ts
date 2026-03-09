@@ -13,7 +13,7 @@
 
 import { existsSync, statSync, copyFileSync, mkdirSync, renameSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { join, basename } from "node:path";
 import { spawn } from "bun";
 
 // ═══════════════════════════════════════════════════════════
@@ -198,8 +198,17 @@ async function migrateSkills(report: MigrationReport, dryRun: boolean): Promise<
 				continue;
 			}
 
-			if (dryRun) {
-				log(`[DRY-RUN] Would migrate flat skill: ${skill.name}`, "info");
+		if (dryRun) {
+			log(`[DRY-RUN] Would migrate flat skill: ${skill.name}`, "info");
+		} else {
+			// Check if already in hierarchical location (parent dir is Category name)
+			const parentDir = basename(skillPath);
+			const isAlreadyHierarchical = skillFiles.includes("Tools") || skillFiles.includes("Workflows");
+			const isInCategoryDir = parentDir !== skill.name && parentDir !== "skills";
+			
+			if (isAlreadyHierarchical || isInCategoryDir) {
+				// Already in correct location, just updateMinimalBootstrap
+				log(`Skill already in hierarchical location: ${skill.name}`, "info");
 			} else {
 				// Migrate flat to hierarchical: create skill dir with same name
 				const hierarchicalDir = join(skillPath, skill.name);
@@ -214,8 +223,8 @@ async function migrateSkills(report: MigrationReport, dryRun: boolean): Promise<
 						renameSync(join(skillPath, file), join(hierarchicalDir, file));
 					}
 				}
-
-				log(`Migrated flat skill to hierarchical: ${skill.name}`, "success");
+			}
+			log(`Migrated flat skill to hierarchical: ${skill.name}`, "success");
 			}
 			migratedCount++;
 		} else {
@@ -286,7 +295,7 @@ async function main(): Promise<void> {
   const version = await detectVersion();
   log(`Detected version: ${version}`, version.startsWith("3") ? "success" : "info");
 
-  if (version.startsWith("3") && !options.force) {
+  if ((version.startsWith("3") || version === "v3-dual-config") && !options.force) {
     log("Already on v3.x. Use --force to run anyway.", "warn");
     process.exit(0);
   }

@@ -41,7 +41,7 @@ export const STEPS: StepDefinition[] = [
   {
     id: "repository",
     name: "PAI Repository",
-    description: "Clone or update the PAI repository into ~/.claude",
+    description: "Clone or update the PAI repository into ~/.opencode",
     number: 5,
     required: true,
     dependsOn: ["identity"],

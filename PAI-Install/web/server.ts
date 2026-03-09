@@ -13,7 +13,7 @@ process.on("unhandledRejection", (err: any) => {
 });
 
 import { existsSync, readFileSync } from "fs";
-import { join, extname } from "path";
+import { resolve, relative, join, extname } from "path";
 import { handleWsMessage, addClient, removeClient } from "./routes";
 
 const PORT = parseInt(process.env.PAI_INSTALL_PORT || "1337");
@@ -62,6 +62,14 @@ const server = Bun.serve({
 
     // WebSocket upgrade
     if (url.pathname === "/ws") {
+      const origin = req.headers.get("origin");
+      const allowedOrigins = [
+        `http://127.0.0.1:${PORT}`,
+        `http://localhost:${PORT}`,
+      ];
+      if (!origin || !allowedOrigins.includes(origin)) {
+        return new Response("Forbidden", { status: 403 });
+      }
       const upgraded = server.upgrade(req);
       if (!upgraded) {
         return new Response("WebSocket upgrade failed", { status: 400 });
@@ -70,11 +78,12 @@ const server = Bun.serve({
     }
 
     // Static file serving
-    let filePath = url.pathname === "/" ? "/index.html" : url.pathname;
-    const fullPath = join(PUBLIC_DIR, filePath);
+    const requestedPath = url.pathname === "/" ? "index.html" : url.pathname.slice(1);
+    const fullPath = resolve(PUBLIC_DIR, requestedPath);
 
-    // Security: prevent directory traversal
-    if (!fullPath.startsWith(PUBLIC_DIR)) {
+    // Security: prevent directory traversal using resolve + relative
+    const rel = relative(PUBLIC_DIR, fullPath);
+    if (rel.startsWith("..") || rel === "..") {
       return new Response("Forbidden", { status: 403 });
     }
 

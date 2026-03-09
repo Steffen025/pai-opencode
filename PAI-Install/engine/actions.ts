@@ -702,10 +702,22 @@ export async function runConfiguration(
     writeFileSync(rcPath, `${marker}\n${aliasLine}\n`);
   }
 
-  // Fix permissions
+  // Fix permissions - only make scripts executable, not everything
   await emit({ event: "progress", step: "configuration", percent: 90, detail: "Setting permissions..." });
   try {
-    tryExec(`chmod -R 755 "${paiDir}"`, 10000);
+    // Find and chmod +x only actual shell scripts and executable files
+    const scriptDirs = [
+      join(paiDir, "Tools"),
+      join(paiDir, "PAI-Install"),
+    ];
+    for (const dir of scriptDirs) {
+      if (existsSync(dir)) {
+        // Make .sh files and bun scripts executable
+        tryExec(`find "${dir}" -type f \( -name "*.sh" -o -name "*.ts" -o -name "*.js" \) -exec chmod +x {} \; 2>/dev/null`, 5000);
+      }
+    }
+    // Ensure main directories are readable/executable (dirs need +x to be traversable)
+    tryExec(`chmod 755 "${paiDir}" "${join(paiDir, "Tools")}" "${join(paiDir, "PAI-Install")}" 2>/dev/null`, 5000);
   } catch {
     // Non-fatal
   }
@@ -737,8 +749,19 @@ async function stopVoiceServer(emit: EngineEventHandler): Promise<void> {
     // No shutdown endpoint — kill by port
   }
 
-  // Kill the process LISTENING on port 8888 (not clients connected to it — that would kill us!)
-  tryExec(`lsof -ti:8888 -sTCP:LISTEN | xargs kill -9 2>/dev/null`, 5000);
+  // Kill only processes that look like our Bun voice server (check process name)
+  // First, find PIDs listening on port 8888
+  const pids = tryExec(`lsof -ti:8888 -sTCP:LISTEN 2>/dev/null`, 5000);
+  if (pids) {
+    for (const pid of pids.trim().split("\n")) {
+      if (!pid) continue;
+      // Verify it's a Bun process (our voice server) before killing
+      const procName = tryExec(`ps -p ${pid} -o comm= 2>/dev/null`, 2000);
+      if (procName?.includes("bun")) {
+        tryExec(`kill -9 ${pid} 2>/dev/null`, 2000);
+      }
+    }
+  }
 
   // Unload existing LaunchAgent if present
   const plistPath = join(homedir(), "Library", "LaunchAgents", "com.pai.voice-server.plist");

@@ -14,7 +14,7 @@
  * WARNING: --vacuum requires OpenCode to be stopped!
  */
 
-import { existsSync, statSync } from "node:fs";
+import { existsSync, statSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import {
@@ -40,13 +40,15 @@ interface Options {
 function parseArgs(): Options {
 	const args = process.argv.slice(2);
 	const daysArg = args.find((a) => /^\d+$/.test(a));
+	const restoreIdx = args.findIndex((a) => a === "--restore");
 
 	return {
 		days: daysArg ? parseInt(daysArg, 10) : 90,
 		dryRun: args.includes("--dry-run"),
 		vacuum: args.includes("--vacuum"),
 		restore:
-			args.find((a) => a.startsWith("--restore="))?.split("=")[1] || null,
+			args.find((a) => a.startsWith("--restore="))?.split("=")[1] ||
+			(restoreIdx !== -1 ? args[restoreIdx + 1] || null : null),
 	};
 }
 

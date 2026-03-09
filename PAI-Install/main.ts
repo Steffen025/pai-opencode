@@ -15,7 +15,9 @@ import { existsSync } from "fs";
 
 const args = process.argv.slice(2);
 const modeIdx = args.indexOf("--mode");
-const mode = modeIdx >= 0 ? args[modeIdx + 1] : "gui";
+const rawMode = modeIdx >= 0 ? args[modeIdx + 1] : "gui";
+const validModes = ["cli", "web", "gui"];
+const mode = validModes.includes(rawMode) ? rawMode : "gui";
 
 const ROOT = import.meta.dir;
 

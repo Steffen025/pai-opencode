@@ -42,18 +42,22 @@ export async function getSessionsOlderThan(days: number): Promise<Session[]> {
 	const db = getDb();
 	if (!db) return [];
 
-	const rows = db.query(
-		`SELECT id, created_at, updated_at, title\n    FROM conversations\n    WHERE updated_at < ?1\n    ORDER BY updated_at ASC`
-	).all(cutoffDate.toISOString());
+	try {
+		const rows = db.query(
+			`SELECT id, created_at, updated_at, title\n    FROM conversations\n    WHERE updated_at < ?1\n    ORDER BY updated_at ASC`
+		).all(cutoffDate.toISOString());
 
-	const sessions: Session[] = rows.map((row: Record<string, unknown>) => ({
-		id: row.id as string,
-		created_at: row.created_at as string,
-		updated_at: row.updated_at as string,
-		title: row.title as string | undefined,
-	}));
+		const sessions: Session[] = rows.map((row: Record<string, unknown>) => ({
+			id: row.id as string,
+			created_at: row.created_at as string,
+			updated_at: row.updated_at as string,
+			title: row.title as string | undefined,
+		}));
 
-	return sessions;
+		return sessions;
+	} finally {
+		db.close();
+	}
 }
 
 /**
@@ -65,8 +69,14 @@ export async function archiveSessions(
 ): Promise<number> {
 	if (sessions.length === 0) return 0;
 
-	const db = getDb();
-	if (!db) return 0;
+	// Open writable DB connection for read + delete
+	let db;
+	try {
+		const { Database } = require("bun:sqlite");
+		db = new Database(DB_PATH, { readonly: false });
+	} catch {
+		return 0;
+	}
 
 	// Create archive DB connection
 	const archiveDb = new (await import("bun:sqlite")).Database(archivePath);
@@ -84,31 +94,40 @@ export async function archiveSessions(
 
 	let archived = 0;
 
-	for (const session of sessions) {
-		// Get full conversation data
-		const messages = db.query(
-			"SELECT content FROM messages WHERE conversation_id = ?1"
-		).all(session.id);
+	try {
+		for (const session of sessions) {
+			// Get full conversation data
+			const messages = db.query(
+				"SELECT content FROM messages WHERE conversation_id = ?1"
+			).all(session.id);
 
-		const messageData = JSON.stringify(messages);
+			const messageData = JSON.stringify(messages);
 
-		// Insert into archive
-		archiveDb.run(
-			`INSERT OR REPLACE INTO conversations (id, created_at, updated_at, title, messages)
+			// Insert into archive
+			archiveDb.run(
+				`INSERT OR REPLACE INTO conversations (id, created_at, updated_at, title, messages)
        VALUES (?, ?, ?, ?, ?)`,
-			[
-				session.id,
-				session.created_at,
-				session.updated_at,
-				session.title || null,
-				messageData,
-			],
-		);
+				[
+					session.id,
+					session.created_at,
+					session.updated_at,
+					session.title || null,
+					messageData,
+				],
+			);
 
-		archived++;
+			// Delete from source DB after successful archive
+			db.run("DELETE FROM messages WHERE conversation_id = ?", [session.id]);
+			db.run("DELETE FROM conversations WHERE id = ?", [session.id]);
+
+			archived++;
+		}
+	} finally {
+		// Always close both DB handles
+		db.close();
+		archiveDb.close();
 	}
 
-	archiveDb.close();
 	return archived;
 }
 

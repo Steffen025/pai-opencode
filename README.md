@@ -197,7 +197,7 @@ Modular, reusable capabilities invoked by name:
 - **ExtractWisdom** — Fabric-style wisdom extraction
 - **Science** — Hypothesis-driven experimentation
 - **Cloudflare** — Pages, Workers, R2, KV automation
-- **Plus 31 more** — See `.opencode/skills/` for full list
+- **Plus 44 more** — See `.opencode/skills/` for full list
 
 ### 🤖 Agent Orchestration (16 Agents)
 Dynamic multi-agent composition with **intelligent tier routing** — every agent scales up or down based on task complexity:
