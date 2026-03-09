@@ -35,16 +35,32 @@ let pendingRequests = new Map<string, { resolve: (value: string) => void }>();
 
 // ─── Broadcasting ────────────────────────────────────────────────
 
-function broadcast(msg: ServerMessage): void {
-  const raw = JSON.stringify(msg);
-  messageHistory.push(msg);
-  for (const ws of wsClients) {
-    try {
-      ws.send(raw);
-    } catch {
-      wsClients.delete(ws);
-    }
-  }
+function broadcast(msg: ServerMessage, originSocket?: any): void {
+	const raw = JSON.stringify(msg);
+
+	// Don't add sensitive user input to message history
+	if (msg.type !== "user_input") {
+		messageHistory.push(msg);
+	}
+
+	// If originSocket provided, only send to that socket (for user_input)
+	if (originSocket) {
+		try {
+			originSocket.send(raw);
+		} catch {
+			wsClients.delete(originSocket);
+		}
+		return;
+	}
+
+	// Otherwise broadcast to all clients
+	for (const ws of wsClients) {
+		try {
+			ws.send(raw);
+		} catch {
+			wsClients.delete(ws);
+		}
+	}
 }
 
 // ─── Engine Event → WebSocket ────────────────────────────────────
@@ -132,12 +148,18 @@ export function handleWsMessage(ws: any, raw: string): void {
       if (pending) {
         pending.resolve(msg.value);
         pendingRequests.delete(msg.requestId);
-        // Echo user message (masked for keys)
+        // Only echo back to the originating socket, don't broadcast to all
         const display = msg.value.startsWith("sk-") || msg.value.startsWith("xi-")
           ? msg.value.substring(0, 8) + "..."
           : msg.value;
         if (display) {
-          broadcast({ type: "message", role: "system" as any, content: display });
+          // Send only to origin socket, not to message history
+          const originMsg: ServerMessage = { type: "message", role: "system" as any, content: display };
+          try {
+            ws.send(JSON.stringify(originMsg));
+          } catch {
+            wsClients.delete(ws);
+          }
         }
       }
       break;
@@ -175,43 +197,37 @@ async function startInstallation(): Promise<void> {
     if (!installState.completedSteps.includes("system-detect")) {
       await runSystemDetect(installState, emit);
       broadcast({ type: "detection_result", data: installState.detection! });
-      completeStep(installState, "system-detect");
-      installState.currentStep = "prerequisites";
+      completeStep(installState, "system-detect", "prerequisites");
     }
 
     // Step 2: Prerequisites
     if (!installState.completedSteps.includes("prerequisites")) {
       await runPrerequisites(installState, emit);
-      completeStep(installState, "prerequisites");
-      installState.currentStep = "api-keys";
+      completeStep(installState, "prerequisites", "api-keys");
     }
 
     // Step 3: API Keys
     if (!installState.completedSteps.includes("api-keys")) {
       await runApiKeys(installState, emit, requestInput, requestChoice);
-      completeStep(installState, "api-keys");
-      installState.currentStep = "identity";
+      completeStep(installState, "api-keys", "identity");
     }
 
     // Step 4: Identity
     if (!installState.completedSteps.includes("identity")) {
       await runIdentity(installState, emit, requestInput);
-      completeStep(installState, "identity");
-      installState.currentStep = "repository";
+      completeStep(installState, "identity", "repository");
     }
 
     // Step 5: Repository
     if (!installState.completedSteps.includes("repository")) {
       await runRepository(installState, emit);
-      completeStep(installState, "repository");
-      installState.currentStep = "configuration";
+      completeStep(installState, "repository", "configuration");
     }
 
     // Step 6: Configuration
     if (!installState.completedSteps.includes("configuration")) {
       await runConfiguration(installState, emit);
-      completeStep(installState, "configuration");
-      installState.currentStep = "voice";
+      completeStep(installState, "configuration", "voice");
     }
 
     // Step 7: Voice (handles key collection + voice selection + server test)
@@ -219,14 +235,13 @@ async function startInstallation(): Promise<void> {
       try {
         await runVoiceSetup(installState, emit, requestChoice, requestInput);
         if (!installState.skippedSteps.includes("voice")) {
-          completeStep(installState, "voice");
+          completeStep(installState, "voice", "validation");
         }
       } catch (voiceErr: any) {
         broadcast({ type: "error", message: `Voice setup error: ${voiceErr?.message || "Unknown error"}` });
         broadcast({ type: "message", role: "assistant", content: "Voice setup encountered an error. Continuing with installation..." });
-        skipStep(installState, "voice", voiceErr?.message || "error");
+        skipStep(installState, "voice", "validation", voiceErr?.message || "error");
       }
-      installState.currentStep = "validation";
     }
 
     // Step 8: Validation

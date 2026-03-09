@@ -107,6 +107,7 @@ async function performArchiving(days: number): Promise<void> {
 
 	// Ensure archive directory exists
 	if (!existsSync(ARCHIVE_DIR)) {
+		mkdirSync(ARCHIVE_DIR, { recursive: true });
 		await Bun.write(join(ARCHIVE_DIR, ".gitkeep"), "");
 	}
 
@@ -170,7 +171,7 @@ async function performRestore(archivePath: string): Promise<void> {
 		"info",
 	);
 	console.log("\nTo restore manually:");
-	console.log(`  1. sqlite3 ${archivePath}"`);
+	console.log(`  1. sqlite3 ${archivePath}`);
 	console.log("  2. .tables");
 	console.log("  3. SELECT * FROM conversations;");
 	console.log(`  4. Copy needed data to ${DB_PATH}`);

@@ -442,8 +442,20 @@ function startInstall() {
   const overlay = document.getElementById('welcome-overlay');
   if (overlay) overlay.classList.add('hidden');
 
-  // Start installation
-  ws.send(JSON.stringify({ type: 'start_install' }));
+  // Start installation only when WebSocket is ready
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'start_install' }));
+  } else {
+    // Queue for when connection opens
+    const checkAndSend = () => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'start_install' }));
+      } else {
+        setTimeout(checkAndSend, 100);
+      }
+    };
+    checkAndSend();
+  }
 }
 
 // ─── Utilities ───────────────────────────────────────────────────

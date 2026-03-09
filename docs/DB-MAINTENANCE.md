@@ -8,7 +8,7 @@
 
 PAI-OpenCode stores conversation history and session data in a SQLite database at:
 
-```
+```text
 ~/.opencode/conversations.db
 ```
 
@@ -125,7 +125,7 @@ Add to your crontab for monthly archiving:
 
 ```bash
 # Archive sessions > 180 days monthly
-0 2 1 * * cd ~/workspace/github.com/Steffen025/pai-opencode && bun Tools/db-archive.ts 180 >> ~/.opencode/logs/archive.log 2>&1
+0 2 1 * * cd /path/to/pai-opencode && bun Tools/db-archive.ts 180 >> ~/.opencode/logs/archive.log 2>&1
 ```
 
 ---

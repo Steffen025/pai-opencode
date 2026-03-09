@@ -187,7 +187,7 @@ This **10-15 minute** interactive session will configure your complete TELOS fra
 
 ![Features Showcase](docs/images/features-showcase.jpg)
 
-### 🎯 Skills System (39 Skills)
+### 🎯 Skills System (52 Skills)
 Modular, reusable capabilities invoked by name:
 - **CORE** — Identity, preferences, auto-loaded at session start (Algorithm v1.8.0)
 - **Art** — Excalidraw-style visual diagrams

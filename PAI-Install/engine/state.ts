@@ -45,21 +45,37 @@ export function hasSavedState(): boolean {
  * Returns null if no state exists or it's corrupted.
  */
 export function loadState(): InstallState | null {
-  if (!existsSync(STATE_FILE)) return null;
+	if (!existsSync(STATE_FILE)) return null;
 
-  try {
-    const raw = readFileSync(STATE_FILE, "utf-8");
-    const state = JSON.parse(raw) as InstallState;
+	try {
+		const raw = readFileSync(STATE_FILE, "utf-8");
+		const state = JSON.parse(raw) as InstallState;
 
-    // Validate basic structure
-    if (!state.version || !state.startedAt || !state.currentStep) {
-      return null;
-    }
+		// Validate complete minimum structure
+		if (
+			!state.version ||
+			!state.startedAt ||
+			!state.currentStep ||
+			!Array.isArray(state.completedSteps) ||
+			!Array.isArray(state.skippedSteps) ||
+			!state.mode ||
+			!["cli", "web"].includes(state.mode) ||
+			!Array.isArray(state.errors) ||
+			typeof state.collected !== "object"
+		) {
+			return null;
+		}
 
-    return state;
-  } catch {
-    return null;
-  }
+		// Validate version matches current installer
+		if (state.version !== INSTALLER_VERSION) {
+			console.warn(`State version mismatch: ${state.version} vs ${INSTALLER_VERSION}`);
+			// Allow loading but warn - upgrade path might handle this
+		}
+
+		return state;
+	} catch {
+		return null;
+	}
 }
 
 /**
@@ -86,22 +102,34 @@ export function clearState(): void {
 }
 
 /**
- * Mark a step as completed and advance to the next.
+ * Mark a step as completed and optionally advance to the next step atomically.
+ * If nextStep is provided, it's set before persisting to avoid race conditions.
  */
-export function completeStep(state: InstallState, step: StepId): void {
-  if (!state.completedSteps.includes(step)) {
-    state.completedSteps.push(step);
-  }
-  saveState(state);
+export function completeStep(state: InstallState, step: StepId, nextStep?: StepId): void {
+	if (!state.completedSteps.includes(step)) {
+		state.completedSteps.push(step);
+	}
+	if (nextStep) {
+		state.currentStep = nextStep;
+	}
+	saveState(state);
 }
 
 /**
- * Mark a step as skipped.
+ * Mark a step as skipped and optionally advance to the next step atomically.
+ * If nextStep is provided, it's set before persisting to avoid race conditions.
  */
-export function skipStep(state: InstallState, step: StepId, reason?: string): void {
-  if (!state.skippedSteps.includes(step)) {
-    state.skippedSteps.push(step);
-  }
+export function skipStep(state: InstallState, step: StepId, nextStep?: StepId, reason?: string): void {
+	if (!state.skippedSteps.includes(step)) {
+		state.skippedSteps.push(step);
+	}
+	if (nextStep) {
+		state.currentStep = nextStep;
+	}
+	// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+	reason; // Reason stored in potential future error log
+	saveState(state);
+}
   saveState(state);
 }
 

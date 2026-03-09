@@ -25,9 +25,10 @@ async function checkVoiceServerHealth(): Promise<boolean> {
  * Run all validation checks against the current state.
  */
 export async function runValidation(state: InstallState): Promise<ValidationCheck[]> {
-  const paiDir = state.detection?.paiDir || join(homedir(), ".claude");
-  const configDir = state.detection?.configDir || join(homedir(), ".config", "PAI");
-  const checks: ValidationCheck[] = [];
+	// Use v3 target paths (.opencode) instead of legacy .claude
+	const paiDir = state.detection?.paiDir || join(homedir(), ".opencode");
+	const configDir = state.detection?.configDir || join(homedir(), ".config", "PAI");
+	const checks: ValidationCheck[] = [];
 
   // 1. settings.json exists and is valid JSON
   const settingsPath = join(paiDir, "settings.json");
@@ -167,20 +168,39 @@ export async function runValidation(state: InstallState): Promise<ValidationChec
     critical: false,
   });
 
-  // 8. Zsh alias configured
-  const zshrcPath = join(homedir(), ".zshrc");
+  // 8. Shell alias configured (check multiple shells)
+  const shellConfigs = [
+    { path: join(homedir(), ".zshrc"), name: ".zshrc" },
+    { path: join(homedir(), ".bashrc"), name: ".bashrc" },
+    { path: join(homedir(), ".bash_profile"), name: ".bash_profile" },
+    { path: join(homedir(), ".profile"), name: ".profile" },
+    { path: join(homedir(), ".config", "fish", "config.fish"), name: "config.fish" },
+  ];
+
   let aliasConfigured = false;
-  if (existsSync(zshrcPath)) {
-    try {
-      const zshContent = readFileSync(zshrcPath, "utf-8");
-      aliasConfigured = zshContent.includes("# PAI alias") && zshContent.includes("alias pai=");
-    } catch {}
+  let aliasSource = "";
+
+  for (const shell of shellConfigs) {
+    if (existsSync(shell.path)) {
+      try {
+        const content = readFileSync(shell.path, "utf-8");
+        if (content.includes("# PAI alias") && content.includes("alias pai=")) {
+          aliasConfigured = true;
+          aliasSource = shell.name;
+          break;
+        }
+      } catch {
+        // Continue to next shell
+      }
+    }
   }
 
   checks.push({
     name: "Shell alias (pai)",
     passed: aliasConfigured,
-    detail: aliasConfigured ? "Configured in .zshrc" : "Not found — run: source ~/.zshrc",
+    detail: aliasConfigured
+      ? `Configured in ${aliasSource}`
+      : "Not found — add to your shell config",
     critical: true,
   });
 

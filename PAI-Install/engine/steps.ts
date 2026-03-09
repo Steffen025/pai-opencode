@@ -85,25 +85,27 @@ export function getStep(id: StepId): StepDefinition {
  * Get the next step to execute based on current state.
  */
 export function getNextStep(state: InstallState): StepDefinition | null {
-  for (const step of STEPS) {
-    // Skip completed and skipped steps
-    if (state.completedSteps.includes(step.id)) continue;
-    if (state.skippedSteps.includes(step.id)) continue;
+	for (const step of STEPS) {
+		// Skip completed steps
+		if (state.completedSteps.includes(step.id)) continue;
 
-    // Check if condition allows this step
-    if (step.condition && !step.condition(state)) {
-      continue;
-    }
+		// If condition prevents this step, mark as skipped and continue
+		if (step.condition && !step.condition(state)) {
+			if (!state.skippedSteps.includes(step.id)) {
+				state.skippedSteps.push(step.id);
+			}
+			continue;
+		}
 
-    // Check dependencies are met
-    const depsReady = step.dependsOn.every(
-      (dep) => state.completedSteps.includes(dep) || state.skippedSteps.includes(dep)
-    );
-    if (!depsReady) continue;
+		// Check dependencies are met (completed OR skipped)
+		const depsReady = step.dependsOn.every(
+			(dep) => state.completedSteps.includes(dep) || state.skippedSteps.includes(dep)
+		);
+		if (!depsReady) continue;
 
-    return step;
-  }
-  return null; // All steps done
+		return step;
+	}
+	return null; // All steps done
 }
 
 /**

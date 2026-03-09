@@ -155,9 +155,9 @@ For live data fetching:
 
 | Tool | Purpose |
 |------|---------|
-| `tools/update-substrate-metrics.ts` | **Primary** - Fetch all metrics, update Substrate files |
-| `tools/fetch-fred-series.ts` | Fetch historical data from FRED API |
-| `tools/GenerateAnalysis.ts` | Generate analysis report from Substrate data |
+| `Tools/update-substrate-metrics.ts` | **Primary** - Fetch all metrics, update Substrate files |
+| `Tools/fetch-fred-series.ts` | Fetch historical data from FRED API |
+| `Tools/GenerateAnalysis.ts` | Generate analysis report from Substrate data |
 
 ## Example Usage
 
