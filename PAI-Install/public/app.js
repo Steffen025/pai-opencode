@@ -267,10 +267,21 @@ function submitInput(requestId) {
     // Allow empty for optional fields
   }
 
-  // Mask key display
-  const display = value.startsWith('sk-') || value.startsWith('xi-')
-    ? value.substring(0, 8) + '...'
-    : value;
+  // Check WebSocket state before sending
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    addMessage('system', 'Connection lost. Please wait for reconnect...', false);
+    return;
+  }
+
+  // Mask key display - for passwords or API keys
+  let display;
+  if (input.getAttribute('type') === 'password') {
+    display = '•••••';
+  } else if (value.startsWith('sk-') || value.startsWith('xi-')) {
+    display = value.substring(0, 8) + '...';
+  } else {
+    display = value;
+  }
   addMessage('user', display || '(empty)');
 
   // Disable form
@@ -312,19 +323,21 @@ function renderChoiceForm(requestId, prompt, choices) {
       btn.appendChild(descSpan);
     }
 
+    btn.addEventListener('click', () => submitChoice(requestId, c.value, btn));
+    group.appendChild(btn);
+
+    // Add preview button as sibling (not nested) for voice selection
     if (voicePreviews[c.value] && isVoiceTypeRequest) {
-      const preview = document.createElement('span');
+      const preview = document.createElement('button');
+      preview.type = 'button';
       preview.className = 'preview-btn';
       preview.innerHTML = '&#9654; Preview';
       preview.addEventListener('click', (e) => {
         e.stopPropagation();
         playPreview(voicePreviews[c.value], preview);
       });
-      btn.appendChild(preview);
+      group.appendChild(preview);
     }
-
-    btn.addEventListener('click', () => submitChoice(requestId, c.value, btn));
-    group.appendChild(btn);
   });
 
   chat.appendChild(group);
@@ -341,6 +354,12 @@ function playPreview(src, btn) {
 }
 
 function submitChoice(requestId, value, btn) {
+  // Check WebSocket state before sending
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    addMessage('system', 'Connection lost. Please wait for reconnect...', false);
+    return;
+  }
+
   // Highlight selected, disable all
   const group = btn.closest('.choice-group');
   group.querySelectorAll('.choice-btn').forEach(b => {
@@ -465,7 +484,12 @@ function renderSummary(summary) {
   const p1 = document.createElement('p');
   p1.textContent = 'To activate PAI, open a terminal and run:';
   const code = document.createElement('code');
-  code.textContent = 'source ~/.zshrc && pai';
+  // Use activation command from backend, or derive from detected shell
+  const activationCommand = summary.activationCommand || 
+    (summary.userShell?.includes('bash') ? 'source ~/.bashrc && pai' : 
+     summary.userShell?.includes('fish') ? 'source ~/.config/fish/config.fish && pai' :
+     'source ~/.zshrc && pai');
+  code.textContent = activationCommand;
   const p2 = document.createElement('p');
   p2.className = 'summary-hint';
   p2.textContent = 'This reloads your shell config and launches PAI for the first time.';

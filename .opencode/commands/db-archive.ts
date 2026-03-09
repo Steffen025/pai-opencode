@@ -105,7 +105,7 @@ export default async function dbArchiveCommand(input: string): Promise<string> {
 	}
 
 	// Get stats using the requested days threshold
-	const { sizeMB } = await checkDbHealth();
+	const { sizeMB, warnings } = await checkDbHealth();
 	const oldSessions = (await getSessionsOlderThan(args.days)).length;
 	const lastArchive = await getLastArchiveTime();
 	const archiveStats = await getArchiveStats();
@@ -120,6 +120,15 @@ export default async function dbArchiveCommand(input: string): Promise<string> {
 	output += `| Last archive | ${lastArchive || "Never"} |\n`;
 	output += `| Archive files | ${archiveStats.count} (${archiveStats.totalSize}) |\n`;
 	output += "\n";
+
+	// Show warnings if any
+	if (warnings.length > 0) {
+		output += "### ⚠️ Warnings\n\n";
+		for (const warning of warnings) {
+			output += `- ${warning}\n`;
+		}
+		output += "\n";
+	}
 
 	// Show preview if dry-run requested
 	if (args.dryRun && oldSessions > 0) {
@@ -139,52 +148,6 @@ export default async function dbArchiveCommand(input: string): Promise<string> {
 	// Show next steps if not vacuum
 	if (!args.vacuum && oldSessions > 0) {
 		output += `**💡 Tip:** Run \`bun Tools/db-archive.ts ${args.days}\` to archive ${oldSessions} old sessions.\n\n`;
-	}
-
-	return output;
-}
-
-	// Get current stats
-	const { sizeMB, oldSessions, warnings } = await checkDbHealth();
-	const lastArchive = await getLastArchiveTime();
-	const archiveStats = await getArchiveStats();
-
-	let output = "## 📊 Database Health\n\n";
-
-	// Status table
-	output += "| Metric | Value |\n";
-	output += "|--------|-------|\n";
-	output += `| DB Size | ${sizeMB.toFixed(2)} MB |\n`;
-	output += `| Sessions > 90 days | ${oldSessions} |\n`;
-	output += `| Last archive | ${lastArchive || "Never"} |\n`;
-	output += `| Archive files | ${archiveStats.count} (${archiveStats.totalSize}) |\n`;
-	output += "\n";
-
-	// Warnings
-	if (warnings.length > 0) {
-		output += "### ⚠️ Warnings\n\n";
-		for (const warning of warnings) {
-			output += `- ${warning}\n`;
-		}
-		output += "\n";
-	}
-
-	// Show next steps
-	if (oldSessions > 0) {
-		output += `**💡 Tip:** Run \`bun Tools/db-archive.ts ${args.days}\` to archive ${oldSessions} old sessions.\n\n`;
-	}
-
-	if (args.dryRun || args.vacuum) {
-		output +=
-			"⚠️ **Note:** Use the standalone tool for --dry-run and --vacuum operations:\n";
-		output += "\`\`\`bash\n";
-		if (args.dryRun) {
-			output += `bun Tools/db-archive.ts ${args.days} --dry-run\n`;
-		}
-		if (args.vacuum) {
-			output += "bun Tools/db-archive.ts --vacuum\n";
-		}
-		output += "\`\`\`\n";
 	}
 
 	return output;

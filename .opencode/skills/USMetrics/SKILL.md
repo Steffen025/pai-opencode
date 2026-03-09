@@ -21,8 +21,7 @@ triggers:
 
 | Skill | Purpose | Trigger |
 |-------|---------|---------|
-| **USMetrics** | US-specific metrics and data tracking | "US metrics", "American data", "statistics" |
-| **USMetricsCore** | US economic indicators | "GDP", "inflation", "unemployment" |
+| **USMetrics** | US-specific metrics, economic indicators and data tracking | "US metrics", "American data", "statistics", "GDP", "inflation", "unemployment", "economic metrics", "gas prices" |
 
 ## When to Use
 
@@ -55,7 +54,7 @@ If this directory exists, load and apply any PREFERENCES.md, configurations, or 
    ```
 
 2. **Output text notification**:
-   ```
+   ```text
    Running the **WorkflowName** workflow in the **USMetrics** skill to ACTION...
    ```
 
@@ -70,7 +69,7 @@ If this directory exists, load and apply any PREFERENCES.md, configurations, or 
 
 **When executing a workflow, output this notification directly:**
 
-```
+```text
 Running the **WorkflowName** workflow in the **USMetrics** skill to ACTION...
 ```
 
@@ -153,11 +152,11 @@ For live data fetching:
 
 ## Example Usage
 
-```
+```text
 User: "How is the US economy doing? Give me a full analysis."
 
+→ Invoke UpdateData workflow (fetch latest data from APIs)
 → Invoke GetCurrentState workflow
-→ Fetch current + historical data for all metrics
 → Calculate 10y/5y/2y/1y trends
 → Analyze cross-metric correlations
 → Identify patterns and anomalies

@@ -211,16 +211,17 @@ export async function runValidation(state: InstallState): Promise<ValidationChec
  * Generate install summary from state.
  */
 export function generateSummary(state: InstallState): InstallSummary {
-  return {
-    paiVersion: PAI_VERSION,
-    principalName: state.collected.principalName || "User",
-    aiName: state.collected.aiName || "PAI",
-    timezone: state.collected.timezone || "UTC",
-    voiceEnabled: state.completedSteps.includes("voice"),
-    voiceMode: state.collected.elevenLabsKey ? "elevenlabs" : state.completedSteps.includes("voice") ? "macos-say" : "none",
-    catchphrase: state.collected.catchphrase || "",
-    installType: state.installType || "fresh",
-    completedSteps: state.completedSteps.length,
-    totalSteps: 8,
-  };
+	return {
+		paiVersion: PAI_VERSION,
+		principalName: state.collected.principalName || "User",
+		aiName: state.collected.aiName || "PAI",
+		timezone: state.collected.timezone || "UTC",
+		voiceEnabled: state.completedSteps.includes("voice"),
+		voiceMode: state.collected.elevenLabsKey ? "elevenlabs" : state.completedSteps.includes("voice") ? "macos-say" : "none",
+		catchphrase: state.collected.catchphrase || "",
+		installType: state.installType || "fresh",
+		completedSteps: state.completedSteps.length,
+		totalSteps: 8,
+		userShell: state.detection?.userShell,
+	};
 }

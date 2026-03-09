@@ -32,9 +32,6 @@ children: []
 | Phase | COMPLETE |
 | Next action | Commit changes to PR #47 |
 | Blocked by | nothing |
-| Phase | COMPLETE |
-| Next action | Commit changes to PR #47 |
-| Blocked by | nothing |
 
 ---
 

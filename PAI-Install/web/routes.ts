@@ -184,7 +184,7 @@ export function handleWsMessage(ws: any, raw: string): void {
           : msg.value;
         if (display) {
           // Send only to origin socket, not to message history
-          const originMsg: ServerMessage = { type: "message", role: "system" as any, content: display };
+          const originMsg: ServerMessage = { type: "message", role: "system", content: display };
           try {
             ws.send(JSON.stringify(originMsg));
           } catch {

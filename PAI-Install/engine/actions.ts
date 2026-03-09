@@ -44,7 +44,9 @@ function findExistingEnvKey(keyName: string): string {
     try {
       if (existsSync(envPath)) {
         const content = readFileSync(envPath, "utf-8");
-        const match = content.match(new RegExp(`^${keyName}=(.+)$`, "m"));
+        // Escape regex metacharacters in keyName for safe RegExp construction
+        const escapedKeyName = keyName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const match = content.match(new RegExp(`^${escapedKeyName}=(.+)$`, "m"));
         if (match && match[1].trim()) {
           return match[1].trim();
         }
@@ -329,6 +331,7 @@ export async function runPrerequisites(
 export async function runApiKeys(
   state: InstallState,
   emit: EngineEventHandler,
+  // Signature kept for API compatibility with other step functions
   _getInput: (id: string, prompt: string, type: "text" | "password" | "key", placeholder?: string) => Promise<string>,
   _getChoice: (id: string, prompt: string, choices: { label: string; value: string }[]) => Promise<string>
 ): Promise<void> {

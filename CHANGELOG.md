@@ -544,26 +544,62 @@ This release brings full PAI 2.5 Algorithm compatibility and adds 5 new handlers
 
 ## Version Comparison
 
-| Feature | v1.0.0 | v1.1.0 | v1.2.0 | v1.2.1 | v1.3.0 | v2.0.0 |
-|---------|--------|--------|--------|--------|--------|--------|
-| PAI Version | 2.4 | **2.5** | 2.5 | 2.5 | 2.5 | **3.0** |
-| Algorithm | Basic | **Full 7-phase** | Full 7-phase | Full 7-phase | Full 7-phase | **v1.8.0** |
-| Handlers | 8 | **13** | 13 | 13 | 13 | 13 |
-| Agents | 14 | 14 | 14 | 18 | **15 (cleaned)** | 15 |
-| Dynamic Tier Routing | No | No | No | No | **Yes** | Yes |
-| Provider Profiles | No | No | No | **Yes (5)** | **Yes (6)** | Yes (6) |
-| Multi-Provider Research | No | No | No | **Yes** | **Yes** | Yes |
-| Observability Dashboard | No | No | **Yes** | Yes | Yes | Yes |
-| Voice Notifications | No | **Yes** | Yes | Yes | Yes | Yes |
-| Sentiment Detection | No | **Yes** | Yes | Yes | Yes | Yes |
-| Image Optimization | No | No | No | No | **79% reduction** | 79% reduction |
-| Wisdom Frames | No | No | No | No | No | **Yes (5 domains)** |
-| Verify Completion Gate | No | No | No | No | No | **Yes** |
-| Effort-Scaled Gates | No | No | No | No | No | **Yes** |
+| Feature | v1.0.0 | v1.1.0 | v1.2.0 | v1.2.1 | v1.3.0 | v2.0.0 | **v3.0.0** |
+|---------|--------|--------|--------|--------|--------|--------|------------|
+| PAI Version | 2.4 | **2.5** | 2.5 | 2.5 | 2.5 | **3.0** | **3.0** |
+| Algorithm | Basic | **Full 7-phase** | Full 7-phase | Full 7-phase | Full 7-phase | **v1.8.0** | **v1.8.0** |
+| Handlers | 8 | **13** | 13 | 13 | 13 | 13 | **16** |
+| Agents | 14 | 14 | 14 | 18 | **15 (cleaned)** | 15 | **16** |
+| Dynamic Tier Routing | No | No | No | No | **Yes** | Yes | Yes |
+| Provider Profiles | No | No | No | **Yes (5)** | **Yes (6)** | Yes (6) | Yes (6) |
+| Multi-Provider Research | No | No | No | **Yes** | **Yes** | Yes | Yes |
+| Observability Dashboard | No | No | **Yes** | Yes | Yes | Yes | Yes |
+| Voice Notifications | No | **Yes** | Yes | Yes | Yes | Yes | Yes |
+| Sentiment Detection | No | **Yes** | Yes | Yes | Yes | Yes | Yes |
+| Image Optimization | No | No | No | No | **79% reduction** | 79% reduction | 79% reduction |
+| Wisdom Frames | No | No | No | No | No | **Yes (5 domains)** | Yes (5 domains) |
+| Verify Completion Gate | No | No | No | No | No | **Yes** | Yes |
+| Effort-Scaled Gates | No | No | No | No | No | **Yes** | Yes |
+| **DB Health Tooling** | No | No | No | No | No | No | **Yes** |
+| **Electron GUI Installer** | No | No | No | No | No | No | **Yes** |
+| **v2→v3 Migration** | No | No | No | No | No | No | **Yes** |
+| **Security Hardening** | No | No | No | No | No | No | **Full** |
 
 ---
 
 ## Upgrade Path
+
+### From v2.x to v3.0.0 (Breaking Changes)
+
+**Before you start:** The v3.0.0 release has significant breaking changes:
+- Skills structure: flat → hierarchical (Category/Skill)
+- Config: single-file → dual-file (opencode.json + settings.json)
+- Paths: `.claude/` → `.opencode/`
+- New Electron GUI installer
+
+**Recommended upgrade process:**
+
+1. **Backup your existing installation:**
+   ```bash
+   cp -r ~/.opencode ~/.opencode-backup-$(date +%Y%m%d)
+   ```
+
+2. **Run the migration tool (dry-run first):**
+   ```bash
+   bun Tools/migration-v2-to-v3.ts --dry-run
+   ```
+
+3. **Review the migration report**, then execute:
+   ```bash
+   bun Tools/migration-v2-to-v3.ts
+   ```
+
+4. **Alternative: Fresh install with the new GUI:**
+   ```bash
+   bash PAI-Install/install.sh
+   ```
+
+**See [UPGRADE.md](/UPGRADE.md) for detailed step-by-step instructions.**
 
 ### From v1.2.x to v1.3.0
 

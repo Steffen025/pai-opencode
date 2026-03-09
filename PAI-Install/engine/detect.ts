@@ -128,10 +128,11 @@ export function detectSystem(): DetectionResult {
   const home = homedir();
   const paiDir = join(home, ".opencode");
   const configDir = process.env.PAI_CONFIG_DIR || join(home, ".config", "PAI");
+  const shellInfo = detectShell();
 
   return {
     os: detectOS(),
-    shell: detectShell(),
+    shell: shellInfo,
     tools: {
       bun: detectTool("bun", "bun --version"),
       git: detectTool("git", "git --version"),
@@ -147,6 +148,7 @@ export function detectSystem(): DetectionResult {
     homeDir: home,
     paiDir,
     configDir,
+    userShell: shellInfo.path,
   };
 }
 

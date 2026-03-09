@@ -22,7 +22,6 @@ import {
 	getSessionsOlderThan,
 	archiveSessions,
 	vacuumDb,
-	formatBytes,
 	checkDbHealth,
 } from "../.opencode/plugins/lib/db-utils";
 

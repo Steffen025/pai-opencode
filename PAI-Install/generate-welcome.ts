@@ -31,7 +31,10 @@ function getVoiceId(): string {
       // Fallback to DA main voice
       const mainVoice = settings.daidentity?.voices?.main?.voiceId;
       if (typeof mainVoice === "string") return mainVoice;
-    } catch {}
+    } catch (err) {
+      // Log warning but continue to fallback
+      console.warn(`Warning: Could not parse settings.json: ${err instanceof Error ? err.message : err}`);
+    }
   }
   // Fallback to a default ElevenLabs voice
   return "pNInz6obpgDQGcFmaJgB"; // Adam

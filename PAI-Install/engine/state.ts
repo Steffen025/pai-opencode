@@ -151,7 +151,8 @@ export function recordError(
 
 /**
  * Mask API keys for safe logging/display.
- * Shows first 8 chars and masks the rest.
+ * Shows first 8 chars and last 4 chars separated by "...".
+ * Keys with length <= 12 are replaced with "***".
  */
 export function maskKey(key: string): string {
   if (!key || key.length <= 12) return "***";

@@ -50,16 +50,25 @@ interface Options {
 
 function parseArgs(): Options {
 	const args = process.argv.slice(2);
-	let backupDir = PAI_DIR;
+	let backupDir: string | undefined;
 
 	// Handle both --backup-dir=/path and --backup-dir /path
 	const backupIndex = args.findIndex((a) => a === "--backup-dir" || a.startsWith("--backup-dir="));
 	if (backupIndex !== -1) {
 		if (args[backupIndex].includes("=")) {
 			backupDir = args[backupIndex].split("=")[1];
-		} else if (args[backupIndex + 1]) {
+		} else if (backupIndex + 1 < args.length) {
 			backupDir = args[backupIndex + 1];
 		}
+	}
+
+	return {
+		dryRun: args.includes("--dry-run"),
+		force: args.includes("--force"),
+		// If no backup dir provided, createBackup will use its own default
+		backupDir: backupDir || join(PAI_DIR, "backups"),
+	};
+}
 	}
 
 	return {
@@ -200,6 +209,7 @@ async function migrateSkills(report: MigrationReport, dryRun: boolean): Promise<
 
 		if (dryRun) {
 			log(`[DRY-RUN] Would migrate flat skill: ${skill.name}`, "info");
+			migratedCount++; // Count for dry-run reporting
 		} else {
 			// Check if already in hierarchical location (parent dir is Category name)
 			const parentDir = basename(skillPath);
@@ -209,6 +219,7 @@ async function migrateSkills(report: MigrationReport, dryRun: boolean): Promise<
 			if (isAlreadyHierarchical || isInCategoryDir) {
 				// Already in correct location, just updateMinimalBootstrap
 				log(`Skill already in hierarchical location: ${skill.name}`, "info");
+				alreadyHierarchical++;
 			} else {
 				// Migrate flat to hierarchical: create skill dir with same name
 				const hierarchicalDir = join(skillPath, skill.name);
@@ -223,13 +234,10 @@ async function migrateSkills(report: MigrationReport, dryRun: boolean): Promise<
 						renameSync(join(skillPath, file), join(hierarchicalDir, file));
 					}
 				}
+				
+				log(`Migrated flat skill to hierarchical: ${skill.name}`, "success");
+				migratedCount++;
 			}
-			log(`Migrated flat skill to hierarchical: ${skill.name}`, "success");
-			}
-			migratedCount++;
-		} else {
-			// Already hierarchical (SKILL.md is in subdir)
-			alreadyHierarchical++;
 		}
 	}
 
@@ -373,7 +381,10 @@ async function main(): Promise<void> {
 
 // Run if main
 if (import.meta.main) {
-  main();
+  main().catch((err) => {
+    console.error(`Unhandled error in migration main: ${err instanceof Error ? err.message : err}`);
+    process.exit(1);
+  });
 }
 
 export { detectVersion, createBackup, migrateSkills };

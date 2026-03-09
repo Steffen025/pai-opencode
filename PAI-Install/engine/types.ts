@@ -36,6 +36,7 @@ export interface DetectionResult {
   homeDir: string;
   paiDir: string; // resolved ~/.opencode
   configDir: string; // resolved ~/.config/PAI
+  userShell?: string; // detected user shell path
 }
 
 // ─── Install Steps ───────────────────────────────────────────────
@@ -152,16 +153,17 @@ export interface ValidationCheck {
 }
 
 export interface InstallSummary {
-  paiVersion: string;
-  principalName: string;
-  aiName: string;
-  timezone: string;
-  voiceEnabled: boolean;
-  voiceMode: string;
-  catchphrase: string;
-  installType: "fresh" | "upgrade";
-  completedSteps: number;
-  totalSteps: number;
+	paiVersion: string;
+	principalName: string;
+	aiName: string;
+	timezone: string;
+	voiceEnabled: boolean;
+	voiceMode: string;
+	catchphrase: string;
+	installType: "fresh" | "upgrade";
+	completedSteps: number;
+	totalSteps: number;
+	userShell?: string;
 }
 
 // ─── Engine Events ───────────────────────────────────────────────

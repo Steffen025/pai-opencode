@@ -96,15 +96,13 @@ PAI-OpenCode is the complete port of **Daniel Miessler's Personal AI Infrastruct
 ### New Users (GUI Installer)
 
 ```bash
-# Run the Electron GUI installer
-bash PAI-Install/install.sh --gui
-```
-
-Or use the CLI installer:
-
-```bash
+# Run the installer (automatically uses GUI if display available, else CLI)
 bash PAI-Install/install.sh
 ```
+
+The installer automatically detects your environment:
+- **GUI mode**: Used when a display is available (opens Electron installer)
+- **CLI mode**: Used in headless environments (terminal wizard)
 
 ### Manual Setup
 
