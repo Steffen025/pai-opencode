@@ -4,13 +4,14 @@
 
 **Personal AI Infrastructure for OpenCode** — Bring Daniel Miessler's renowned PAI scaffolding to any AI provider.
 
-[![Version](https://img.shields.io/badge/Version-2.0.0-brightgreen)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-3.0.0-brightgreen)](CHANGELOG.md)
 [![OpenCode Compatible](https://img.shields.io/badge/OpenCode-Compatible-green)](https://github.com/anomalyco/opencode)
 [![PAI Version](https://img.shields.io/badge/PAI-3.0-blue)](https://github.com/danielmiessler/Personal_AI_Infrastructure)
 [![Algorithm](https://img.shields.io/badge/Algorithm-1.8.0-blueviolet)](https://github.com/danielmiessler/TheAlgorithm)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> **v2.0 Release** — PAI v3.0 / Algorithm v1.8.0 with 8 effort levels, Verify Completion Gate, Wisdom Frames, 25-capability audit, PRD system, and 39 skills. See [CHANGELOG.md](CHANGELOG.md).
+> [!note]
+> **v3.0 Release** — Plugin event bus, security hardening (prompt injection protection), Electron GUI installer, DB health tooling, hierarchical skills structure, and 52 skills. See [CHANGELOG.md](CHANGELOG.md) and [UPGRADE.md](UPGRADE.md).
 
 > **🎯 Scope Note:** PAI-OpenCode is a **community port** of PAI to OpenCode. For the future vision (Voice-to-Voice, Ambient AI, OMI integration), see **[Open Arc](https://github.com/jeremaiah-ai/openark)**. [Read the Scope Boundary →](docs/SCOPE-BOUNDARY.md)
 
@@ -25,10 +26,13 @@ PAI-OpenCode is the complete port of **Daniel Miessler's Personal AI Infrastruct
 **PAI** is a scaffolding system that makes AI assistants work better for *you*. It's not about which model you use — it's about the infrastructure around it:
 
 - **The Algorithm (v1.8.0)** — 8 effort levels with Verify Completion Gate, Wisdom Frames, phase separation enforcement, and quality gates
-- **Skills** — Modular capabilities (39 skills including Cloudflare, ExtractWisdom, Science)
-- **Agents** — Dynamic multi-agent orchestration
+- **Skills** — Modular capabilities (52 skills including AudioEditor, Cloudflare, ExtractWisdom, Security)
+- **Agents** — Dynamic multi-agent orchestration with model tier routing (60x cost optimization)
 - **Memory** — Session history, project context, learning loops, PRD system
-- **Plugins** — Lifecycle automation (session init, security validation, observability, algorithm tracking)
+- **Plugins** — Event-driven lifecycle automation (security validation, observability, algorithm tracking, DB health)
+- **Installer** — Electron GUI + CLI installer for easy setup
+- **Security** — Prompt injection protection with 200+ patterns
+- **DB Health** — Automated session archiving and maintenance
 
 **OpenCode** is an open-source alternative to Claude Code that supports 75+ AI providers — from Anthropic and OpenAI to Google, AWS Bedrock, Ollama, and beyond.
 
@@ -89,6 +93,19 @@ PAI-OpenCode is the complete port of **Daniel Miessler's Personal AI Infrastruct
 ---
 
 ## Quick Start
+
+### New Users (GUI Installer)
+
+```bash
+# Run the installer (automatically uses GUI if display available, else CLI)
+bash PAI-Install/install.sh
+```
+
+The installer automatically detects your environment:
+- **GUI mode**: Used when a display is available (opens Electron installer)
+- **CLI mode**: Used in headless environments (terminal wizard)
+
+### Manual Setup
 
 ```bash
 # 1. Clone PAI-OpenCode
@@ -169,7 +186,7 @@ This **10-15 minute** interactive session will configure your complete TELOS fra
 
 ![Features Showcase](docs/images/features-showcase.jpg)
 
-### 🎯 Skills System (39 Skills)
+### 🎯 Skills System (52 Skills)
 Modular, reusable capabilities invoked by name:
 - **CORE** — Identity, preferences, auto-loaded at session start (Algorithm v1.8.0)
 - **Art** — Excalidraw-style visual diagrams
@@ -179,7 +196,7 @@ Modular, reusable capabilities invoked by name:
 - **ExtractWisdom** — Fabric-style wisdom extraction
 - **Science** — Hypothesis-driven experimentation
 - **Cloudflare** — Pages, Workers, R2, KV automation
-- **Plus 31 more** — See `.opencode/skills/` for full list
+- **Plus 44 more** — See `.opencode/skills/` for full list
 
 ### 🤖 Agent Orchestration (16 Agents)
 Dynamic multi-agent composition with **intelligent tier routing** — every agent scales up or down based on task complexity:

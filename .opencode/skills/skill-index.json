@@ -1,11 +1,11 @@
 {
-  "generated": "2026-03-08T23:31:35.392Z",
-  "totalSkills": 54,
-  "categories": 9,
+  "generated": "2026-03-08T23:47:52.369Z",
+  "totalSkills": 52,
+  "categories": 7,
   "flatSkills": 17,
-  "hierarchicalSkills": 37,
+  "hierarchicalSkills": 35,
   "alwaysLoadedCount": 2,
-  "deferredCount": 52,
+  "deferredCount": 50,
   "skills": {
     "agents": {
       "name": "Agents",
@@ -1001,29 +1001,6 @@
       "tier": "deferred",
       "isHierarchical": false
     },
-    "teloscore": {
-      "name": "TelosCore",
-      "path": "Telos/Telos/SKILL.md",
-      "category": "Telos",
-      "fullDescription": "\"Life OS and project analysis. USE WHEN TELOS, life goals, projects, dependencies, books, movies. SkillSearch('telos') for docs.\"",
-      "triggers": [
-        "telos",
-        "life",
-        "goals",
-        "projects",
-        "dependencies",
-        "books",
-        "movies"
-      ],
-      "workflows": [
-        "Update",
-        "InterviewExtraction",
-        "CreateNarrativePoints",
-        "WriteReport"
-      ],
-      "tier": "deferred",
-      "isHierarchical": true
-    },
     "thinking": {
       "name": "Thinking",
       "path": "Thinking/SKILL.md",
@@ -1071,30 +1048,12 @@
         "demographics",
         "tracking"
       ],
-      "workflows": [],
-      "tier": "deferred",
-      "isHierarchical": false
-    },
-    "usmetricscore": {
-      "name": "USMetricsCore",
-      "path": "USMetrics/USMetrics/SKILL.md",
-      "category": "USMetrics",
-      "fullDescription": "US economic indicators. USE WHEN GDP, inflation, unemployment, economic metrics, gas prices. SkillSearch('usmetrics') for docs.",
-      "triggers": [
-        "gdp",
-        "inflation",
-        "unemployment",
-        "economic",
-        "metrics",
-        "gas",
-        "prices"
-      ],
       "workflows": [
         "UpdateData",
         "GetCurrentState"
       ],
       "tier": "deferred",
-      "isHierarchical": true
+      "isHierarchical": false
     },
     "utilities": {
       "name": "Utilities",
@@ -1281,9 +1240,6 @@
       "SECUpdates",
       "WebAssessment"
     ],
-    "Telos": [
-      "TelosCore"
-    ],
     "Thinking": [
       "BeCreative",
       "Council",
@@ -1292,9 +1248,6 @@
       "RedTeam",
       "Science",
       "WorldThreatModelHarness"
-    ],
-    "USMetrics": [
-      "USMetricsCore"
     ],
     "Utilities": [
       "Aphorisms",

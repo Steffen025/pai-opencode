@@ -7,6 +7,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.0] - Unreleased
+
+### Breaking Changes
+- Plugin system migrated from hooks to event-driven architecture (WP-A)
+- Skills structure changed: flat → hierarchical Category/Skill (WP-C)
+- Config dual-file: `opencode.json` + `settings.json` (replaces single file)
+- All paths migrated: `.claude/` → `.opencode/`, `CLAUDE.md` → `AGENTS.md`
+
+### Added
+
+#### Plugin Event Bus (WP-A)
+- **6 Plugin Handlers** — prd-sync, session-cleanup, last-response-cache, relationship-memory, question-tracking, agent-execution-guard
+- **7 Bus Events** — session.compacted, session.error, permission.asked, command.executed, installation.update.available, session.updated, session.created
+- **Event-Driven Architecture** — cleaner code, better testability, unified handler registration
+
+#### Security Layer (WP-B)
+- **Prompt Injection Guard** — `plugins/handlers/prompt-injection-guard.ts` with `injection-patterns.ts` library
+- **Input Sanitizer** — `plugins/lib/sanitizer.ts` for pre-processing protection
+- **Sensitivity Levels** — low/medium/high security modes
+- **Pattern Detection** — 200+ known injection patterns from v4.0.3 upstream
+
+#### Core PAI System (WP-C)
+- **Missing Skills** — AudioEditor, Delegation, Research/Templates, Agents/ClaudeResearcherContext
+- **PAI Flat Docs** — 9 files: CLI.md, CLIFIRSTARCHITECTURE.md, DOCUMENTATIONINDEX.md, FLOWS.md, PAIAGENTSYSTEM.md, README.md, SYSTEM_USER_EXTENDABILITY.md, THEFABRICSYSTEM.md, THENOTIFICATIONSYSTEM.md
+- **PAI Subdirectories** — ACTIONS/, FLOWS/, PIPELINES/
+- **BuildOpenCode.ts** — OpenCode-native version of BuildCLAUDE.ts
+- **Telos/USMetrics Flatten** — Fixed nested skill structure
+
+#### Installer & Migration (WP-D)
+- **PAI-Install** — Complete port from upstream v4.0.3 (shell, CLI, engine, Electron GUI)
+- **Migration Script** — `Tools/migration-v2-to-v3.ts` with `--dry-run`, `--force`, `--backup-dir`
+- **UPGRADE.md** — Step-by-step v2→v3 migration guide
+
+#### DB Health Tooling (WP-F)
+- **DB Utils Library** — `plugins/lib/db-utils.ts` with getDbSizeMB(), getSessionsOlderThan(), archiveSessions(), vacuumDb()
+- **Session Cleanup Extension** — Automatic DB health warnings (>500MB, >90 days)
+- **Standalone Archive Tool** — `Tools/db-archive.ts` with --dry-run, --vacuum, --restore
+- **Custom Command** — `/db-archive` for in-session DB stats
+- **Maintenance Guide** — `docs/DB-MAINTENANCE.md`
+
+### Changed
+- Skills organization: flat → hierarchical (Category/Skill)
+- Config management: single-file → dual-file
+- Installer: CLI-only → CLI + Electron GUI
+- Security: none → full prompt injection protection
+
+### Migration
+- See [UPGRADE.md](/UPGRADE.md) for detailed migration instructions
+- Run `bun Tools/migration-v2-to-v3.ts --dry-run` to preview
+- Automatic backup created before any changes
+
+---
+
 ## [2.0.0] - 2026-02-19
 
 ### Breaking Changes
@@ -491,26 +544,62 @@ This release brings full PAI 2.5 Algorithm compatibility and adds 5 new handlers
 
 ## Version Comparison
 
-| Feature | v1.0.0 | v1.1.0 | v1.2.0 | v1.2.1 | v1.3.0 | v2.0.0 |
-|---------|--------|--------|--------|--------|--------|--------|
-| PAI Version | 2.4 | **2.5** | 2.5 | 2.5 | 2.5 | **3.0** |
-| Algorithm | Basic | **Full 7-phase** | Full 7-phase | Full 7-phase | Full 7-phase | **v1.8.0** |
-| Handlers | 8 | **13** | 13 | 13 | 13 | 13 |
-| Agents | 14 | 14 | 14 | 18 | **15 (cleaned)** | 15 |
-| Dynamic Tier Routing | No | No | No | No | **Yes** | Yes |
-| Provider Profiles | No | No | No | **Yes (5)** | **Yes (6)** | Yes (6) |
-| Multi-Provider Research | No | No | No | **Yes** | **Yes** | Yes |
-| Observability Dashboard | No | No | **Yes** | Yes | Yes | Yes |
-| Voice Notifications | No | **Yes** | Yes | Yes | Yes | Yes |
-| Sentiment Detection | No | **Yes** | Yes | Yes | Yes | Yes |
-| Image Optimization | No | No | No | No | **79% reduction** | 79% reduction |
-| Wisdom Frames | No | No | No | No | No | **Yes (5 domains)** |
-| Verify Completion Gate | No | No | No | No | No | **Yes** |
-| Effort-Scaled Gates | No | No | No | No | No | **Yes** |
+| Feature | v1.0.0 | v1.1.0 | v1.2.0 | v1.2.1 | v1.3.0 | v2.0.0 | **v3.0.0** |
+|---------|--------|--------|--------|--------|--------|--------|------------|
+| PAI Version | 2.4 | **2.5** | 2.5 | 2.5 | 2.5 | **3.0** | **3.0** |
+| Algorithm | Basic | **Full 7-phase** | Full 7-phase | Full 7-phase | Full 7-phase | **v1.8.0** | **v1.8.0** |
+| Handlers | 8 | **13** | 13 | 13 | 13 | 13 | **16** |
+| Agents | 14 | 14 | 14 | 18 | **15 (cleaned)** | 15 | **16** |
+| Dynamic Tier Routing | No | No | No | No | **Yes** | Yes | Yes |
+| Provider Profiles | No | No | No | **Yes (5)** | **Yes (6)** | Yes (6) | Yes (6) |
+| Multi-Provider Research | No | No | No | **Yes** | **Yes** | Yes | Yes |
+| Observability Dashboard | No | No | **Yes** | Yes | Yes | Yes | Yes |
+| Voice Notifications | No | **Yes** | Yes | Yes | Yes | Yes | Yes |
+| Sentiment Detection | No | **Yes** | Yes | Yes | Yes | Yes | Yes |
+| Image Optimization | No | No | No | No | **79% reduction** | 79% reduction | 79% reduction |
+| Wisdom Frames | No | No | No | No | No | **Yes (5 domains)** | Yes (5 domains) |
+| Verify Completion Gate | No | No | No | No | No | **Yes** | Yes |
+| Effort-Scaled Gates | No | No | No | No | No | **Yes** | Yes |
+| **DB Health Tooling** | No | No | No | No | No | No | **Yes** |
+| **Electron GUI Installer** | No | No | No | No | No | No | **Yes** |
+| **v2→v3 Migration** | No | No | No | No | No | No | **Yes** |
+| **Security Hardening** | No | No | No | No | No | No | **Full** |
 
 ---
 
 ## Upgrade Path
+
+### From v2.x to v3.0.0 (Breaking Changes)
+
+**Before you start:** The v3.0.0 release has significant breaking changes:
+- Skills structure: flat → hierarchical (Category/Skill)
+- Config: single-file → dual-file (opencode.json + settings.json)
+- Paths: `.claude/` → `.opencode/`
+- New Electron GUI installer
+
+**Recommended upgrade process:**
+
+1. **Backup your existing installation:**
+   ```bash
+   cp -r ~/.opencode ~/.opencode-backup-$(date +%Y%m%d)
+   ```
+
+2. **Run the migration tool (dry-run first):**
+   ```bash
+   bun Tools/migration-v2-to-v3.ts --dry-run
+   ```
+
+3. **Review the migration report**, then execute:
+   ```bash
+   bun Tools/migration-v2-to-v3.ts
+   ```
+
+4. **Alternative: Fresh install with the new GUI:**
+   ```bash
+   bash PAI-Install/install.sh
+   ```
+
+**See [UPGRADE.md](/UPGRADE.md) for detailed step-by-step instructions.**
 
 ### From v1.2.x to v1.3.0
 

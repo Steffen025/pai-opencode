@@ -1,0 +1,163 @@
+/**
+ * PAI Installer v4.0 — State Persistence
+ * Manages install state to support resume from interruption.
+ */
+
+import { existsSync, readFileSync, writeFileSync, mkdirSync, unlinkSync, renameSync } from "fs";
+import { homedir } from "os";
+import { join, dirname } from "path";
+import type { InstallState, StepId } from "./types";
+import { INSTALLER_VERSION } from "./types";
+
+const STATE_FILE = join(
+  process.env.PAI_CONFIG_DIR || join(homedir(), ".config", "PAI"),
+  "install-state.json"
+);
+
+/**
+ * Create a fresh install state.
+ */
+export function createFreshState(mode: "cli" | "web"): InstallState {
+  return {
+    version: INSTALLER_VERSION,
+    startedAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    currentStep: "system-detect",
+    completedSteps: [],
+    skippedSteps: [],
+    mode,
+    detection: null,
+    collected: {},
+    installType: null,
+    errors: [],
+  };
+}
+
+/**
+ * Check if a saved state exists.
+ */
+export function hasSavedState(): boolean {
+  return existsSync(STATE_FILE);
+}
+
+/**
+ * Load saved install state from disk.
+ * Returns null if no state exists or it's corrupted.
+ */
+export function loadState(): InstallState | null {
+	if (!existsSync(STATE_FILE)) return null;
+
+	try {
+		const raw = readFileSync(STATE_FILE, "utf-8");
+		const state = JSON.parse(raw) as InstallState;
+
+		// Validate complete minimum structure
+		if (
+			!state.version ||
+			!state.startedAt ||
+			!state.currentStep ||
+			!Array.isArray(state.completedSteps) ||
+			!Array.isArray(state.skippedSteps) ||
+			!state.mode ||
+			!["cli", "web"].includes(state.mode) ||
+			!Array.isArray(state.errors) ||
+			typeof state.collected !== "object"
+		) {
+			return null;
+		}
+
+		// Validate version matches current installer
+		if (state.version !== INSTALLER_VERSION) {
+			console.warn(`State version mismatch: ${state.version} vs ${INSTALLER_VERSION}`);
+			// Allow loading but warn - upgrade path might handle this
+		}
+
+		return state;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Save install state to disk atomically.
+ */
+export function saveState(state: InstallState): void {
+  state.updatedAt = new Date().toISOString();
+
+  const dir = dirname(STATE_FILE);
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
+  }
+
+  // Atomic write: write to temp file then rename
+  const tempFile = `${STATE_FILE}.tmp`;
+  writeFileSync(tempFile, JSON.stringify(state, null, 2), { mode: 0o600 });
+  renameSync(tempFile, STATE_FILE);
+}
+
+/**
+ * Remove saved state (after successful install).
+ */
+export function clearState(): void {
+  if (existsSync(STATE_FILE)) {
+    unlinkSync(STATE_FILE);
+  }
+}
+
+/**
+ * Mark a step as completed and optionally advance to the next step atomically.
+ * If nextStep is provided, it's set before persisting to avoid race conditions.
+ */
+export function completeStep(state: InstallState, step: StepId, nextStep?: StepId): void {
+	if (!state.completedSteps.includes(step)) {
+		state.completedSteps.push(step);
+	}
+	if (nextStep) {
+		state.currentStep = nextStep;
+	}
+	saveState(state);
+}
+
+/**
+ * Mark a step as skipped and optionally advance to the next step atomically.
+ * If nextStep is provided, it's set before persisting to avoid race conditions.
+ */
+export function skipStep(state: InstallState, step: StepId, nextStep?: StepId, reason?: string): void {
+	if (!state.skippedSteps.includes(step)) {
+		state.skippedSteps.push(step);
+	}
+	if (nextStep) {
+		state.currentStep = nextStep;
+	}
+	// Reason reserved for future logging
+	void reason;
+	saveState(state);
+}
+
+/**
+ * Record an error for a step.
+ */
+export function recordError(
+  state: InstallState,
+  step: StepId,
+  message: string,
+  recoverable: boolean = true
+): void {
+  state.errors.push({
+    step,
+    message,
+    timestamp: new Date().toISOString(),
+    recoverable,
+  });
+  saveState(state);
+}
+
+/**
+ * Mask API keys for safe logging/display.
+ * Shows first 8 chars and last 4 chars separated by "...".
+ * Keys with length <= 12 are replaced with "***".
+ */
+export function maskKey(key: string): string {
+  if (!key || key.length <= 12) return "***";
+  return key.substring(0, 8) + "..." + key.substring(key.length - 4);
+}
