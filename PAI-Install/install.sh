@@ -24,7 +24,7 @@ if [ "${1:-}" = "--cli" ]; then
 	exec bun PAI-Install/cli/quick-install.ts "$@"
 else
 	# GUI mode (default)
-	cd PAI-Install
+	cd PAI-Install/electron
 	bun install --silent 2>/dev/null || true
-	exec electron .
+	exec bunx electron .
 fi

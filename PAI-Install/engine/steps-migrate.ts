@@ -5,6 +5,9 @@
  * 5-step migration flow with explicit user consent and backup.
  */
 
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { homedir } from "node:os";
 import type { InstallState } from "./types";
 import { migrateV2ToV3, isMigrationNeeded } from "./migrate";
 import { buildOpenCodeBinary } from "./build-opencode";
@@ -55,9 +58,6 @@ export async function stepCreateBackup(
 	onProgress(10, "Creating backup...");
 	
 	// Check if backup already exists
-	import { existsSync } from "node:fs";
-	import { join, homedir } from "node:path";
-	
 	const finalBackupDir = backupDir || join(
 		homedir(),
 		`.opencode-backup-${Date.now()}`
@@ -71,7 +71,8 @@ export async function stepCreateBackup(
 		};
 	}
 	
-	state.collected.backupPath = finalBackupDir;
+	// Store backup path in state (using a property that exists)
+	(state as any).backupPath = finalBackupDir;
 	
 	return {
 		success: true,
@@ -167,17 +168,18 @@ export async function runMigration(
   requestChoice: (id: string, prompt: string, choices: { label: string; value: string; description?: string }[]) => Promise<string>
 ): Promise<void> {
   // Step 1: Detect Migration
-  emit({ event: "step_start", step: "backup" });
-  const { detectSystem } = await import("./detect");
-  const detection = stepDetectMigration(state, () => detectSystem());
-  emit({ event: "step_complete", step: "backup" });
+  emit({ event: "step_start", step: "detect" });
+  const detection = await stepDetectMigration(state, (percent, message) => {
+    emit({ event: "progress", step: "detect", percent, detail: message });
+  });
+  emit({ event: "step_complete", step: "detect" });
 
   // Step 2: Create Backup (with explicit consent)
-  emit({ event: "step_start", step: "detect" });
+  emit({ event: "step_start", step: "backup" });
   emit({ 
     event: "message", 
     content: MIGRATION_CONSENT_TEXT.title + "\n" + 
-             MIGRATION_CONSENT_TEXT.description(detection.skillsToMigrate.length)
+             MIGRATION_CONSENT_TEXT.description((detection.flatSkills || []).length)
   });
   
   const consentChoices = [
@@ -190,33 +192,32 @@ export async function runMigration(
     throw new Error("Migration cancelled by user");
   }
   
-  await stepCreateBackup(state, (percent, message) => {
-    emit({ event: "progress", step: "detect", percent, detail: message });
+  const backupResult = await stepCreateBackup(state, "", (percent, message) => {
+    emit({ event: "progress", step: "backup", percent, detail: message });
   });
-  emit({ event: "step_complete", step: "detect" });
+  emit({ event: "step_complete", step: "backup" });
 
   // Step 3: Migrate Configuration
   emit({ event: "step_start", step: "migrate-config" });
-  await stepMigrate(state, (percent, message) => {
+  const migrationResult = await stepMigrate(state, (percent, message) => {
     emit({ event: "progress", step: "migrate-config", percent, detail: message });
-  });
+  }, false);
   emit({ event: "step_complete", step: "migrate-config" });
 
   // Step 4: Build Binary
   emit({ event: "step_start", step: "build" });
   const { buildOpenCodeBinary } = await import("./build-opencode");
-  await buildOpenCodeBinary(
-    { cacheBust: true },
-    (percent, message) => {
+  await buildOpenCodeBinary({
+    onProgress: async (message, percent) => {
       emit({ event: "progress", step: "build", percent, detail: message });
     },
-    () => Promise.resolve(false)
-  );
+    skipIfExists: false,
+  });
   emit({ event: "step_complete", step: "build" });
 
   // Step 5: Verify Migration
   emit({ event: "step_start", step: "verify" });
-  await stepMigrationDone(state, (percent, message) => {
+  await stepMigrationDone(state, migrationResult, (percent, message) => {
     emit({ event: "progress", step: "verify", percent, detail: message });
   });
   emit({ event: "step_complete", step: "verify" });

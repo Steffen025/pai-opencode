@@ -12,7 +12,8 @@
 
 import { parseArgs } from "node:util";
 import { existsSync } from "node:fs";
-import { join, homedir } from "node:path";
+import { join } from "node:path";
+import { homedir } from "node:os";
 import type { InstallState } from "../engine/types";
 import { createFreshState } from "../engine/state";
 import { stepPrerequisites } from "../engine/steps-fresh";
@@ -21,7 +22,7 @@ import { stepProviderConfig, ZEN_FREE_MODELS } from "../engine/steps-fresh";
 import { stepIdentity } from "../engine/steps-fresh";
 import { stepVoice } from "../engine/steps-fresh";
 import { stepInstallPAI } from "../engine/steps-fresh";
-import { stepDetectMigration, stepCreateBackup, stepMigrate, stepMigrationDone } from "../engine/steps-migrate";
+import { stepDetectMigration, stepCreateBackup, stepMigrate, stepBinaryUpdate, stepMigrationDone } from "../engine/steps-migrate";
 import { stepDetectUpdate, stepApplyUpdate, stepUpdateDone } from "../engine/steps-update";
 
 // ═══════════════════════════════════════════════════════════

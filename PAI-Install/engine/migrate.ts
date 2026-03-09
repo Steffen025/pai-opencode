@@ -18,7 +18,8 @@ import {
 	writeFileSync,
 	readFileSync,
 } from "node:fs";
-import { join, homedir, basename } from "node:path";
+import { join, basename } from "node:path";
+import { homedir } from "node:os";
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
 
@@ -82,27 +83,8 @@ async function createBackup(
 	// Create backup directory
 	mkdirSync(backupDir, { recursive: true });
 	
-	// Use rsync or cp -R for backup
-	try {
-		await execAsync(`cp -R "${sourceDir}/"* "${backupDir}/" 2>/dev/null || true`);
-	} catch {
-		// Fallback: manual copy
-		const copyRecursive = (src: string, dest: string) => {
-			const entries = readdirSync(src, { withFileTypes: true });
-			for (const entry of entries) {
-				const srcPath = join(src, entry.name);
-				const destPath = join(dest, entry.name);
-				
-				if (entry.isDirectory()) {
-					mkdirSync(destPath, { recursive: true });
-					copyRecursive(srcPath, destPath);
-				} else {
-					copyFileSync(srcPath, destPath);
-				}
-			}
-		};
-		copyRecursive(sourceDir, backupDir);
-	}
+	// Use cp -a for backup (preserves dotfiles, permissions)
+	await execAsync(`cp -a "${sourceDir}/." "${backupDir}/"`);
 }
 
 // ═══════════════════════════════════════════════════════════

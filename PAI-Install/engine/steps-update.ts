@@ -107,14 +107,14 @@ export async function runUpdate(
   requestChoice: (id: string, prompt: string, choices: { label: string; value: string; description?: string }[]) => Promise<string>
 ): Promise<void> {
   // Step 1: Detect Update
-  emit({ event: "step_start", step: "backup" });
-  const { detectSystem } = await import("./detect");
-  state.detection = detectSystem();
-  const updateInfo = stepDetectUpdate(state);
-  emit({ event: "step_complete", step: "backup" });
+  emit({ event: "step_start", step: "detect" });
+  const updateInfo = await stepDetectUpdate(state, (percent, message) => {
+    emit({ event: "progress", step: "detect", percent, detail: message });
+  });
+  emit({ event: "step_complete", step: "detect" });
 
-  if (!updateInfo.hasUpdate) {
-    emit({ event: "message", content: UPDATE_UI_TEXT.upToDate.message(updateInfo.currentVersion) });
+  if (!updateInfo.needed) {
+    emit({ event: "message", content: UPDATE_UI_TEXT.upToDate.message(updateInfo.currentVersion || "unknown") });
     return;
   }
 
@@ -123,7 +123,7 @@ export async function runUpdate(
     { label: UPDATE_UI_TEXT.updateAvailable.buttons.update, value: "update", description: `Update to ${updateInfo.targetVersion}` },
     { label: UPDATE_UI_TEXT.updateAvailable.buttons.skip, value: "skip", description: "Keep current version" },
   ];
-  const choice = await requestChoice("update-choice", UPDATE_UI_TEXT.updateAvailable.message(updateInfo.currentVersion, updateInfo.targetVersion), updateChoices);
+  const choice = await requestChoice("update-choice", UPDATE_UI_TEXT.updateAvailable.message(updateInfo.currentVersion || "unknown", updateInfo.targetVersion), updateChoices);
   
   if (choice === "skip") {
     emit({ event: "message", content: "Update skipped. You can update later by running the installer again." });
@@ -132,7 +132,7 @@ export async function runUpdate(
 
   // Step 2: Apply Update
   emit({ event: "step_start", step: "pull" });
-  await stepApplyUpdate(state, (percent, message) => {
+  const updateResult = await stepApplyUpdate(state, (percent, message) => {
     emit({ event: "progress", step: "pull", percent, detail: message });
   });
   emit({ event: "step_complete", step: "pull" });
@@ -140,14 +140,13 @@ export async function runUpdate(
   // Step 3: Rebuild & Verify
   emit({ event: "step_start", step: "rebuild" });
   const { buildOpenCodeBinary } = await import("./build-opencode");
-  await buildOpenCodeBinary(
-    { cacheBust: true },
-    (percent, message) => {
+  await buildOpenCodeBinary({
+    onProgress: async (message, percent) => {
       emit({ event: "progress", step: "rebuild", percent, detail: message });
     },
-    () => Promise.resolve(false)
-  );
-  await stepUpdateDone(state, updateInfo, (percent, message) => {
+    skipIfExists: false,
+  });
+  await stepUpdateDone(state, updateResult, (percent, message) => {
     emit({ event: "progress", step: "rebuild", percent, detail: message });
   });
   emit({ event: "step_complete", step: "rebuild" });

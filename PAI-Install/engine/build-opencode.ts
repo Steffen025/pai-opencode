@@ -11,8 +11,9 @@
 
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
-import { existsSync, symlinkSync, unlinkSync, chmodSync } from "node:fs";
-import { join, homedir } from "node:path";
+import { existsSync, symlinkSync, unlinkSync, chmodSync, copyFileSync, mkdirSync } from "node:fs";
+import { join } from "node:path";
+import { homedir } from "node:os";
 
 const execAsync = promisify(exec);
 
@@ -165,18 +166,18 @@ export async function buildOpenCodeBinary(
 		await onProgress("Installing to ~/.opencode/tools/...", 90);
 		
 		// Ensure directory exists
-		await execAsync(`mkdir -p "${PAI_BIN_DIR}"`);
+		mkdirSync(PAI_BIN_DIR, { recursive: true });
 		
-		// Remove old symlink if exists
+		// Remove old binary/symlink if exists
 		if (existsSync(PAI_BIN_PATH)) {
 			unlinkSync(PAI_BIN_PATH);
 		}
 		
-		// Create symlink (Bun binaries must stay in dist/, we symlink to them)
-		symlinkSync(distBinary, PAI_BIN_PATH);
+		// Copy binary to permanent location (BUILD_DIR will be deleted)
+		copyFileSync(distBinary, PAI_BIN_PATH);
 		chmodSync(PAI_BIN_PATH, 0o755);
 		
-		// Get version
+		// Get version BEFORE cleanup (needs BUILD_DIR)
 		const version = await getBuildVersion(BUILD_DIR);
 		
 		// Done (100%)

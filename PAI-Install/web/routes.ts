@@ -18,6 +18,8 @@ import { runValidation, generateSummary } from "../engine/validate";
 import { runFreshInstall } from "../engine/steps-fresh";
 import { runMigration } from "../engine/steps-migrate";
 import { runUpdate } from "../engine/steps-update";
+import { hasSavedState, clearState, createFreshState, saveState } from "../engine/state";
+import { access, constants } from "node:fs/promises";
 
 // ─── State ───────────────────────────────────────────────────────
 
@@ -25,6 +27,7 @@ let installState: InstallState | null = null;
 let wsClients = new Set<any>();
 let messageHistory: ServerMessage[] = [];
 let pendingRequests = new Map<string, { resolve: (value: string) => void; timeout: Timer }>();
+let installationRunning = false;
 
 // Request timeout: 5 minutes (prevent memory leaks from abandoned requests)
 const REQUEST_TIMEOUT_MS = 5 * 60 * 1000;
@@ -174,11 +177,18 @@ export function handleWsMessage(ws: any, raw: string): void {
       break;
 
     case "select_mode":
+      if (installationRunning) {
+        broadcast({ type: "error", message: "Installation already in progress" });
+        break;
+      }
       if (msg.mode && ["fresh", "migrate", "update"].includes(msg.mode)) {
         selectedMode = msg.mode as "fresh" | "migrate" | "update";
         broadcast({ type: "mode_selected", mode: selectedMode });
         // Auto-start installation after mode selection
-        startInstallation(selectedMode);
+        installationRunning = true;
+        startInstallation(selectedMode).finally(() => {
+          installationRunning = false;
+        });
       }
       break;
 
@@ -216,8 +226,15 @@ export function handleWsMessage(ws: any, raw: string): void {
     }
 
     case "start_install": {
+      if (installationRunning) {
+        broadcast({ type: "error", message: "Installation already in progress" });
+        break;
+      }
       if (!installState && selectedMode) {
-        startInstallation(selectedMode);
+        installationRunning = true;
+        startInstallation(selectedMode).finally(() => {
+          installationRunning = false;
+        });
       }
       break;
     }
@@ -262,15 +279,30 @@ async function startInstallation(mode: "fresh" | "migrate" | "update"): Promise<
 async function detectInstallMode(): Promise<"fresh" | "migrate" | "update" | null> {
   // Check for existing PAI installation
   const paiDir = `${process.env.HOME}/.opencode`;
-  const hasPai = await fs.exists(paiDir);
   
-  if (!hasPai) {
+  try {
+    await access(paiDir, constants.F_OK);
+  } catch {
     return "fresh";
   }
   
   // Check for v2 installation (claude/config.json vs opencode/settings.json)
-  const hasV2 = await fs.exists(`${paiDir}/claude/config.json`);
-  const hasV3 = await fs.exists(`${paiDir}/settings.json`);
+  let hasV2 = false;
+  let hasV3 = false;
+  
+  try {
+    await access(`${paiDir}/claude/config.json`, constants.F_OK);
+    hasV2 = true;
+  } catch {
+    hasV2 = false;
+  }
+  
+  try {
+    await access(`${paiDir}/settings.json`, constants.F_OK);
+    hasV3 = true;
+  } catch {
+    hasV3 = false;
+  }
   
   if (hasV2 && !hasV3) {
     return "migrate";
