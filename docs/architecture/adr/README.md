@@ -138,17 +138,26 @@ When adding new ADRs, use this structure:
 
 ---
 
-## Future ADRs
+## OpenCode-Native ADRs (ADR-012 to ADR-016)
 
-Potential topics for future documentation:
+These ADRs document the **native OpenCode transformation** — the shift from "port"
+to "genuinely native". See `docs/epic/EPIC-v3.0-OpenCode-Native.md` for context.
 
-| Topic | Why It Matters | Target |
+| ADR | Title | Status | WP |
+|-----|-------|--------|----|
+| ADR-012 | Session Registry as Custom Plugin Tool | 🔄 Planned | WP-N1 |
+| ADR-013 | Algorithm Session Awareness Post-Compaction | 🔄 Planned | WP-N3 |
+| ADR-014 | LSP-Native Code Navigation | 🔄 Planned | WP-N4 |
+| ADR-015 | Compaction Intelligence via Plugin Hook | 🔄 Planned | WP-N2 |
+| ADR-016 | Session Fork for Experiment Isolation | 🔄 Planned | WP-N4 |
+
+## Legacy Future ADRs
+
+| Topic | Why It Matters | Status |
 |-------|----------------|--------|
-| DB Archive Strategy (WP-F) | opencode.db grows to 2+ GB without cleanup | PR #D |
-| file.edited → PRD Sync (WP-G) | Event-driven instead of polling | PR #B |
-| Config Hierarchy (6-Level) | Understanding override precedence | PR #C docs |
-| Relationship Memory Names | Hardcoded @Jeremy/@Steffen → config-based | PR #C |
-| Session-Scoped Response Cache | Global cache causes cross-session pollution | PR #B |
+| Config Hierarchy (6-Level) | Understanding override precedence | Future |
+| Relationship Memory Names | Hardcoded @Jeremy/@Steffen → config-based | Future |
+| Session-Scoped Response Cache | Global cache causes cross-session pollution | Future |
 
 ---
 

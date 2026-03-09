@@ -16,17 +16,26 @@ date: 2026-03-08
 ## Overall Progress
 
 ```text
-WP1 ████████████ 100% ✅
-WP2 ████████████ 100% ✅
-WP3 ████████████ 100% ✅
-WP4 ████████████ 100% ✅
-─────────────────────────
+WP1  ████████████ 100% ✅  ← PR #32-35
+WP2  ████████████ 100% ✅  ← PR #34
+WP3  ████████████ 100% ✅  ← PR #37
+WP4  ████████████ 100% ✅  ← PR #38-40
+──────────────────────────────────────
 WP-A  ████████████ 100% ✅  ← PR #42 merged
 WP-B  ████████████ 100% ✅  ← PR #43 merged
-WP-C  ░░░░░░░░░░░░   0% 🔄  ← next up
-WP-D  ░░░░░░░░░░░░   0% ⏳
-WP-E  ░░░░░░░░░░░░   0% ⏳
+WP-C  ████████████ 100% ✅  ← PR #45 merged
+WP-D  ████████████ 100% ✅  ← PR #47 merged
+WP-E  ██████████░░  85% 🔄  ← PR #48 in review
+──────────────────────────────────────
+WP-N1 ░░░░░░░░░░░░   0% ⏳  ← Session Registry (next)
+WP-N2 ░░░░░░░░░░░░   0% ⏳  ← Compaction Intelligence
+WP-N3 ░░░░░░░░░░░░   0% ⏳  ← Algorithm Awareness
+WP-N4 ░░░░░░░░░░░░   0% ⏳  ← LSP + Fork
+WP-N5 ░░░░░░░░░░░░   0% ⏳  ← Plan Update
 ```
+
+> **The port is done. The native transformation starts with WP-N1.**
+> See `docs/epic/EPIC-v3.0-OpenCode-Native.md` for the full WP-N plan.
 
 ---
 

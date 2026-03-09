@@ -25,8 +25,9 @@ tags: [architecture, migration, v3.0, PR-strategy, corrected]
 | **WP4** | Integration & Validation | #38, #39, #40 | ✅ **Complete** | Functional, validated |
 | **WP-A** | WP3-Completion: Plugin System & Hooks | #42 | ✅ **Merged** | 5 handlers + bus events + pai-unified.ts |
 | **WP-B** | Security Hardening / Prompt Injection | #43 | ✅ **Merged** | injection-guard + sanitizer + patterns |
-| **WP-C** | Core PAI System + Skill Fixes | — | 🔄 **Next** | PAI docs, skill structure fixes, BuildOpenCode.ts |
-| **WP-D** | Installer & Migration | — | ⏳ **Blocked on C** | PAI-Install, migration script, DB health |
+| **WP-C** | Core PAI System + Skill Fixes | #45 | ✅ **Merged** | PAI docs, skill structure fixes, BuildOpenCode.ts |
+| **WP-D** | Installer & Migration | #47 | ✅ **Merged** | PAI-Install, migration script, DB health |
+| **WP-E** | Installer Refactor (Electron-first) | #48 | 🔄 **In Review** | Symlink architecture, Google TTS, Electron flows |
 
 > [!NOTE]
 > **2026-03-08 Live Audit:** WP-C scope significantly reduced after comparing repo against v4.0.3.
@@ -218,18 +219,20 @@ Current state (dev branch):
 
 ---
 
-## Summary
+## Summary (Updated 2026-03-10)
 
-| Metric | After Audit (2026-03-06) | Current (2026-03-08) |
-|--------|--------------------------|----------------------|
-| Total PRs | 10 (4 ✅ partial, 4 🔄 open) | 10 (8 ✅, **2 open**) |
-| Still open | 4 PRs (A, B, C, D) | **2 PRs (C, D)** |
-| Remaining work | WP3-Completion + WP3.5 + WP5 + WP6 | **WP5 + WP6** |
-| WP-C actual scope | ~25 files, ~2500 lines (estimated) | **~21 tasks, ~3.5h (verified)** |
-| ETA | 5–8 days realistic | **~2–3 days realistic** |
+| Metric | 2026-03-08 | **Current (2026-03-10)** |
+|--------|------------|--------------------------|
+| Port WPs done | 8 ✅ | **9 ✅ (WP-C + WP-D merged)** |
+| Open PRs | 2 (C, D) | **1 (WP-E #48 in review)** |
+| Remaining port work | WP-C + WP-D | **WP-E only** |
+| Native transformation | Not planned | **WP-N1 through WP-N5 defined** |
 
-**Status:** WP-A and WP-B delivered the plugin system and security layer. WP-C is the content/structure completion sprint. WP-D delivers the installer and migration tooling needed for the public v3.0 release.
+**Status:** The port is complete. WP-E (Installer Refactor) is in review.
+The next phase is the OpenCode-Native transformation — 5 new work packages that
+turn PAI from a Claude Code port into a genuinely native OpenCode system.
 
+**Native transformation plan:** `docs/epic/EPIC-v3.0-OpenCode-Native.md`
 **Full gap analysis:** `docs/epic/GAP-ANALYSIS-v3.0.md`
 **Granular task list:** `docs/epic/TODO-v3.0.md`
 
