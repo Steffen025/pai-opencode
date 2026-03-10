@@ -25,9 +25,9 @@ WP-A  ████████████ 100% ✅  ← PR #42 merged
 WP-B  ████████████ 100% ✅  ← PR #43 merged
 WP-C  ████████████ 100% ✅  ← PR #45 merged
 WP-D  ████████████ 100% ✅  ← PR #47 merged
-WP-E  ██████████░░  85% 🔄  ← PR #48 in review
+WP-E  ████████████ 100% ✅  ← PR #48 merged
 ──────────────────────────────────────
-WP-N1 ░░░░░░░░░░░░   0% ⏳  ← Session Registry (next)
+WP-N1 ████████████ 100% ✅  ← Session Registry complete, PR #50
 WP-N2 ░░░░░░░░░░░░   0% ⏳  ← Compaction Intelligence
 WP-N3 ░░░░░░░░░░░░   0% ⏳  ← Algorithm Awareness
 WP-N4 ░░░░░░░░░░░░   0% ⏳  ← LSP + Fork
@@ -368,14 +368,15 @@ graph TD
 > **The port is complete. The native transformation starts now.**
 > Full specification: `docs/epic/EPIC-v3.0-OpenCode-Native.md`
 
-### WP-N1: Session Registry — ⏳ ACTIVE (Next)
+### WP-N1: Session Registry — ✅ IN PROGRESS (PR #50)
 **Branch:** `feature/wp-n1-session-registry`
 **Spec:** ADR-012
+**Status:** Implementation complete, awaiting PR merge
 
-- [ ] Create `plugins/handlers/session-registry.ts` — track subagent sessions via `tool.execute.after`
-- [ ] Add custom tools `session_registry` + `session_results` in `pai-unified.ts`
-- [ ] Write AGENTS.md section on post-compaction recovery
-- [ ] Create ADR-012
+- [x] Create `plugins/handlers/session-registry.ts` — track subagent sessions via `tool.execute.after`
+- [x] Add custom tools `session_registry` + `session_results` in `pai-unified.ts`
+- [x] Write AGENTS.md section on post-compaction recovery
+- [x] ADR-012 already exists (merged via PR #49)
 
 ---
 

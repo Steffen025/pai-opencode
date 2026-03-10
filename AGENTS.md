@@ -247,6 +247,61 @@ When triggered via `/opencode` or `/oc` in a PR comment:
 
 ---
 
+## OpenCode Session API
+
+After context compaction, subagent results are **NOT lost**. They are stored in OpenCode's SQLite database and accessible via custom tools. Use these tools to recover session context after compaction or to resume subagent work.
+
+### Custom Tools
+
+**`session_registry`** — List all subagent sessions spawned in this session.
+
+- **When to use:** After context compaction, or when you need to check what subagents were spawned
+- **Returns:** Markdown table with session IDs, agent types, descriptions, and spawn times
+- **Example output:**
+  ```
+  ## Subagent Registry (2 sessions)
+
+  | # | Agent Type | Session ID | Description | Spawned At |
+  |---|-----------|-----------|-------------|------------|
+  | 1 | Engineer | ses_abc123 | Refactor auth middleware | 2026-03-10T10:30:00Z |
+  | 2 | Research | ses_def456 | Investigate OpenCode API | 2026-03-10T10:35:00Z |
+  ```
+
+**`session_results`** — Get registry metadata for a specific subagent session.
+
+- **When to use:** When you need details about a specific subagent's work
+- **Args:** `{ session_id: string }`
+- **Returns:** Agent type, full description, model tier, status, and resume instructions
+- **Note:** The full conversation history is in OpenCode's database. Use Task tool with `session_id` to retrieve it.
+
+### Post-Compaction Recovery Pattern
+
+When the Algorithm says "subagent results are lost after compaction":
+
+1. **Call `session_registry`** to see what subagents exist
+   ```
+   session_registry: {}
+   ```
+
+2. **Call `session_results`** for any sessions you need context on
+   ```
+   session_results: { "session_id": "ses_abc123" }
+   ```
+
+3. **Resume the session** using Task tool if you need full conversation:
+   ```
+   Task({ session_id: "ses_abc123", prompt: "Continue where you left off and summarize what you did" })
+   ```
+
+### Key Facts
+
+- Subagent data survives compaction — it's stored in OpenCode's SQLite with indexed `parent_id`
+- The registry file lives in `.opencode/MEMORY/STATE/subagent-registry-{parentSessionId}.json`
+- Registry is human-readable JSON for debugging
+- Session data persists across restarts, not just compaction
+
+---
+
 ## Quick Reference
 
 ### Commands

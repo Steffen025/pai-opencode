@@ -92,6 +92,11 @@ import { restoreSkillFiles } from "./handlers/skill-restore";
 import { handleTabState } from "./handlers/tab-state";
 import { handleUpdateCounts } from "./handlers/update-counts";
 import {
+	captureSubagentSession,
+	sessionRegistryTool,
+	sessionResultsTool,
+} from "./handlers/session-registry";
+import {
 	extractVoiceCompletion,
 	handleVoiceNotification,
 } from "./handlers/voice-notification";
@@ -352,6 +357,12 @@ export const PaiUnified: Plugin = async (ctx) => {
 	);
 
 	const hooks: Hooks = {
+		// WP-N1: Custom tools for session recovery after compaction
+		tool: {
+			session_registry: sessionRegistryTool,
+			session_results: sessionResultsTool,
+		},
+
 		/**
 		 * CONTEXT INJECTION (SessionStart equivalent)
 		 *
@@ -561,6 +572,13 @@ export const PaiUnified: Plugin = async (ctx) => {
 					if (captureResult.success && captureResult.filepath) {
 						fileLog(`Agent output saved: ${captureResult.filepath}`, "info");
 					}
+
+					// WP-N1: Capture subagent session to registry
+					await captureSubagentSession(
+						input.sessionID,
+						input.args,
+						output,
+					);
 				}
 
 				// === ALGORITHM TRACKER (v3.0) ===
