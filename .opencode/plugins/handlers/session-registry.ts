@@ -62,15 +62,50 @@ function readRegistry(sessionId: string): SubagentRegistry {
 	};
 }
 
-function writeRegistry(sessionId: string, registry: SubagentRegistry): void {
+function writeRegistryAtomic(sessionId: string, registry: SubagentRegistry): boolean {
 	const filePath = getRegistryPath(sessionId);
 	const dir = path.dirname(filePath);
+	const tempPath = `${filePath}.tmp.${Date.now()}`;
+
 	if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
 	registry.updatedAt = new Date().toISOString();
-	fs.writeFileSync(filePath, JSON.stringify(registry, null, 2), "utf-8");
+
+	try {
+		// Write to temp file
+		fs.writeFileSync(tempPath, JSON.stringify(registry, null, 2), "utf-8");
+		// Atomic rename
+		fs.renameSync(tempPath, filePath);
+		return true;
+	} catch (error) {
+		// Cleanup temp file on failure
+		try {
+			if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+		} catch {}
+		return false;
+	}
+}
+
+// Legacy non-atomic write for compatibility
+function writeRegistry(sessionId: string, registry: SubagentRegistry): void {
+	writeRegistryAtomic(sessionId, registry);
 }
 
 // --- Task Tool Output Parser ---
+
+/**
+ * Sanitize text for Markdown table cells.
+ * - Replace newlines with spaces
+ * - Escape pipe characters
+ * - Truncate to max length
+ */
+function sanitizeForTable(text: string, maxLength = 60): string {
+	return text
+		.replace(/\r\n/g, " ")
+		.replace(/\n/g, " ")
+		.replace(/\|/g, "\\|")
+		.substring(0, maxLength);
+}
 
 /**
  * Extract session_id from Task tool output metadata.
@@ -144,30 +179,53 @@ export async function captureSubagentSession(
 		}
 
 		const taskInfo = extractTaskInfo(args);
-		const registry = readRegistry(sessionId);
 
-		// Avoid duplicates
-		if (registry.entries.some((e) => e.sessionId === childSessionId)) {
-			fileLog(
-				`[SessionRegistry] Session ${childSessionId} already registered`,
-				"debug",
-			);
-			return;
+		// Retry loop for atomic update (handles concurrent writes)
+		let retries = 3;
+		while (retries > 0) {
+			const registry = readRegistry(sessionId);
+
+			// Avoid duplicates
+			if (registry.entries.some((e) => e.sessionId === childSessionId)) {
+				fileLog(
+					`[SessionRegistry] Session ${childSessionId} already registered`,
+					"debug",
+				);
+				return;
+			}
+
+			registry.entries.push({
+				sessionId: childSessionId,
+				agentType: taskInfo.agentType,
+				description: taskInfo.description,
+				modelTier: taskInfo.modelTier,
+				spawnedAt: new Date().toISOString(),
+				status: "completed",
+			});
+
+			// Atomic write with retry on failure
+			if (writeRegistryAtomic(sessionId, registry)) {
+				fileLog(
+					`[SessionRegistry] Registered ${taskInfo.agentType} subagent: ${childSessionId} (${registry.entries.length} total)`,
+					"info",
+				);
+				return;
+			}
+
+			// Retry after short delay
+			retries--;
+			if (retries > 0) {
+				fileLog(
+					`[SessionRegistry] Registry write conflict, retrying... (${retries} left)`,
+					"warn",
+				);
+				await new Promise((r) => setTimeout(r, 50));
+			}
 		}
 
-		registry.entries.push({
-			sessionId: childSessionId,
-			agentType: taskInfo.agentType,
-			description: taskInfo.description,
-			modelTier: taskInfo.modelTier,
-			spawnedAt: new Date().toISOString(),
-			status: "completed",
-		});
-
-		writeRegistry(sessionId, registry);
-		fileLog(
-			`[SessionRegistry] Registered ${taskInfo.agentType} subagent: ${childSessionId} (${registry.entries.length} total)`,
-			"info",
+		fileLogError(
+			"[SessionRegistry] Failed to write registry after retries",
+			new Error("Atomic write failed"),
 		);
 	} catch (error) {
 		fileLogError("[SessionRegistry] Failed to capture subagent session", error);
@@ -205,7 +263,7 @@ export const sessionRegistryTool = tool({
 		for (let i = 0; i < registry.entries.length; i++) {
 			const e = registry.entries[i];
 			lines.push(
-				`| ${i + 1} | ${e.agentType} | ${e.sessionId} | ${e.description.substring(0, 60)} | ${e.spawnedAt} |`,
+				`| ${i + 1} | ${e.agentType} | ${e.sessionId} | ${sanitizeForTable(e.description, 60)} | ${e.spawnedAt} |`,
 			);
 		}
 

@@ -368,10 +368,10 @@ graph TD
 > **The port is complete. The native transformation starts now.**
 > Full specification: `docs/epic/EPIC-v3.0-OpenCode-Native.md`
 
-### WP-N1: Session Registry — ✅ IN PROGRESS (PR #50)
+### WP-N1: Session Registry — ✅ Complete (PR #50)
 **Branch:** `feature/wp-n1-session-registry`
 **Spec:** ADR-012
-**Status:** Implementation complete, awaiting PR merge
+**Status:** Awaiting PR review/merge
 
 - [x] Create `plugins/handlers/session-registry.ts` — track subagent sessions via `tool.execute.after`
 - [x] Add custom tools `session_registry` + `session_results` in `pai-unified.ts`
