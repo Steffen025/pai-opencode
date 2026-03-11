@@ -302,6 +302,103 @@ When the Algorithm says "subagent results are lost after compaction":
 
 ---
 
+## Code Navigation (LSP Integration)
+
+OpenCode has 35+ Language Server Protocol (LSP) servers built-in. When enabled, they provide **type-aware code navigation** that goes beyond simple text matching.
+
+### Available LSP Tools
+
+| Tool | What It Does | When to Use |
+|------|-------------|-------------|
+| `goToDefinition` | Jump to symbol definition (type-aware, follows imports) | Find where a function/type is defined |
+| `findReferences` | All usages of a function (semantic, not text-match) | Understand impact before refactoring |
+| `hover` | Show type info and docs for a symbol | Quickly inspect unfamiliar APIs |
+| `callHierarchy` | Incoming/outgoing call chains | Trace execution paths |
+
+### LSP vs. Grep — When to Use Which
+
+| Use Case | LSP | Grep |
+|----------|-----|------|
+| Find all callers of `myFunction()` | ✅ `findReferences` — semantic, exact | ⚠️ Misses renamed imports, aliases |
+| Jump to type definition across files | ✅ `goToDefinition` — follows imports | ❌ Can't follow re-exports |
+| Check TypeScript type of a variable | ✅ `hover` — live type info | ❌ Not possible |
+| Find all files containing "TODO" | ❌ LSP can't do text search | ✅ Grep is correct tool |
+| Find all uses of a string literal | ❌ LSP is symbol-only | ✅ Grep is correct tool |
+| Quick pattern match in one file | ❌ Overhead not worth it | ✅ Grep is faster |
+
+**Rule of thumb:** Use LSP for **symbols** (functions, types, variables). Use Grep for **text** (strings, comments, patterns).
+
+### Activation
+
+LSP tools are **experimental** and must be explicitly enabled:
+
+```bash
+# Enable LSP tools for the current session
+export OPENCODE_EXPERIMENTAL_LSP_TOOL=true
+opencode
+```
+
+Or add to your shell profile for permanent activation:
+
+```bash
+echo 'export OPENCODE_EXPERIMENTAL_LSP_TOOL=true' >> ~/.zshrc
+```
+
+> **Note:** LSP tools are only available when `OPENCODE_EXPERIMENTAL_LSP_TOOL=true` is set. Without this flag, the tools are not registered and will not appear in the tool list.
+
+---
+
+## Safe Experiments (Session Fork)
+
+> **Note:** Plan Mode is **not available** in OpenCode. Session Fork is the native equivalent — a checkpoint system for safe experimentation.
+
+OpenCode's Session Fork creates an **exact copy** of the current session up to a specific message. The original session is untouched. If the experiment fails, discard the fork and return to the original.
+
+### When to Fork
+
+| Situation | Action |
+|-----------|--------|
+| About to do a risky refactoring | Fork first, then refactor in the fork |
+| Exploring multiple solution approaches | Fork once per approach, compare results |
+| About to run destructive operations (delete, overwrite) | Fork → verify in fork → apply to original |
+| Algorithm needs to "try something" without commitment | Fork, try, decide |
+| Pre-BUILD checkpoint in the PAI Algorithm | Fork at end of PLAN phase |
+
+### API Reference
+
+```http
+POST /session/{sessionID}/fork
+Content-Type: application/json
+
+{
+  "messageID": "msg_..."
+}
+```
+
+**Response:** A new session ID pointing to an exact copy of the session at the specified message.
+
+**How to get the current messageID:** Available via the OpenCode Session API (same endpoint used by `session_registry`).
+
+### Fork Workflow
+
+```
+PLAN phase complete → identify last messageID
+                    → POST /session/{id}/fork
+                    → get forked_session_id
+                    → work in forked session (BUILD / EXECUTE)
+                    → if success: apply changes to original
+                    → if failure: discard fork, original is safe
+```
+
+### Key Properties
+
+- **Atomic:** Fork creates a complete snapshot — no partial state
+- **Non-destructive:** Original session is never modified by fork operations
+- **Persistent:** Forked sessions survive restarts (stored in OpenCode SQLite)
+- **Discardable:** Failed experiments leave no traces in the original session
+
+---
+
 ## Quick Reference
 
 ### Commands
