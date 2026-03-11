@@ -28,8 +28,8 @@ WP-D  ████████████ 100% ✅  ← PR #47 merged
 WP-E  ████████████ 100% ✅  ← PR #48 merged
 ──────────────────────────────────────
 WP-N1 ████████████ 100% ✅  ← Session Registry complete, PR #50
-WP-N2 ░░░░░░░░░░░░   0% ⏳  ← Compaction Intelligence
-WP-N3 ░░░░░░░░░░░░   0% ⏳  ← Algorithm Awareness
+WP-N2 ████████████ 100% ✅  ← Compaction Intelligence complete, PR #51
+WP-N3 ░░░░░░░░░░░░   0% ⏳  ← Algorithm Awareness (next)
 WP-N4 ░░░░░░░░░░░░   0% ⏳  ← LSP + Fork
 WP-N5 ░░░░░░░░░░░░   0% ⏳  ← Plan Update
 ```
@@ -380,14 +380,15 @@ graph TD
 
 ---
 
-### WP-N2: Compaction Intelligence — ⏳ Planned
+### WP-N2: Compaction Intelligence — ✅ COMPLETE (PR #51)
 **Branch:** `feature/wp-n2-compaction-intelligence`
 **Spec:** ADR-015
+**Status:** Implementation complete, awaiting PR review/merge
 
-- [ ] Implement `experimental.session.compacting` hook
-- [ ] Create `plugins/lib/compaction-context.ts`
-- [ ] Inject registry + ISC + PRD context into compaction summary
-- [ ] Create ADR-015
+- [x] Implement `experimental.session.compacting` hook in `pai-unified.ts`
+- [x] Create `plugins/handlers/compaction-intelligence.ts` with context builders
+- [x] Inject registry + ISC + PRD context into compaction summary
+- [x] ADR-015 already exists (merged via PR #49)
 
 ---
 

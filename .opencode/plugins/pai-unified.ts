@@ -13,9 +13,14 @@
  * Session lifecycle:
  * - session.created         → skill-restore, version-check, session-info logging
  * - session.ended/idle      → learnings, integrity, work-complete, cleanup, relationship-memory
- * - session.compacted       → urgent learning rescue before context loss
+ * - session.compacted       → learning rescue (POST-compaction)
  * - session.updated         → session title tracking
  * - session.error           → error diagnostics
+ *
+ * COMPACTION HANDLING (2 komplementäre Mechanismen):
+ * - experimental.session.compacting (WP-N2) → Context injection DURING compaction
+ * - session.compacted (WP-A) → Learning rescue AFTER compaction
+ * Beide notwendig: Einer beeinflusst die Summary, der andere rettet Daten.
  *
  * Message events:
  * - message.updated         → ISC validation, voice, response-capture, rating, sentiment
@@ -96,6 +101,7 @@ import {
 	sessionRegistryTool,
 	sessionResultsTool,
 } from "./handlers/session-registry";
+import { injectCompactionContext } from "./handlers/compaction-intelligence";
 import {
 	extractVoiceCompletion,
 	handleVoiceNotification,
@@ -357,10 +363,24 @@ export const PaiUnified: Plugin = async (ctx) => {
 	);
 
 	const hooks: Hooks = {
-		// WP-N1: Custom tools for session recovery after compaction
+		// ═══════════════════════════════════════════════════════════════
+		// WP-N1/N2: COMPACTION HANDLING (2 komplementäre Mechanismen)
+		// ═══════════════════════════════════════════════════════════════
+
+		// WP-N1: Custom tools for session recovery AFTER compaction
 		tool: {
 			session_registry: sessionRegistryTool,
 			session_results: sessionResultsTool,
+		},
+
+		// WP-N2: Context Injection (WÄHREND compaction)
+		// Hook: experimental.session.compacting
+		// Zeitpunkt: Während LLM die Summary generiert
+		// Ziel: Subagent-Registry, ISC, PRD in Summary injizieren
+		// Output: Beeinflusst WAS das LLM in die Summary schreibt
+		"experimental.session.compacting": async (input, output) => {
+			fileLog("[Compaction:Pre] Context injection triggered", "info");
+			await injectCompactionContext(input, output);
 		},
 
 		/**
@@ -1250,29 +1270,39 @@ export const PaiUnified: Plugin = async (ctx) => {
 
 				// ─── BUS EVENTS (WP-A) ───────────────────────────────────────────────
 
+				// ═══════════════════════════════════════════════════════════════
+				// COMPACTION HANDLING (Komplementär zu WP-N2)
+				// ═══════════════════════════════════════════════════════════════
+
+				// WP-N2 oben: Context Injection (WÄHREND compaction via experimental.session.compacting hook)
+				// HIER: Learning Rescue (NACH compaction via session.compacted event)
+
 				// === SESSION COMPACTED ===
-				// OpenCode compresses context when token limit reached.
-				// CRITICAL moment — rescue learnings BEFORE context is lost.
+				// Event: session.compacted
+				// Zeitpunkt: NACHDEM LLM Summary generiert & Context gekürzt wurde
+				// Ziel: Extrahierte Learnings aus Work-Files retten
+				// Output: Speichert Learnings für spätere Nutzung
+				// Unterscheidung: [Compaction:Post] vs [Compaction:Pre] (bei WP-N2 Hook)
 				if (eventType === "session.compacted") {
 					fileLog(
-						"=== Context Compaction Detected — rescuing learnings ===",
+						"[Compaction:Post] Context compaction detected — rescuing learnings",
 						"info",
 					);
 					try {
 						const learningResult = await extractLearningsFromWork();
 						if (learningResult.success && learningResult.learnings.length > 0) {
 							fileLog(
-								`[Compaction] Rescued ${learningResult.learnings.length} learnings`,
+								`[Compaction:Post] Rescued ${learningResult.learnings.length} learnings`,
 								"info",
 							);
 						} else {
-							fileLog("[Compaction] No learnings to rescue", "debug");
+							fileLog("[Compaction:Post] No learnings to rescue", "debug");
 						}
 					} catch (error) {
-						fileLogError("[Compaction] Learning rescue failed", error);
+						fileLogError("[Compaction:Post] Learning rescue failed", error);
 					}
 					fileLog(
-						`[Compaction] Compacted at ${new Date().toISOString()}`,
+						`[Compaction:Post] Compaction completed at ${new Date().toISOString()}`,
 						"info",
 					);
 				}

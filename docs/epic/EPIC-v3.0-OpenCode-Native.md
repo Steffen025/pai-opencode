@@ -368,8 +368,66 @@ doesn't *know* these tools exist. It won't use `session_registry` unless it's ta
 
 ---
 
-### WP-N6: System Self-Awareness (P2 — Algorithm Introspection)
-**Effort:** 3-4h | **Branch:** `feature/wp-n6-system-awareness`
+### WP-N6: Database Archive System (P1 — Performance Infrastructure)
+**Effort:** 3-4h | **Branch:** `feature/wp-n6-db-archive-system`
+
+**The Problem:** OpenCode's SQLite database grows indefinitely. At 2.3+ GB, performance degrades — queries slow down, startup takes longer, compaction strains memory. The current archive tool creates multiple timestamped databases (`sessions-YYYY-MM-DD.db`), fragmenting old data across files and making search difficult.
+
+**The Vision:** A single, cumulative archive database with 14-day retention in the main DB. Active work stays fast (<600 MB), unlimited history sits in one searchable cold-storage file.
+
+**Deliverables:**
+
+1. **Refactor `Tools/db-archive.ts`:**
+   - Single Archive-DB: `~/.opencode/archive.db` (statt multi-DB)
+   - Append-Mode: `INSERT OR IGNORE` (Sessions nur einmal archivieren)
+   - 14-Tage Standard-Retention (statt 90)
+   - Cumulative growth (unlimited cold storage)
+
+2. **Configuration in `settings.json`:**
+   ```json
+   {
+     "pai": {
+       "archive": {
+         "retentionDays": 14,
+         "archiveDbPath": "archive.db",
+         "autoArchive": true,
+         "vacuumAfterArchive": true
+       }
+     }
+   }
+   ```
+
+3. **Extend `session-cleanup.ts`:**
+   - Read `retentionDays` from `settings.json`
+   - Auto-archive bei Session-Cleanup
+   - Warn bei DB > 500 MB
+
+4. **Update `DB-MAINTENANCE.md`:**
+   - Single Archive-DB Dokumentation
+   - 14-Tage-Retention erklären
+   - Query-Beispiele für Archive-DB
+
+5. **New ADR:** `docs/architecture/adr/ADR-018-db-archive-system.md`
+   - Decision: Single cumulative archive DB vs. timestamped archives
+   - Rationale: Performance + unbegrenzter Cold Storage
+   - 14-Day retention as default for active work window
+
+**Verification:**
+- Single `archive.db` exists in `~/.opencode/`
+- Haupt-DB bleibt bei <600 MB mit 14-Tage-Retention
+- `bun Tools/db-archive.ts --dry-run` zeigt 14-Tage-Default
+- Archive-DB ist durchsuchbar via `sqlite3 ~/.opencode/archive.db`
+- `bun test` green, `biome check` clean
+
+**Integration with WP-N2:**
+- WP-N2 (Compaction Intelligence) injiziert Registry/ISC/PRD in Summaries
+- WP-N6 (Database Archive) hält Haupt-DB schlank für schnelle Compaction
+- Together: Performance-optimiertes Context Management
+
+---
+
+### WP-N7: System Self-Awareness (P2 — Algorithm Introspection)
+**Effort:** 3-4h | **Branch:** `feature/wp-n7-system-awareness`
 
 **The Problem:** The Algorithm has WP-N1 tools (session recovery) and WP-N4 tools (LSP, Fork), but doesn't have a **systematic understanding** of its own operating environment. When unexpected behavior occurs, it cannot self-diagnose.
 
@@ -426,7 +484,7 @@ doesn't *know* these tools exist. It won't use `session_registry` unless it's ta
 
 **Integration with WP-N3:**
 - WP-N3 teaches Algorithm: "Use session_registry after compaction"
-- WP-N6 teaches Algorithm: "Understand your entire environment"
+- WP-N7 teaches Algorithm: "Understand your entire environment"
 - Together: Complete Algorithm awareness (tools + system)
 
 ---
@@ -440,7 +498,8 @@ doesn't *know* these tools exist. It won't use `session_registry` unless it's ta
 | 🔴 P0 | WP-N3 | Algorithm knows tools | 2-3h | Algorithm uses new capabilities |
 | 🟡 P1 | WP-N4 | LSP + Fork | 2h | Code navigation + safe experiments |
 | 🟡 P1 | WP-N5 | Plan updated | 1h | Single source of truth |
-| 🟢 P2 | WP-N6 | System Self-Awareness | 3-4h | Algorithm understands its OS |
+| 🟡 P1 | WP-N6 | Database Archive System | 3-4h | Performance + cold storage |
+| 🟢 P2 | WP-N7 | System Self-Awareness | 3-4h | Algorithm understands its OS |
 
 **Total effort:** ~15-20h for full OpenCode-native transformation
 
@@ -465,9 +524,12 @@ WP-N1 (Session Registry) ✅ COMPLETE
     │         │     WP-N5 (Plan Update)
     │         │         │
     │         │         ▼
-    │         └──► WP-N6 (System Self-Awareness) ← Final step
+    │         │     WP-N6 (Database Archive System)
+    │         │         │
+    │         │         ▼
+    │         └──► WP-N7 (System Self-Awareness) ← Final step
     │
-    └──► (Sequential: N2 → N3 → N4 → N5 → N6)
+    └──► (Sequential: N2 → N3 → N4 → N5 → N6 → N7)
 ```
 
 **Execution Order:**
@@ -475,7 +537,8 @@ WP-N1 (Session Registry) ✅ COMPLETE
 2. **WP-N3** (Session Awareness) — Algorithm learns session tools
 3. **WP-N4** (LSP + Fork) — Algorithm learns navigation + experiments  
 4. **WP-N5** (Plan Update) — Documentation sync
-5. **WP-N6** (System Awareness) — Algorithm learns its environment
+5. **WP-N6** (Database Archive) — Performance infrastructure, 14-day retention
+6. **WP-N7** (System Awareness) — Algorithm learns its environment
 
 <details>
 <summary>Detailed Mermaid Diagram</summary>
@@ -488,7 +551,8 @@ flowchart TD
     N3["WP-N3 (Algorithm Awareness)"]
     N4["WP-N4 (LSP + Fork)"]
     N5["WP-N5 (Plan Update)"]
-    N6["WP-N6 (System Self-Awareness)"]
+    N6["WP-N6 (Database Archive System)"]
+    N7["WP-N7 (System Self-Awareness)"]
 
     E --> N1
     N1 --> N2
@@ -496,13 +560,14 @@ flowchart TD
     N3 --> N4
     N4 --> N5
     N5 --> N6
+    N6 --> N7
 ```
 
 </details>
 
 ---
 
-## 📋 New ADR Index (ADR-012 to ADR-016)
+## 📋 New ADR Index (ADR-012 to ADR-018)
 
 | ADR | Title | WP | Solves |
 |-----|-------|----|--------|
@@ -511,13 +576,14 @@ flowchart TD
 | ADR-014 | LSP-Native Code Navigation | WP-N4 | Code understanding |
 | ADR-015 | Compaction Intelligence via Plugin Hook | WP-N2 | Memory preservation |
 | ADR-016 | Session Fork for Experiment Isolation | WP-N4 | Safe experiments |
-| ADR-017 | System Self-Awareness for Algorithm Introspection | WP-N6 | Self-diagnostic capability |
+| ADR-017 | System Self-Awareness for Algorithm Introspection | WP-N7 | Self-diagnostic capability |
+| ADR-018 | Database Archive System (Single Cumulative DB) | WP-N6 | Performance + cold storage |
 
 ---
 
 ## ✅ What v3.0 Native Means
 
-When WP-N1 through WP-N6 are complete, PAI-OpenCode v3.0 will:
+When WP-N1 through WP-N7 are complete, PAI-OpenCode v3.0 will:
 
 | Before (Port) | After (Native) |
 |---------------|----------------|
@@ -526,7 +592,8 @@ When WP-N1 through WP-N6 are complete, PAI-OpenCode v3.0 will:
 | Grep for everything | LSP for symbol navigation, Grep for text search |
 | Experiments = risky | Session fork = safe checkpoint/rollback |
 | 0 custom tools | 2 custom tools (`session_registry`, `session_results`) |
-| 11 ADRs about porting | 17 ADRs — 11 port + 6 native |
+| Database grows indefinitely → slow | 14-day retention + archive.db → always fast |
+| 11 ADRs about porting | 18 ADRs — 11 port + 7 native |
 | Algorithm asks "How do I...?" | Algorithm consults OpenCodeSystem Skill for self-diagnosis |
 | Hard-coded paths/configs | Algorithm reads from centralized system documentation |
 
@@ -538,7 +605,7 @@ When WP-N1 through WP-N6 are complete, PAI-OpenCode v3.0 will:
 
 1. **Merge PR #50** (WP-N1) — ✅ COMPLETE, ready to merge
 2. **Start WP-N2** (`feature/wp-n2-compaction-intelligence`) — highest priority next
-3. **Sequentially:** N2 → N3 → N4 → N5 → N6
+3. **Sequentially:** N2 → N3 → N4 → N5 → N6 → N7
 
 ---
 
