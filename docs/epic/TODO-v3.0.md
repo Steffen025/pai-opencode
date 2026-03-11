@@ -9,7 +9,7 @@ date: 2026-03-10
 
 > [!NOTE]
 > **Basis:** Gap-Analysis 2026-03-06 | Reference: `GAP-ANALYSIS-v3.0.md` | Plan: `OPTIMIZED-PR-PLAN.md`
-> **Updated:** 2026-03-10 — WP-A through WP-D merged. WP-E in review. WP-N1..N5 defined for native transformation.
+> **Updated:** 2026-03-11 — WP-N1 through WP-N4 complete (PR #50–#53). WP-N5 next.
 
 ---
 
@@ -380,10 +380,10 @@ graph TD
 
 ---
 
-### WP-N2: Compaction Intelligence — ✅ COMPLETE (PR #51)
+### WP-N2: Compaction Intelligence — ✅ Complete (PR #51)
 **Branch:** `feature/wp-n2-compaction-intelligence`
 **Spec:** ADR-015
-**Status:** Implementation complete, awaiting PR review/merge
+**Status:** Merged into `dev`
 
 - [x] Implement `experimental.session.compacting` hook in `pai-unified.ts`
 - [x] Create `plugins/handlers/compaction-intelligence.ts` with context builders
@@ -392,10 +392,10 @@ graph TD
 
 ---
 
-### WP-N3: Algorithm Awareness — ⏳ Implemented (PR #52)
+### WP-N3: Algorithm Awareness — ✅ Complete (PR #52+#53)
 **Branch:** `feature/wp-n3-algorithm-awareness`
 **Spec:** ADR-013
-**Status:** Implementation complete, awaiting PR review/merge
+**Status:** Merged into `dev`
 
 - [x] Update AGENTS.md — Session API section (already complete from WP-N1/N2)
 - [x] Update Algorithm SKILL.md — Post-Compaction recovery pattern with session tools
@@ -443,5 +443,5 @@ graph TD
 ---
 
 *Created: 2026-03-06*
-*Updated: 2026-03-11 — WP-N1 complete; WP-N2..N6 sequential execution defined; WP-N6 System Awareness added*
+*Updated: 2026-03-11 — WP-N1 through WP-N4 complete (PR #50–#53); WP-N5 next; WP-N6 System Awareness defined*
 *Basis: GAP-ANALYSIS-v3.0.md + EPIC-v3.0-Synthesis-Architecture.md + EPIC-v3.0-OpenCode-Native.md*
