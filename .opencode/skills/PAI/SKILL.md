@@ -119,7 +119,7 @@ These are direct, synchronous calls. Do not send to background. The voice notifi
 **The AI writes ALL PRD content directly using Write/Edit tools.** PRD.md in `~/.opencode/MEMORY/WORK/{slug}/` is the single source of truth. The AI is the sole writer — no hooks, no indirection.
 
 **What the AI writes directly:**
-- YAML frontmatter (canonical v1.0.0 schema: `prd`, `id`, `status`, `mode`, `effort_level`, `created`, `updated`; optional: `iteration`, `maxIterations`, `loopStatus`, `last_phase`, `failing_criteria`, `verification_summary`, `parent`, `children`)
+- YAML frontmatter (canonical v1.0.0 schema: `prd`, `id`, `status`, `mode`, `effort_level`, `created`, `updated`; optional: `parent_session_id`, `iteration`, `maxIterations`, `loopStatus`, `last_phase`, `failing_criteria`, `verification_summary`, `parent`, `children`)
 - Legacy schema (deprecated): `task`, `slug`, `effort`, `phase`, `progress`, `mode`, `started`, `updated` — migrate to canonical on next edit
 - All prose sections (Context, Criteria, Decisions, Verification)
 - Criteria checkboxes (`- [ ] ISC-1: text` and `- [x] ISC-1: text`)
@@ -469,7 +469,7 @@ Fill in all bracketed values from the current session. `implied_sentiment` is yo
 
 - **SAME-SESSION:** Task was worked on earlier THIS session (in working memory) → Skip search entirely. Use working memory context directly.
 
-- **POST-COMPACTION (legacy fallback, if native tools unavailable):**
+- **POST-COMPACTION FALLBACK:** If native OpenCode tools unavailable →
   1. Read the most recent PRD from `~/.opencode/MEMORY/WORK/` (by mtime) — Grep/Glob/Read only
   2. PRD frontmatter has state fields
   3. PRD body has criteria checkboxes, decisions
@@ -485,11 +485,15 @@ OpenCode stores ALL subagent sessions persistently, indexed by `parent_id`. Data
 
 **Recovery Flow:**
 ```json
-// Step 1: Read PRD frontmatter → get parent_session_id
-// Step 2: List all subagents for this session
-session_registry: {}
+// Step 1: Read PRD frontmatter → extract parent_session_id field
+// Example: parent_session_id: "ses_abc123"
 
-// Step 3: Get specific subagent results  
+// Step 2: List all subagents for this parent session
+// session_registry uses parent_session_id from context automatically
+session_registry: {}
+// Returns: All subagents where parent_id = "ses_abc123"
+
+// Step 3: Get specific subagent results using session_id from Step 2
 session_results: { "session_id": "ses_child456" }
 ```
 
