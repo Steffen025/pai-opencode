@@ -9,7 +9,7 @@ date: 2026-03-10
 
 > [!NOTE]
 > **Basis:** Gap-Analysis 2026-03-06 | Reference: `GAP-ANALYSIS-v3.0.md` | Plan: `OPTIMIZED-PR-PLAN.md`
-> **Updated:** 2026-03-11 — WP-N1 through WP-N4 complete (PR #50–#53). WP-N5 next.
+> **Updated:** 2026-03-12 — WP-N1 through WP-N5 complete (PR #50–#54). WP-N6 in progress.
 
 ---
 
@@ -32,6 +32,7 @@ WP-N2 ████████████ 100% ✅  ← Compaction Intelligence
 WP-N3 ████████████ 100% ✅  ← Algorithm Awareness complete, PR #52+#53
 WP-N4 ████████████ 100% ✅  ← LSP + Fork Documentation complete, PR #53
 WP-N5 ████████████ 100% ✅  ← Plan Update complete, PR #54
+WP-N6 ██████████░░  85% 🔄  ← System Self-Awareness, PR #55 (fix commit pending)
 ```
 
 > **The port is done. The native transformation starts with WP-N1.**
@@ -426,22 +427,41 @@ graph TD
 
 ---
 
-### WP-N6: System Self-Awareness — ⏳ Planned
+### WP-N6: System Self-Awareness — 🔄 In Progress (PR #55)
 **Branch:** `feature/wp-n6-system-awareness`
 **Spec:** ADR-017
 **Dependencies:** WP-N3 (Algorithm Awareness) + WP-N4 (LSP/Fork documented)
 **Goal:** Algorithm understands its operating environment
 
-- [ ] Create `.opencode/skills/OpenCodeSystem/SKILL.md` with USE WHEN triggers
-- [ ] Create `SystemArchitecture.md` — PAI-OpenCode 3.0 structure
-- [ ] Create `ToolReference.md` — all native + MCP tools
-- [ ] Create `Configuration.md` — settings.json, opencode.json, model routing
-- [ ] Create `Troubleshooting.md` — self-diagnostic checklist
-- [ ] Create ADR-017: System Self-Awareness
-- [ ] Integration test: Algorithm consults skill when stuck
+- [x] Create `.opencode/skills/OpenCodeSystem/SKILL.md` with USE WHEN triggers
+- [x] Create `SystemArchitecture.md` — PAI-OpenCode 3.0 structure
+- [x] Create `ToolReference.md` — all native + MCP tools
+- [x] Create `Configuration.md` — settings.json, opencode.json, model routing
+- [x] Create `Troubleshooting.md` — self-diagnostic checklist
+- [x] Create ADR-017: System Self-Awareness
+- [x] Update skill-index.json with OpenCodeSystem entry
+- [x] Update ADR README + TODO + OPTIMIZED-PR-PLAN
+- [x] Fix: Remove hardcoded model names → tier-only references
+- [x] Fix: Add YAML frontmatter + Obsidian callouts to all docs
+- [x] Fix: Add `permission.asked` hook to SystemArchitecture.md
+- [x] Fix: Safe rsync in Troubleshooting.md (was unsafe mv)
+- [x] Fix: Restructure SKILL.md to PAI v3.0 schema (MANDATORY/OPTIONAL)
+- [x] Fix: Add `OPENCODE_EXPERIMENTAL_LSP_TOOL=true` to .env.example
+- [x] Fix: MCP detection uses grep (no cat pipe), searches both keys
+
+---
+
+### WP-N7: Obsidian CLI + Agent Capability Matrix — 📋 Planned
+**Branch:** TBD
+**Dependencies:** WP-N6
+**Goal:** Obsidian formatting guidelines + agent permissions/tools/MCP capability matrix
+
+- [ ] Obsidian CLI integration guide (frontmatter, callouts, collapsible sections)
+- [ ] Formatting guidelines document for all PAI-OpenCode docs
+- [ ] Agent capability matrix (permissions, tools, MCP access per agent type)
 
 ---
 
 *Created: 2026-03-06*
-*Updated: 2026-03-11 — WP-N1 through WP-N4 complete (PR #50–#53); WP-N5 next; WP-N6 System Awareness defined*
+*Updated: 2026-03-12 — WP-N1 through WP-N5 complete (PR #50–#54); WP-N6 in progress (PR #55 open); WP-N7 planned*
 *Basis: GAP-ANALYSIS-v3.0.md + EPIC-v3.0-Synthesis-Architecture.md + EPIC-v3.0-OpenCode-Native.md*

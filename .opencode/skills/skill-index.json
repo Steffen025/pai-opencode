@@ -1,11 +1,11 @@
 {
-  "generated": "2026-03-08T23:47:52.369Z",
-  "totalSkills": 52,
+  "generated": "2026-03-12T07:24:22.833Z",
+  "totalSkills": 53,
   "categories": 7,
-  "flatSkills": 17,
+  "flatSkills": 18,
   "hierarchicalSkills": 35,
   "alwaysLoadedCount": 2,
-  "deferredCount": 50,
+  "deferredCount": 51,
   "skills": {
     "agents": {
       "name": "Agents",
@@ -533,6 +533,29 @@
       "tier": "deferred",
       "isHierarchical": false
     },
+    "opencodesystem": {
+      "name": "OpenCodeSystem",
+      "path": "OpenCodeSystem/SKILL.md",
+      "category": null,
+      "fullDescription": "PAI-OpenCode system self-awareness. USE WHEN asking about tools, config, model routing, plugin handlers, MCP servers, troubleshooting, or operating environment.",
+      "triggers": [
+        "asking",
+        "tools",
+        "config",
+        "model",
+        "routing",
+        "plugin",
+        "handlers",
+        "mcp",
+        "servers",
+        "troubleshooting",
+        "operating",
+        "environment"
+      ],
+      "workflows": [],
+      "tier": "deferred",
+      "isHierarchical": false
+    },
     "osint": {
       "name": "OSINT",
       "path": "Investigation/OSINT/SKILL.md",
@@ -1039,14 +1062,19 @@
       "name": "USMetrics",
       "path": "USMetrics/SKILL.md",
       "category": null,
-      "fullDescription": "US metrics and data tracking. USE WHEN US metrics, American data, statistics, demographics, tracking.",
+      "fullDescription": "US metrics, economic indicators and data tracking. USE WHEN US metrics, American data, statistics, demographics, GDP, inflation, unemployment, economic metrics, gas prices.",
       "triggers": [
         "metrics",
         "american",
         "data",
         "statistics",
         "demographics",
-        "tracking"
+        "gdp",
+        "inflation",
+        "unemployment",
+        "economic",
+        "gas",
+        "prices"
       ],
       "workflows": [
         "UpdateData",
