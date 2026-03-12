@@ -60,19 +60,34 @@ jobs:
           # module names like 'task-manager', 'publishTask', 'publish-task-model', etc.
           
           # Search in common code directories
-          SEARCH_DIRS="Tools .opencode skill-packs"
+          SEARCH_DIRS="Tools .opencode skill-packs .github"
           
+          echo "🔍 Scanning for hardcoded secrets..."
           FOUND=0
           for dir in $SEARCH_DIRS; do
             if [ -d "$dir" ]; then
-              if grep -rEin "sk-[a-zA-Z0-9._-]{20,}|(api[_-]?key|client[_-]?secret|password|token)[[:space:]]*[:=][[:space:]]*['\"]?[a-zA-Z0-9._-]{20,}['\"]?" "$dir" --include="*.ts" --include="*.js" --include="*.json" 2>/dev/null; then
-                FOUND=1
+              echo "  Scanning $dir..."
+              # Find potential secrets (include YAML configs)
+              # Filter: exclude example strings in documentation, BountyPrograms, test data
+              RESULT=$(grep -rEin "sk-[a-zA-Z0-9._-]{20,}|(api[_-]?key|client[_-]?secret|password|token)[[:space:]]*[:=][[:space:]]*['\"]?[a-zA-Z0-9._-]{20,}['\"]?" "$dir" --include="*.ts" --include="*.js" --include="*.json" --include="*.yaml" --include="*.yml" --exclude-dir="node_modules" 2>/dev/null | grep -v "BountyPrograms.json" | grep -vi "EXAMPLES OF GOOD\|EXAMPLES OF BAD\|claimed-task-complete-when\|ignored-explicit-python\|assistant-deleted-users\|overwrote-working-code\|asked-clarifying-question" || true)
+              
+              if [ -n "$RESULT" ]; then
+                # Filter out process.env references (environment variable lookups, not hardcoded secrets)
+                FILTERED=$(echo "$RESULT" | grep -vi "process\.env" | grep -vi "\.env\.example" || true)
+                
+                if [ -n "$FILTERED" ]; then
+                  # Only show file:line, not the content (to avoid exposing secrets in logs)
+                  echo "❌ Potential hardcoded secret found:"
+                  echo "$FILTERED" | cut -d: -f1,2
+                  FOUND=1
+                fi
               fi
             fi
           done
           
           if [ $FOUND -eq 1 ]; then
-            echo "❌ Potential hardcoded secret found!"
+            echo ""
+            echo "❌ Secret scan failed! Please remove hardcoded secrets or use environment variables."
             exit 1
           fi
           
@@ -81,7 +96,8 @@ jobs:
       # Test job — vorbereitet für wenn Tests existieren
       - name: Tests (if tests exist)
         run: |
-          if find . -name "*.test.ts" -o -name "*.spec.ts" | grep -q .; then
+          # Exclude node_modules to avoid finding test files in dependencies
+          if find . \( -name "*.test.ts" -o -name "*.spec.ts" \) -not -path "*/node_modules/*" | grep -q .; then
             echo "Test files found — running tests..."
             bun test
           else
