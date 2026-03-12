@@ -33,8 +33,8 @@ export const PROVIDER_MODELS: Record<ProviderName, ModelTierMap> = {
 	},
 	openrouter: {
 		quick: "openrouter/google/gemini-flash-1.5",
-		standard: "openrouter/anthropic/claude-3.5-sonnet",
-		advanced: "openrouter/anthropic/claude-3-opus",
+		standard: "openrouter/anthropic/claude-4.5-sonnet",
+		advanced: "openrouter/anthropic/claude-opus-4-6",
 	},
 	openai: {
 		quick: "openai/gpt-4o-mini",
