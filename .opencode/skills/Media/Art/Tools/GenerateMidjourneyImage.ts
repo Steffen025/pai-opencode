@@ -12,8 +12,8 @@
  * @see ~/.opencode/skills/art/SKILL.md
  */
 
-import { DiscordBotClient } from '../lib/discord-bot.js';
-import { MidjourneyClient, MidjourneyError } from '../lib/midjourney-client.js';
+import { DiscordBotClient } from '../Lib/discord-bot.js';
+import { MidjourneyClient, MidjourneyError } from '../Lib/midjourney-client.js';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 

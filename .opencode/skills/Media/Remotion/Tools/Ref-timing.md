@@ -85,7 +85,7 @@ A `spring()` has a natural duration based on the physical properties.
 To stretch the animation to a specific duration, use the `durationInFrames` parameter.
 
 ```tsx
-const spring = spring({
+const springProgress = spring({
   frame,
   fps,
   durationInFrames: 40,

@@ -85,7 +85,7 @@ TRANSPARENT: Use Images skill to remove background for overlay use
 **For transparent background** — use the **Images skill** for background removal:
 
 ```bash
-bun ~/.opencode/skills/CORE/Tools/RemoveBg.ts /path/to/visualization.png
+bun ~/.opencode/skills/PAI/Tools/RemoveBg.ts /path/to/visualization.png
 ```
 
 ### Title/Subtitle Alignment

@@ -42,7 +42,7 @@ PAI_THEME.colors.textMuted     // #94a3b8 - Muted text
 
 // Typography
 PAI_THEME.typography.title     // { fontSize: 72, fontWeight: 'bold' }
-PAI_THEME.typography.subtitle  // { fontSize: 36 }
+PAI_THEME.typography.subtitle  // { fontSize: 48 }
 PAI_THEME.typography.body      // { fontSize: 24 }
 
 // Animation
