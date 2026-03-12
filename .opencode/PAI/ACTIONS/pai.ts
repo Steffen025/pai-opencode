@@ -55,9 +55,19 @@ function parseArgs(args: string[]): { command: string; target?: string; options:
     const arg = args[i];
 
     if (expectingValue) {
-      if (expectingValue === "mode") options.mode = arg as "local" | "cloud";
-      else if (expectingValue === "input") options.input = arg;
-      else extra[expectingValue] = arg;
+      if (expectingValue === "mode") {
+        // Validate mode value — only "local" or "cloud" accepted
+        if (arg === "local" || arg === "cloud") {
+          options.mode = arg;
+        } else {
+          console.error(`Error: Invalid mode "${arg}". Must be "local" or "cloud".`);
+          process.exit(1);
+        }
+      } else if (expectingValue === "input") {
+        options.input = arg;
+      } else {
+        extra[expectingValue] = arg;
+      }
       expectingValue = null;
       continue;
     }
