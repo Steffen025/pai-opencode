@@ -1,15 +1,9 @@
 {
   "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
-  "organizeImports": {
-    "enabled": true
-  },
   "linter": {
     "enabled": true,
     "rules": {
       "recommended": true,
-      "correctness": {
-        "noUnusedVariables": "warn"
-      },
       "suspicious": {
         "noEmptyBlockStatements": "off"
       }
@@ -22,13 +16,8 @@
     "lineWidth": 120
   },
   "files": {
-    "include": [
+    "includes": [
       ".opencode/PAI/ACTIONS/**/*.ts"
-    ],
-    "ignore": [
-      "node_modules",
-      ".opencode/PAI/ACTIONS/A_*",
-      ".opencode/PAI/ACTIONS/lib/types.ts"
     ]
   }
 }
