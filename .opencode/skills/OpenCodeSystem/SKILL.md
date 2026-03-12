@@ -3,24 +3,24 @@ name: OpenCodeSystem
 description: PAI-OpenCode system self-awareness. USE WHEN asking about tools, config, model routing, plugin handlers, MCP servers, troubleshooting, or operating environment.
 ---
 
+## Customization
+
+**Before executing, check for user customizations at:**
+`~/.opencode/skills/PAI/USER/SKILLCUSTOMIZATIONS/OpenCodeSystem/`
+
+If this directory exists, load and apply any PREFERENCES.md, configurations, or resources found there. These override default behavior. If the directory does not exist, proceed with skill defaults.
+
 # OpenCodeSystem — System Self-Awareness
 
-**USE WHEN:**
-- "What tools do I have?"
-- "What custom tools are available?"
-- "How is model routing configured?"
-- "What MCP servers are connected?"
-- "Why isn't the plugin firing?"
-- "What's the difference between opencode.json and settings.json?"
-- "How do I troubleshoot X not working?"
-- "What agents can I spawn?"
-- "Where is the memory stored?"
-- "What hooks does the plugin register?"
-- Any question about the operating environment, directory structure, or system configuration
+System self-awareness for PAI-OpenCode. Enables the Algorithm to answer questions about its own operating environment without asking the user or hallucinating.
+
+## Visibility
+
+This skill runs in the foreground. All lookups and diagnostic output should be visible to maintain transparency.
 
 ---
 
-## Quick Reference
+## MANDATORY — Quick Reference
 
 | Question | Answer Location |
 |----------|----------------|
@@ -32,7 +32,7 @@ description: PAI-OpenCode system self-awareness. USE WHEN asking about tools, co
 
 ---
 
-## Key Facts (Inline — No File Read Needed)
+## MANDATORY — Key Facts (Inline — No File Read Needed)
 
 ### Runtime Identity
 - **Platform:** OpenCode (NOT Claude Code — never use `~/.claude/`)
@@ -47,10 +47,10 @@ description: PAI-OpenCode system self-awareness. USE WHEN asking about tools, co
 | `session_results` | Get detailed results for a specific session ID |
 
 ### Model Tiers
-- `quick` → haiku-class (fast, cheap)
-- `standard` → sonnet-class (default)
-- `advanced` → opus-class (complex reasoning)
-- Algorithm agent always uses Opus (no tiers)
+- `quick` → fast, cheap (exploration, simple tasks)
+- `standard` → balanced (default for most agents)
+- `advanced` → complex reasoning (Algorithm agent)
+- Actual model names resolved from `opencode.json` — never hardcode
 
 ### The 2-Second Rule
 If Grep, Glob, or Read can answer in <2 seconds → use them directly. Never spawn an agent for what a direct tool call can do instantly.
@@ -65,7 +65,7 @@ memory paths        → ALWAYS ~/.opencode/ (never ~/.claude/)
 
 ---
 
-## When Something Doesn't Work
+## MANDATORY — When Something Doesn't Work
 
 Walk `docs/architecture/Troubleshooting.md` top-to-bottom. The checklist covers:
 1. Plugin not loading
@@ -79,7 +79,7 @@ Walk `docs/architecture/Troubleshooting.md` top-to-bottom. The checklist covers:
 
 ---
 
-## Architecture in 30 Seconds
+## OPTIONAL — Architecture in 30 Seconds
 
 ```text
 opencode.json          → model routing, permissions, agent definitions
@@ -91,3 +91,36 @@ skills/skill-index.json → skill discovery registry for CAPABILITY AUDIT
 ```
 
 Full details: `docs/architecture/SystemArchitecture.md`
+
+---
+
+## OPTIONAL — USE WHEN Triggers
+
+- "What tools do I have?"
+- "What custom tools are available?"
+- "How is model routing configured?"
+- "What MCP servers are connected?"
+- "Why isn't the plugin firing?"
+- "What's the difference between opencode.json and settings.json?"
+- "How do I troubleshoot X not working?"
+- "What agents can I spawn?"
+- "Where is the memory stored?"
+- "What hooks does the plugin register?"
+- Any question about the operating environment, directory structure, or system configuration
+
+---
+
+## Tools
+
+_No dedicated CLI tools for this skill. Reference documents are read directly via `read` tool._
+
+## Workflows
+
+_No workflow files. This skill operates by directing the Algorithm to the correct reference document._
+
+---
+
+## Related Skills
+
+- **PAI** — Algorithm core, ISC creation, verification
+- **System** — System maintenance, integrity check, documentation

@@ -1,7 +1,16 @@
+---
+title: PAI-OpenCode System Architecture
+description: Authoritative source for Algorithm self-awareness — directory layout, plugin handlers, event hooks
+type: reference
+adr: ADR-017
+wp: WP-N6
+updated: 2026-03-12
+---
+
 # PAI-OpenCode System Architecture
 
+> [!NOTE]
 > **Authoritative source for Algorithm self-awareness (ADR-017 / WP-N6)**
-> Last updated: 2026-03-12
 
 ---
 
@@ -77,7 +86,8 @@ PAI-OpenCode uses a **single unified plugin** (`pai-unified.ts`) that registers 
 | `session.created` | New session starts | Algorithm tracker, tab-state, integrity check |
 | `session.compacted` | Context compaction completes | Learning rescue, skill-restore |
 | `experimental.session.compacting` | Compaction in progress (WP-N2) | `compaction-intelligence` — injects context summary |
-| `permission.ask` | Tool permission requested | `security-validator` — blocks dangerous operations |
+| `permission.ask` | Tool permission requested (blocking gate) | `security-validator` — blocks dangerous operations |
+| `permission.asked` | After permission decision made (audit log) | Observability, decision logging |
 | `tool.execute.before` | Before any tool runs | Security check, work tracker update |
 | `tool.execute.after` | After any tool runs | Response capture, agent output capture |
 | `message.completed` | AI response finished | Format reminder, rating capture, PRD sync |
@@ -114,6 +124,28 @@ PAI Algorithm 7 phases: OBSERVE → THINK → PLAN → BUILD → EXECUTE → VER
     ├── VERIFY:  Check each ISC criterion
     └── LEARN:   Reflections, PRD update
 ```
+
+<details>
+<summary>Algorithm Flow (Mermaid)</summary>
+
+```mermaid
+flowchart TD
+    UI[User Input] --> AM[AGENTS.md<br/>Runtime Instructions]
+    AM --> OBS[1. OBSERVE<br/>ISC creation, capability audit]
+    OBS --> THK[2. THINK<br/>Pressure test ISC]
+    THK --> PLN[3. PLAN<br/>PRD creation, execution strategy]
+    PLN --> BLD[4. BUILD<br/>Artifact creation]
+    BLD --> EXE[5. EXECUTE<br/>Run artifacts]
+    EXE --> VER[6. VERIFY<br/>Check each ISC criterion]
+    VER --> LRN[7. LEARN<br/>Reflections, PRD update]
+    VER -->|Criteria failing| BLD
+
+    style OBS fill:#e8f0fe,stroke:#333
+    style VER fill:#e8f5e9,stroke:#333
+    style LRN fill:#fff3e0,stroke:#333
+```
+
+</details>
 
 ### Session Persistence
 

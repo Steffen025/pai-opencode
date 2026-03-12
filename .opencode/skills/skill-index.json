@@ -1,11 +1,11 @@
 {
-  "generated": "2026-03-08T23:47:52.369Z",
+  "generated": "2026-03-12T07:24:22.833Z",
   "totalSkills": 53,
   "categories": 7,
-  "flatSkills": 17,
+  "flatSkills": 18,
   "hierarchicalSkills": 35,
   "alwaysLoadedCount": 2,
-  "deferredCount": 50,
+  "deferredCount": 51,
   "skills": {
     "agents": {
       "name": "Agents",
@@ -131,7 +131,7 @@
       "name": "AudioEditor",
       "path": "AudioEditor/SKILL.md",
       "category": null,
-      "fullDescription": "AI-powered audio/video editing \u2014 transcription, intelligent cut detection, automated editing with crossfades, and optional cloud polish. USE WHEN clean audio, edit audio, remove filler words, clean podcast, remove ums, fix audio, cut dead air, polish audio, clean recording, transcribe and edit.",
+      "fullDescription": "AI-powered audio/video editing — transcription, intelligent cut detection, automated editing with crossfades, and optional cloud polish. USE WHEN clean audio, edit audio, remove filler words, clean podcast, remove ums, fix audio, cut dead air, polish audio, clean recording, transcribe and edit.",
       "triggers": [
         "clean",
         "audio",
@@ -528,6 +528,29 @@
         "thumbnails",
         "art",
         "illustrations"
+      ],
+      "workflows": [],
+      "tier": "deferred",
+      "isHierarchical": false
+    },
+    "opencodesystem": {
+      "name": "OpenCodeSystem",
+      "path": "OpenCodeSystem/SKILL.md",
+      "category": null,
+      "fullDescription": "PAI-OpenCode system self-awareness. USE WHEN asking about tools, config, model routing, plugin handlers, MCP servers, troubleshooting, or operating environment.",
+      "triggers": [
+        "asking",
+        "tools",
+        "config",
+        "model",
+        "routing",
+        "plugin",
+        "handlers",
+        "mcp",
+        "servers",
+        "troubleshooting",
+        "operating",
+        "environment"
       ],
       "workflows": [],
       "tier": "deferred",
@@ -1039,14 +1062,19 @@
       "name": "USMetrics",
       "path": "USMetrics/SKILL.md",
       "category": null,
-      "fullDescription": "US metrics and data tracking. USE WHEN US metrics, American data, statistics, demographics, tracking.",
+      "fullDescription": "US metrics, economic indicators and data tracking. USE WHEN US metrics, American data, statistics, demographics, GDP, inflation, unemployment, economic metrics, gas prices.",
       "triggers": [
         "metrics",
         "american",
         "data",
         "statistics",
         "demographics",
-        "tracking"
+        "gdp",
+        "inflation",
+        "unemployment",
+        "economic",
+        "gas",
+        "prices"
       ],
       "workflows": [
         "UpdateData",
@@ -1132,7 +1160,7 @@
       "name": "WorldThreatModelHarness",
       "path": "Thinking/WorldThreatModelHarness/SKILL.md",
       "category": "Thinking",
-      "fullDescription": "Persistent world model system across 11 time horizons (6mo\u219250yr) for adversarial analysis of ideas, strategies, and investments. USE WHEN threat model, world model, test idea, test strategy, future analysis, test investment, how will this hold up, test against future, update world models, view world models, time horizon analysis, adversarial future test, stress test idea.",
+      "fullDescription": "Persistent world model system across 11 time horizons (6mo→50yr) for adversarial analysis of ideas, strategies, and investments. USE WHEN threat model, world model, test idea, test strategy, future analysis, test investment, how will this hold up, test against future, update world models, view world models, time horizon analysis, adversarial future test, stress test idea.",
       "triggers": [
         "threat",
         "model",
@@ -1215,31 +1243,6 @@
       "workflows": [],
       "tier": "deferred",
       "isHierarchical": true
-    },
-    "opencodesystem": {
-      "name": "OpenCodeSystem",
-      "path": "OpenCodeSystem/SKILL.md",
-      "category": "System",
-      "fullDescription": "PAI-OpenCode system self-awareness. USE WHEN asking about tools, config, model routing, plugin handlers, MCP servers, troubleshooting, or operating environment.",
-      "triggers": [
-        "opencode",
-        "system",
-        "tools",
-        "config",
-        "plugin",
-        "mcp",
-        "troubleshoot",
-        "environment",
-        "routing",
-        "handlers",
-        "architecture",
-        "configuration",
-        "model",
-        "session_registry",
-        "session_results"
-      ],
-      "workflows": [],
-      "alwaysLoad": false
     }
   },
   "categoryMap": {

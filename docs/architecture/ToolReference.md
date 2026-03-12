@@ -1,7 +1,16 @@
+---
+title: Tool Reference
+description: Authoritative source for all tools available in PAI-OpenCode
+type: reference
+adr: ADR-017
+wp: WP-N6
+updated: 2026-03-12
+---
+
 # Tool Reference
 
+> [!NOTE]
 > **Authoritative source for all tools available in PAI-OpenCode (ADR-017 / WP-N6)**
-> Last updated: 2026-03-12
 
 ---
 
@@ -82,26 +91,27 @@ Registered by `pai-unified.ts` plugin. Available in every session.
 
 When using the `task` tool to spawn agents, use these `subagent_type` values:
 
-| subagent_type | Model (default) | Best For |
-|---------------|----------------|----------|
-| `Algorithm` | claude-opus (advanced) | Full PAI Algorithm runs, complex reasoning |
-| `Architect` | claude-sonnet (standard) | System design, ADR writing, architecture decisions |
-| `Engineer` | claude-sonnet (standard) | Implementation, file edits, code writing |
-| `explore` | claude-haiku (quick) | Fast codebase exploration |
-| `Intern` | claude-haiku (quick) | Simple tasks, data transformation |
-| `Writer` | claude-sonnet (standard) | Documentation, content |
-| `DeepResearcher` | claude-sonnet (standard) | Multi-model research orchestration |
-| `GeminiResearcher` | gemini-2.5-flash | Google Gemini research |
-| `GrokResearcher` | grok-4-1-fast | xAI Grok contrarian analysis |
-| `PerplexityResearcher` | perplexity/sonar | Real-time web search |
-| `CodexResearcher` | claude-sonnet | Technical archaeology |
-| `QATester` | claude-sonnet | Quality assurance, test writing |
-| `Pentester` | claude-sonnet | Security testing |
-| `Designer` | claude-sonnet | UI/UX design |
-| `Artist` | claude-sonnet | Visual content generation |
-| `general` | claude-sonnet | General purpose fallback |
+| subagent_type | Model Tier | Best For |
+|---------------|-----------|----------|
+| `Algorithm` | advanced | Full PAI Algorithm runs, complex reasoning |
+| `Architect` | standard | System design, ADR writing, architecture decisions |
+| `Engineer` | standard | Implementation, file edits, code writing |
+| `explore` | quick | Fast codebase exploration |
+| `Intern` | quick | Simple tasks, data transformation |
+| `Writer` | standard | Documentation, content |
+| `DeepResearcher` | standard | Multi-model research orchestration |
+| `GeminiResearcher` | standard | Google Gemini research |
+| `GrokResearcher` | standard | xAI Grok contrarian analysis |
+| `PerplexityResearcher` | standard | Real-time web search |
+| `CodexResearcher` | standard | Technical archaeology |
+| `QATester` | standard | Quality assurance, test writing |
+| `Pentester` | standard | Security testing |
+| `Designer` | standard | UI/UX design |
+| `Artist` | standard | Visual content generation |
+| `general` | standard | General purpose fallback |
 
-**Model tier override:** Pass `model_tier: "quick" | "standard" | "advanced"` to override the default model for any agent type (see `opencode.json` `model_tiers` section for exact mappings).
+> [!IMPORTANT]
+> **Model tier override:** Pass `model_tier: "quick" | "standard" | "advanced"` to override the default model for any agent type. Actual model names are resolved from `opencode.json` — never hardcode model names in prompts or docs.
 
 ---
 
@@ -109,15 +119,16 @@ When using the `task` tool to spawn agents, use these `subagent_type` values:
 
 MCP (Model Context Protocol) servers extend the tool set with domain-specific capabilities.
 
+> [!TIP]
 > **Check `opencode.json` for currently connected MCP servers.** The list below reflects a typical PAI-OpenCode setup — your installation may differ.
 
 ### Detecting Connected MCP Servers
 
-If unsure which MCP servers are active, inspect `opencode.json` for an `mcp` or `mcpServers` section. You can also run:
+If unsure which MCP servers are active, inspect `opencode.json` for an `mcp` or `mcpServers` section:
 
 ```bash
 # List configured MCP servers from opencode.json
-cat opencode.json | grep -A 5 '"mcp"'
+grep -A 5 '"mcp"\|"mcpServers"' opencode.json
 ```
 
 MCP tools appear with the `mcp_` prefix in tool calls (e.g., `mcp_task`, `mcp_jira_create_issue`).

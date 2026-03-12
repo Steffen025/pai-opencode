@@ -114,7 +114,7 @@ The reference documents describe the project structure and are useful to human d
 ## Implementation Notes
 
 - The SKILL.md uses a **pointer pattern**: it documents where information lives and provides the key facts inline, but directs the Algorithm to read the source files for complete detail
-- Model names in `Configuration.md` must match `opencode.json` exactly — no abstract placeholders
+- `Configuration.md` must reference model tiers (`quick`/`standard`/`advanced`) — never hardcode specific model names. `opencode.json` is the single source of truth for actual model routing
 - `Troubleshooting.md` uses a checklist format so the Algorithm can walk it step by step
 - skill-index.json triggers: `["opencode", "system", "tools", "config", "plugin", "mcp", "troubleshoot", "environment", "routing", "handlers"]`
 

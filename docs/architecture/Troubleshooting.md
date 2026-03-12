@@ -1,8 +1,16 @@
+---
+title: Troubleshooting — Self-Diagnostic Checklist
+description: Algorithm self-diagnosis when something isn't working
+type: reference
+adr: ADR-017
+wp: WP-N6
+updated: 2026-03-12
+---
+
 # Troubleshooting — Self-Diagnostic Checklist
 
-> **For Algorithm self-diagnosis when something isn't working (ADR-017 / WP-N6)**
+> [!NOTE]
 > Walk each checklist top-to-bottom. Stop at the first match.
-> Last updated: 2026-03-12
 
 ---
 
@@ -137,7 +145,10 @@ Files being written to wrong location:
     → PRDs: ~/.opencode/MEMORY/WORK/{session-slug}/
 
 □ If files were written to ~/.claude/:
-    → Move them: mv ~/.claude/MEMORY/ ~/.opencode/MEMORY/
+    → First backup: cp -r ~/.claude/MEMORY/ ~/.claude/MEMORY.bak/
+    → Then move: rsync -av ~/.claude/MEMORY/ ~/.opencode/MEMORY/
+    → Verify: ls ~/.opencode/MEMORY/ (confirm files arrived)
+    → Only then remove source: rm -rf ~/.claude/MEMORY/
     → Update any references in PRD files
 
 □ Working directory in bash tool
