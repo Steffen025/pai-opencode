@@ -19,7 +19,7 @@
  * ============================================================================
  */
 
-import { resolve, dirname, join, relative } from "path";
+import { resolve, dirname, join, relative } from "node:path";
 import type { ActionSpec, ActionContext, ActionResult } from "./types";
 
 const ACTIONS_DIR = dirname(import.meta.dir);
