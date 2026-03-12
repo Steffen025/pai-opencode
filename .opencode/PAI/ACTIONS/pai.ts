@@ -68,7 +68,7 @@ function parseArgs(args: string[]): { command: string; target?: string; options:
     if (arg.startsWith("--")) { expectingValue = arg.slice(2); continue; }
 
     if (!command) { command = arg; continue; }
-    if (!target) { target = arg; continue; }
+    if (!target) { target = arg; }
   }
 
   return { command, target, options, extra };
