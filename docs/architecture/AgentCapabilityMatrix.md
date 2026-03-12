@@ -4,13 +4,12 @@ description: Permissions, model tiers, tools, and MCP access for every agent typ
 type: reference
 wp: WP-N8
 updated: 2026-03-12
-wp: WP-N8, WP-N9, WP-N10
 ---
 
 # PAI-OpenCode Agent Capability Matrix
 
 > [!NOTE]
-> **Source of truth for agent capabilities (WP-N8).** Model names are resolved from `opencode.json` — this document describes tiers and roles only. Installer supports 4 presets: `anthropic`, `zen`, `openrouter`, `openai`.
+> **Source of truth for agent capabilities (WP-N8).** Model names are resolved from `opencode.json` — this document describes tiers and roles only.
 
 ---
 
