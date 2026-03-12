@@ -16,6 +16,18 @@ updated: 2026-03-12
 
 ## Quick Triage
 
+```text
+Start — What's broken?
+├── Plugin not firing / hooks silent   → Plugin Not Loading
+├── Custom tools not available         → Custom Tools Missing
+├── Session context lost               → Post-Compaction Recovery
+├── Wrong model being used             → Model Routing
+├── Path errors (~/.claude/ vs ~/.opencode/) → Path Errors
+├── Skill not triggering               → Skill Not Triggering
+├── Bun / npm errors                   → Runtime Errors
+└── Agent spawn failing                → Agent Spawn Issues
+```
+
 | Symptom | Jump To |
 |---------|---------|
 | Plugin not firing / hooks silent | [Plugin Not Loading](#plugin-not-loading) |
@@ -26,6 +38,27 @@ updated: 2026-03-12
 | Skill not triggering | [Skill Not Triggering](#skill-not-triggering) |
 | Bun / npm errors | [Runtime Errors](#runtime-errors) |
 | Agent spawn failing | [Agent Spawn Issues](#agent-spawn-issues) |
+
+<details>
+<summary>Quick Triage Flowchart (Mermaid)</summary>
+
+```mermaid
+flowchart TD
+    Start([Something is broken]) --> Q1{What symptom?}
+    Q1 -->|Plugin not firing| PL[Plugin Not Loading]
+    Q1 -->|Custom tools missing| CT[Custom Tools Missing]
+    Q1 -->|Context lost after compaction| PC[Post-Compaction Recovery]
+    Q1 -->|Wrong model| MR[Model Routing]
+    Q1 -->|Path errors| PE[Path Errors]
+    Q1 -->|Skill not triggering| SN[Skill Not Triggering]
+    Q1 -->|Bun / npm errors| RE[Runtime Errors]
+    Q1 -->|Agent spawn failing| AS[Agent Spawn Issues]
+
+    style Start fill:#e8f0fe,stroke:#333
+    style Q1 fill:#fff3e0,stroke:#333
+```
+
+</details>
 
 ---
 
@@ -238,9 +271,9 @@ Task tool not spawning agents or agents failing:
 
 ## Still Stuck?
 
-If none of the above resolves the issue:
+If none of the above resolves the issue, escalate through reference materials:
 
-1. Read the relevant ADR: `docs/architecture/adr/README.md`
-2. Check git log for recent changes: `git log --oneline -10`
-3. Read the full handler file for the failing component
-4. Ask the user — include what you've already diagnosed
+1. Read the relevant ADR: `docs/architecture/adr/README.md` — find the ADR for the failing component and re-read its rationale and implementation notes
+2. Review collected diagnostic artifacts: run `git log --oneline -10` and `git diff HEAD~1` to surface recent changes that may have introduced the regression
+3. Read the full handler file for the failing component — check imports, hook registration, and exported symbols against what `pai-unified.ts` expects
+4. Cross-reference all four architecture docs: `SystemArchitecture.md` (handler map), `ToolReference.md` (tool list), `Configuration.md` (model routing), `Troubleshooting.md` (this file) — confirm the component is documented and wired as expected
