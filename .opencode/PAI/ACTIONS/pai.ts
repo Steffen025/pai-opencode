@@ -32,9 +32,9 @@
  * ============================================================================
  */
 
-import { runAction, listActionsV2, findAction, loadManifest } from "./lib/runner.v2";
-import { dirname, join } from "path";
-import { readdir, readFile } from "fs/promises";
+import { readdir } from "node:fs/promises";
+import { dirname, join } from "node:path";
+import { findAction, listActionsV2, loadManifest, runAction } from "./lib/runner.v2";
 
 const PIPELINES_DIR = join(dirname(import.meta.dir), "PIPELINES");
 
@@ -183,6 +183,7 @@ async function main() {
       console.error(`Pipeline execution not yet implemented: ${target}`);
       console.error(`Use 'pai action <name>' to run individual actions.`);
       process.exit(1);
+      break;
     }
 
     case "actions": {
