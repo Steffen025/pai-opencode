@@ -33,7 +33,8 @@ WP-N3 ████████████ 100% ✅  ← Algorithm Awareness com
 WP-N4 ████████████ 100% ✅  ← LSP + Fork Documentation complete, PR #53
 WP-N5 ████████████ 100% ✅  ← Plan Update complete, PR #54
 WP-N6 ████████████ 100% ✅  ← System Self-Awareness, PR #55 merged
-WP-N7 ██████░░░░░░  50% 🔄  ← roborev + Biome CI, PR open (in progress)
+WP-N7 ████████████ 100% ✅  ← roborev + Biome CI, PR #56 merged
+WP-N8 ████████░░░░  80% 🔄  ← Obsidian formatting + agent matrix, PR open
 ```
 
 > **The port is done. The native transformation starts with WP-N1.**
@@ -473,17 +474,19 @@ graph TD
 
 ---
 
-### WP-N8: Obsidian Formatting Guidelines — 📋 Planned
-**Branch:** TBD
-**Dependencies:** WP-N7
+### WP-N8: Obsidian Formatting Guidelines — 🔄 In Progress (PR open)
+**Branch:** `feature/wp-n8-obsidian-formatting`
+**Dependencies:** WP-N7 ✅
 **Goal:** Obsidian formatting guidelines + agent capability matrix
 
-- [ ] Obsidian CLI integration guide (frontmatter, callouts, collapsible sections)
-- [ ] Formatting guidelines document for all PAI-OpenCode docs
-- [ ] Agent capability matrix (permissions, tools, MCP access per agent type)
+- [x] `docs/architecture/FormattingGuidelines.md` — frontmatter, callouts, Mermaid, code blocks, SKILL.md/ADR schemas
+- [x] `docs/architecture/AgentCapabilityMatrix.md` — all agent types, model tiers, tool/MCP access, decision rules
+- [x] `docs/architecture/SystemArchitecture.md` — updated directory layout + ADR table for WP-N8 docs
+- [x] `docs/epic/TODO-v3.0.md` — WP-N8 progress updated
+- [x] `docs/epic/OPTIMIZED-PR-PLAN.md` — WP-N8 status updated
 
 ---
 
 *Created: 2026-03-06*
-*Updated: 2026-03-12 — WP-N1 through WP-N6 merged; WP-N7 in progress; WP-N8 planned (Obsidian split out from WP-N7)*
+*Updated: 2026-03-12 — WP-N1 through WP-N7 merged (PR #50–#56); WP-N8 in progress (Obsidian formatting + agent matrix)*
 *Basis: GAP-ANALYSIS-v3.0.md + EPIC-v3.0-Synthesis-Architecture.md + EPIC-v3.0-OpenCode-Native.md*
