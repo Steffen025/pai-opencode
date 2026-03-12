@@ -34,8 +34,8 @@ tags: [architecture, migration, v3.0, PR-strategy, native-transformation]
 | **WP-N4** | LSP + Fork Documentation | #53 | ✅ **Merged** | AGENTS.md LSP + Fork sections, installer .env |
 | **WP-N5** | Plan Update | #54 | ✅ **Merged** | Sync all planning docs to reflect N1-N4 complete |
 | **WP-N6** | System Self-Awareness | #55 | ✅ **Merged** | OpenCodeSystem skill, 4 architecture reference docs, ADR-017 |
-| **WP-N7** | roborev + Biome CI | — | 🔄 **In Progress** | roborev plugin handler, CodeReview skill, GitHub Actions CI, ADR-018 |
-| **WP-N8** | Obsidian Formatting Guidelines | — | 📋 **Planned** | Formatting guidelines, agent capability matrix (split from WP-N7) |
+| **WP-N7** | roborev + Biome CI | #56 | ✅ **Merged** | roborev plugin handler, CodeReview skill, GitHub Actions CI, ADR-018 |
+| **WP-N8** | Obsidian Formatting Guidelines | — | 🔄 **In Progress** | Formatting guidelines, agent capability matrix (split from WP-N7) |
 
 > [!NOTE]
 > **2026-03-08 Live Audit:** WP-C scope significantly reduced after comparing repo against v4.0.3.
@@ -218,11 +218,11 @@ Current state (dev branch):
 | Metric | 2026-03-08 | 2026-03-11 | **Current (2026-03-12)** |
 |--------|------------|------------|--------------------------|
 | Port WPs done | 8 ✅ | 9 ✅ (WP-E) | **9 ✅** |
-| Native WPs done | 0 | 4 ✅ (N1–N4) | **6 ✅ (N1–N6), N7 in progress** |
-| Open PRs | 2 (C, D) | 1 (#55) | **1 (WP-N7 — open, in progress)** |
-| Remaining native work | Not planned | WP-N6 in progress | **WP-N7 in progress, WP-N8 planned (Obsidian)** |
+| Native WPs done | 0 | 4 ✅ (N1–N4) | **7 ✅ (N1–N7), N8 in progress** |
+| Open PRs | 2 (C, D) | 1 (#55) | **1 (WP-N8 — open, in progress)** |
+| Remaining native work | Not planned | WP-N6 in progress | **WP-N8 in progress (Obsidian formatting)** |
 
-**Status:** Port complete. Native transformation: WP-N1 through WP-N6 merged. WP-N7 in progress (roborev + Biome CI). WP-N8 planned (Obsidian formatting).
+**Status:** Port complete. Native transformation: WP-N1 through WP-N7 merged (PR #50–#56). WP-N8 in progress (Obsidian formatting guidelines + agent capability matrix).
 
 **Native transformation plan:** `docs/epic/EPIC-v3.0-OpenCode-Native.md`
 **Full gap analysis:** `docs/epic/GAP-ANALYSIS-v3.0.md`
@@ -236,3 +236,4 @@ Current state (dev branch):
 *Correction 3 (2026-03-11): WP-N1–N4 complete (PR #50–#53); WP-N5 plan sync in progress*
 *Correction 4 (2026-03-12): WP-N5 merged (PR #54); WP-N6 in progress (PR #55 open); WP-N7 planned*
 *Correction 5 (2026-03-12): WP-N6 merged (PR #55); WP-N7 in progress (roborev + Biome CI); WP-N8 planned (Obsidian — split from WP-N7)*
+*Correction 6 (2026-03-12): WP-N7 merged (PR #56); WP-N8 in progress (Obsidian formatting guidelines + agent capability matrix)*

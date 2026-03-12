@@ -61,11 +61,13 @@ pai-opencode/
 │       └── [40+ other skills]
 ├── docs/
 │   ├── architecture/
-│   │   ├── adr/                  ← Architecture Decision Records
-│   │   ├── SystemArchitecture.md ← THIS FILE
-│   │   ├── ToolReference.md      ← All tools catalog
-│   │   ├── Configuration.md      ← opencode.json + settings.json
-│   │   └── Troubleshooting.md    ← Self-diagnostic checklist
+│   │   ├── adr/                      ← Architecture Decision Records
+│   │   ├── SystemArchitecture.md     ← THIS FILE
+│   │   ├── ToolReference.md          ← All tools catalog
+│   │   ├── Configuration.md          ← opencode.json + settings.json
+│   │   ├── Troubleshooting.md        ← Self-diagnostic checklist
+│   │   ├── FormattingGuidelines.md   ← Obsidian formatting patterns (WP-N8)
+│   │   └── AgentCapabilityMatrix.md  ← Agent types, model tiers, tool access (WP-N8)
 │   └── epic/                     ← Project planning documents
 │       ├── TODO-v3.0.md
 │       ├── OPTIMIZED-PR-PLAN.md
@@ -184,6 +186,7 @@ flowchart TD
 | ADR-015 | Compaction intelligence via `experimental.session.compacting` hook |
 | ADR-017 | System self-awareness skill + reference docs (this WP) |
 | ADR-018 | roborev code review integration + Biome CI pipeline |
+| —       | WP-N8: Obsidian formatting guidelines + agent capability matrix |
 
 Full ADR index: `docs/architecture/adr/README.md`
 
