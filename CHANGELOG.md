@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [3.0.0] - Unreleased
+## [3.0.0] - 2026-03-12
 
 ### Breaking Changes
 - Plugin system migrated from hooks to event-driven architecture (WP-A)
@@ -17,35 +17,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-#### Plugin Event Bus (WP-A)
+#### Plugin Event Bus (WP-N1)
 - **6 Plugin Handlers** — prd-sync, session-cleanup, last-response-cache, relationship-memory, question-tracking, agent-execution-guard
 - **7 Bus Events** — session.compacted, session.error, permission.asked, command.executed, installation.update.available, session.updated, session.created
 - **Event-Driven Architecture** — cleaner code, better testability, unified handler registration
 
-#### Security Layer (WP-B)
+#### Security Layer (WP-N2)
 - **Prompt Injection Guard** — `plugins/handlers/prompt-injection-guard.ts` with `injection-patterns.ts` library
 - **Input Sanitizer** — `plugins/lib/sanitizer.ts` for pre-processing protection
 - **Sensitivity Levels** — low/medium/high security modes
 - **Pattern Detection** — 200+ known injection patterns from v4.0.3 upstream
 
-#### Core PAI System (WP-C)
+#### Core PAI System (WP-N3)
 - **Missing Skills** — AudioEditor, Delegation, Research/Templates, Agents/ClaudeResearcherContext
 - **PAI Flat Docs** — 9 files: CLI.md, CLIFIRSTARCHITECTURE.md, DOCUMENTATIONINDEX.md, FLOWS.md, PAIAGENTSYSTEM.md, README.md, SYSTEM_USER_EXTENDABILITY.md, THEFABRICSYSTEM.md, THENOTIFICATIONSYSTEM.md
 - **PAI Subdirectories** — ACTIONS/, FLOWS/, PIPELINES/
 - **BuildOpenCode.ts** — OpenCode-native version of BuildCLAUDE.ts
 - **Telos/USMetrics Flatten** — Fixed nested skill structure
 
-#### Installer & Migration (WP-D)
+#### Installer & Migration (WP-N4)
 - **PAI-Install** — Complete port from upstream v4.0.3 (shell, CLI, engine, Electron GUI)
 - **Migration Script** — `Tools/migration-v2-to-v3.ts` with `--dry-run`, `--force`, `--backup-dir`
 - **UPGRADE.md** — Step-by-step v2→v3 migration guide
 
-#### DB Health Tooling (WP-F)
+#### DB Health Tooling (WP-N5)
 - **DB Utils Library** — `plugins/lib/db-utils.ts` with getDbSizeMB(), getSessionsOlderThan(), archiveSessions(), vacuumDb()
 - **Session Cleanup Extension** — Automatic DB health warnings (>500MB, >90 days)
 - **Standalone Archive Tool** — `Tools/db-archive.ts` with --dry-run, --vacuum, --restore
 - **Custom Command** — `/db-archive` for in-session DB stats
 - **Maintenance Guide** — `docs/DB-MAINTENANCE.md`
+
+#### ADR Documentation (WP-N6)
+- **ADR-009 through ADR-018** — 10 new Architecture Decision Records covering all v3.0 decisions
+- Full rationale for every major architectural choice documented
+
+#### Upstream Sync v1.8.0 (WP-N7)
+- **Algorithm v1.8.0** — Wisdom Frames, phase separation enforcement, ITERATION format
+- **Upstream SPEC** — `docs/specs/UPSTREAM-SYNC-v1.8.0-SPEC.md`
+- Full PAI v3.0 upstream parity achieved
+
+#### Platform Docs (WP-N8)
+- **PLATFORM-DIFFERENCES.md** — Comprehensive Claude Code vs OpenCode comparison
+- **ADVANCED-SETUP.md** — Multi-provider research, custom configuration
+- **DB-MAINTENANCE.md** — Database health guide
+
+#### Installer opencode.json Fix (WP-N9)
+- **4 provider presets** — anthropic, zen, openrouter, openai (was 3)
+- **opencode.json generation** — Correct provider-specific config per preset
+- `principalName` populated from username during install
+
+#### Docs Consolidation (WP-N10)
+- **CHANGELOG.md** — Released, full WP-N1..N9 Added sections
+- **CONTRIBUTING.md** — Updated to hierarchical skills structure (`Category/SkillName/`)
+- **INSTALL.md** — 4 provider presets documented
+- **README.md** — Broken links to non-existent files removed
+- **Planning docs deleted** — GAP-ANALYSIS-v3.0.md, EPIC-v3.0-OpenCode-Native.md, OPENCODE-NATIVE-RESEARCH.md (completed, no longer needed)
 
 ### Changed
 - Skills organization: flat → hierarchical (Category/Skill)
@@ -634,5 +660,4 @@ See `.opencode/voice-server/README.md` for full documentation.
 **Links:**
 - [PAI v3.0 Upstream](https://github.com/danielmiessler/Personal_AI_Infrastructure)
 - [OpenCode](https://github.com/anomalyco/opencode)
-- [ROADMAP.md](ROADMAP.md)
 - [Upstream Sync Spec](docs/specs/UPSTREAM-SYNC-v1.8.0-SPEC.md)
