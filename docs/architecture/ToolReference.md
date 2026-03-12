@@ -182,7 +182,31 @@ Need prior session context?
 
 Need to verify code quality?
     └── code_review (mode="dirty" for uncommitted, mode="last-commit" for last commit)
+```
 
+<details>
+<summary>code_review mode selection (Mermaid)</summary>
+
+```mermaid
+flowchart TD
+    Start([Need code review?]) --> Q1{What to review?}
+    Q1 -->|Uncommitted / working tree changes| D[code_review\nmode='dirty']
+    Q1 -->|Last git commit| LC[code_review\nmode='last-commit']
+    Q1 -->|Apply findings from last review| F[code_review\nmode='fix']
+    Q1 -->|Auto-fix loop until review passes| R[code_review\nmode='refine']
+
+    D -->|Optional: narrow to file/glob| DP[add path argument]
+    LC -->|Optional: narrow to file/glob| LCP[add path argument]
+
+    style Start fill:#e8f0fe,stroke:#333
+    style Q1 fill:#fff3e0,stroke:#333
+    style D fill:#e8f5e9,stroke:#333
+    style LC fill:#e8f5e9,stroke:#333
+```
+
+</details>
+
+```text
 Need to delegate complex work?
     └── task (with subagent_type, full context, effort level)
 

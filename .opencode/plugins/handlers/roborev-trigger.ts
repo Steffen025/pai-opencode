@@ -73,7 +73,22 @@ function runRoborev(args: string[]): ReviewResult {
 			cwd: process.cwd(),
 		});
 
-		// Check for spawn errors (e.g. ENOENT — roborev not in PATH)
+		// Check for timeout first — spawnSync sets result.error.code = 'ETIMEDOUT'
+		// when the timeout fires, AND may also set result.signal = 'SIGTERM'.
+		// Must detect this before the generic result.error branch to give the
+		// specific "Try focusing the review with a path argument" message.
+		if (result.signal || result.error?.code === "ETIMEDOUT") {
+			const signal = result.signal ?? "ETIMEDOUT";
+			const msg = `roborev timed out (signal: ${signal}). Try focusing the review with a path argument.`;
+			fileLog(`[roborev] ${msg}`, "warn");
+			return {
+				success: false,
+				output: msg,
+				exitCode: 1,
+			};
+		}
+
+		// Check for other spawn errors (e.g. ENOENT — roborev not in PATH)
 		if (result.error) {
 			fileLogError("[roborev] Spawn error", result.error);
 			return {
@@ -83,23 +98,23 @@ function runRoborev(args: string[]): ReviewResult {
 			};
 		}
 
-		// Check for timeout (signal SIGTERM sent by spawnSync on timeout)
-		if (result.signal) {
-			const msg = `roborev timed out (signal: ${result.signal}). Try focusing the review with a path argument.`;
-			fileLog(`[roborev] ${msg}`, "warn");
-			return {
-				success: false,
-				output: msg,
-				exitCode: 1,
-			};
-		}
-
 		const output = [result.stdout, result.stderr].filter(Boolean).join("\n").trim();
 		const exitCode = result.status ?? 1;
 
-		fileLog(`[roborev] Exit code: ${exitCode}, output length: ${output.length}`, "info");
-		if (result.stdout) fileLog(`[roborev] stdout: ${result.stdout.slice(0, 500)}`, "info");
-		if (result.stderr) fileLog(`[roborev] stderr: ${result.stderr.slice(0, 500)}`, "info");
+		// Log only metadata — never raw stdout/stderr content (may contain code/secrets).
+		// Set DEBUG_ROBOREV=1 in environment to include truncated content for debugging.
+		const stdoutLen = result.stdout?.length ?? 0;
+		const stderrLen = result.stderr?.length ?? 0;
+		fileLog(
+			`[roborev] Exit code: ${exitCode}, output length: ${output.length}, stdout: ${stdoutLen}b, stderr: ${stderrLen}b`,
+			"info"
+		);
+		if (process.env.DEBUG_ROBOREV) {
+			if (result.stdout)
+				fileLog(`[roborev] stdout (debug): ${result.stdout.slice(0, 500)}`, "info");
+			if (result.stderr)
+				fileLog(`[roborev] stderr (debug): ${result.stderr.slice(0, 500)}`, "info");
+		}
 
 		return {
 			success: exitCode === 0,
@@ -161,6 +176,24 @@ export const codeReviewTool = tool({
 		_context: ToolContext
 	): Promise<string> {
 		const mode = args.mode ?? "dirty";
+
+		// Validate: path is only supported for "dirty" and "last-commit" modes.
+		// "fix" and "refine" operate on roborev's own internal state and do not
+		// accept a file filter — passing path would be silently ignored otherwise.
+		if (args.path && (mode === "fix" || mode === "refine")) {
+			return [
+				`## Invalid Combination: path + mode="${mode}"`,
+				"",
+				`The \`path\` argument is not supported for mode \`"${mode}"\`.`,
+				"",
+				`**Why:** \`roborev ${mode}\` operates on roborev's internal review state, not on a file filter.`,
+				"Specifying a path would be silently ignored.",
+				"",
+				"**Options:**",
+				`- Remove the \`path\` argument and run \`code_review\` with \`mode: "${mode}"\` to ${mode === "fix" ? "apply findings from the last review" : "run the auto-fix loop"}.`,
+				`- Or run \`code_review\` with \`mode: "dirty"\` and \`path: "${args.path}"\` to review specific files.`,
+			].join("\n");
+		}
 
 		// Check if roborev is available
 		if (!isRoborevAvailable()) {
