@@ -34,12 +34,12 @@ WP-N4 ████████████ 100% ✅  ← LSP + Fork Documentatio
 WP-N5 ████████████ 100% ✅  ← Plan Update complete, PR #54
 WP-N6 ████████████ 100% ✅  ← System Self-Awareness, PR #55 merged
 WP-N7 ████████████ 100% ✅  ← roborev + Biome CI, PR #56 merged
-WP-N8 ████████████ 100% ✅  ← Obsidian formatting + agent matrix, PR #57 merged
-WP-N9 ██████████░░  90% 🔄  ← Installer opencode.json fix, PR #58 open
+ WP-N8 ████████████ 100% ✅  ← Obsidian formatting + agent matrix, PR #57 merged
+ WP-N9 ████████████ 100% ✅  ← Installer opencode.json fix, PR #58 merged
+ WP-N10 ███████████ 100% ✅  ← Docs consolidation, PR #59 merged
 ```
 
-> **The port is done. The native transformation starts with WP-N1.**
-> See `docs/epic/EPIC-v3.0-OpenCode-Native.md` for the full WP-N plan.
+> **v3.0 COMPLETE. All 19 WPs shipped.**
 
 ---
 
@@ -475,7 +475,7 @@ graph TD
 
 ---
 
-### WP-N8: Obsidian Formatting Guidelines — 🔄 In Progress (PR open)
+### WP-N8: Obsidian Formatting Guidelines — ✅ Complete (PR #57 merged)
 **Branch:** `feature/wp-n8-obsidian-formatting`
 **Dependencies:** WP-N7 ✅
 **Goal:** Obsidian formatting guidelines + agent capability matrix
@@ -488,6 +488,34 @@ graph TD
 
 ---
 
+### WP-N9: Installer opencode.json Fix — ✅ Complete (PR #58 merged)
+**Branch:** `feature/wp-n9-installer-opencode-json`
+**Dependencies:** WP-N8 ✅
+**Goal:** Fix installer to generate correct 4-provider opencode.json
+
+- [x] `PAI-Install/engine/provider-models.ts` — 4 providers × 3 tiers
+- [x] `PAI-Install/engine/steps-fresh.ts` — full opencode.json generation per provider
+- [x] `PAI-Install/cli/quick-install.ts` — principalName populated from username
+
+---
+
+### WP-N10: Docs Consolidation — ✅ Complete (PR #59 merged)
+**Branch:** `feature/wp-n10-docs-consolidation-v2`
+**Dependencies:** WP-N9 ✅
+**Goal:** Final documentation cleanup for v3.0 release
+
+- [x] `CHANGELOG.md` — [3.0.0] marked released 2026-03-12, WP-N1..N10 Added sections
+- [x] `CONTRIBUTING.md` — Skills structure updated to hierarchical Category/SkillName/
+- [x] `INSTALL.md` — 4 provider presets documented
+- [x] `README.md` — Broken links to ROADMAP.md and SCOPE-BOUNDARY.md removed
+- [x] `docs/epic/GAP-ANALYSIS-v3.0.md` — Deleted (planning complete)
+- [x] `docs/epic/EPIC-v3.0-OpenCode-Native.md` — Deleted (planning complete)
+- [x] `docs/epic/OPENCODE-NATIVE-RESEARCH.md` — Deleted (planning complete)
+- [x] `docs/architecture/SystemArchitecture.md` — WP-N9/N10 entries added
+- [x] `docs/architecture/AgentCapabilityMatrix.md` — 4 installer presets noted
+
+---
+
 *Created: 2026-03-06*
-*Updated: 2026-03-12 — WP-N1 through WP-N7 merged (PR #50–#56); WP-N8 in progress (Obsidian formatting + agent matrix)*
+*Updated: 2026-03-12 — v3.0 COMPLETE. All 19 WPs (WP-A through WP-N10) shipped.*
 *Basis: GAP-ANALYSIS-v3.0.md + EPIC-v3.0-Synthesis-Architecture.md + EPIC-v3.0-OpenCode-Native.md*
