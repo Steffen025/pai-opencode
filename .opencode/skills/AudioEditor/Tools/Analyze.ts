@@ -95,14 +95,17 @@ async function main(): Promise<void> {
     throw new Error("Missing ANTHROPIC_API_KEY");
   }
 
-  // FIX: Only apply one replacement - check for .transcript.json first, then .json
+  // Determine output path — ensure outFile never equals inputFile (self-overwrite)
   let outFile: string;
   if (outputPath) {
     outFile = outputPath;
   } else if (inputFile.endsWith(".transcript.json")) {
     outFile = inputFile.replace(/\.transcript\.json$/, ".edits.json");
-  } else {
+  } else if (inputFile.endsWith(".json")) {
     outFile = inputFile.replace(/\.json$/, ".edits.json");
+  } else {
+    // Non-JSON input (e.g. bare filename without extension): append suffix to avoid self-overwrite
+    outFile = inputFile + ".edits.json";
   }
 
   console.log(`Analyzing: ${inputFile}`);

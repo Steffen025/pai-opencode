@@ -257,38 +257,49 @@ ${colors.cyan}Examples:${colors.reset}
 }
 
 // Main
-const [cmd, ...args] = process.argv.slice(2)
+async function main(): Promise<void> {
+  const [cmd, ...args] = process.argv.slice(2)
 
-switch (cmd) {
-  case 'channel':
-    await getChannel()
-    break
-  case 'videos': {
-    const count = parseInt(args[0], 10)
-    await getRecentVideos(Number.isFinite(count) && count > 0 ? count : 10)
-    break
+  switch (cmd) {
+    case 'channel':
+      await getChannel()
+      break
+    case 'videos': {
+      const count = parseInt(args[0], 10)
+      if (args[0] !== undefined && (!Number.isFinite(count) || count <= 0)) {
+        console.error(`${colors.red}Error: invalid count "${args[0]}" — must be a positive integer${colors.reset}`)
+        process.exit(1)
+      }
+      await getRecentVideos(Number.isFinite(count) && count > 0 ? count : 10)
+      break
+    }
+    case 'video':
+      if (!args[0]) {
+        console.error(`${colors.red}Error: video ID or title required${colors.reset}`)
+        process.exit(1)
+      }
+      await getVideoStats(args.join(' '))
+      break
+    case 'search':
+      if (!args[0]) {
+        console.error(`${colors.red}Error: search query required${colors.reset}`)
+        process.exit(1)
+      }
+      await searchVideos(args.join(' '))
+      break
+    case '--help':
+    case '-h':
+    case undefined:
+      showHelp()
+      break
+    default:
+      console.error(`${colors.red}Unknown command: ${cmd}${colors.reset}`)
+      showHelp()
+      process.exit(1)
   }
-  case 'video':
-    if (!args[0]) {
-      console.error(`${colors.red}Error: video ID or title required${colors.reset}`)
-      process.exit(1)
-    }
-    await getVideoStats(args.join(' '))
-    break
-  case 'search':
-    if (!args[0]) {
-      console.error(`${colors.red}Error: search query required${colors.reset}`)
-      process.exit(1)
-    }
-    await searchVideos(args.join(' '))
-    break
-  case '--help':
-  case '-h':
-  case undefined:
-    showHelp()
-    break
-  default:
-    console.error(`${colors.red}Unknown command: ${cmd}${colors.reset}`)
-    showHelp()
-    process.exit(1)
 }
+
+main().catch(err => {
+  console.error(`${colors.red}Error: ${err instanceof Error ? err.message : String(err)}${colors.reset}`)
+  process.exit(1)
+})

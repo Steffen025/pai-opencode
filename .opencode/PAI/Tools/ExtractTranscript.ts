@@ -17,8 +17,9 @@
 
 import OpenAI from "openai";
 import { existsSync, statSync, readdirSync, mkdirSync, createReadStream } from "fs";
-import { join, basename, extname, dirname } from "path";
+import { join, basename, extname, dirname, normalize } from "path";
 import { writeFile } from "fs/promises";
+import { homedir } from "os";
 
 // Supported audio/video formats
 const SUPPORTED_FORMATS = [
@@ -70,7 +71,15 @@ function parseArgs(): { path: string; options: Options } {
     process.exit(1);
   }
 
-  const path = args[0];
+  // Expand leading "~" or "~/" to the user's home directory so existsSync works correctly
+  const rawPath = args[0];
+  const path = normalize(
+    rawPath.startsWith("~/")
+      ? join(homedir(), rawPath.slice(2))
+      : rawPath.startsWith("~")
+        ? join(homedir(), rawPath.slice(1))
+        : rawPath
+  );
   const options: Options = {
     format: "txt",
     batch: false,
@@ -79,7 +88,11 @@ function parseArgs(): { path: string; options: Options } {
   for (let i = 1; i < args.length; i++) {
     const arg = args[i];
 
-    if (arg === "--format" && i + 1 < args.length) {
+    if (arg === "--format") {
+      if (i + 1 >= args.length || args[i + 1].startsWith("--")) {
+        console.error('Error: "--format" requires a value (txt, json, srt, vtt)');
+        process.exit(1);
+      }
       const format = args[i + 1];
       if (!OUTPUT_FORMATS.includes(format)) {
         console.error(
@@ -91,9 +104,17 @@ function parseArgs(): { path: string; options: Options } {
       i++;
     } else if (arg === "--batch") {
       options.batch = true;
-    } else if (arg === "--output" && i + 1 < args.length) {
+    } else if (arg === "--output") {
+      if (i + 1 >= args.length || args[i + 1].startsWith("--")) {
+        console.error('Error: "--output" requires a directory path');
+        process.exit(1);
+      }
       options.outputDir = args[i + 1];
       i++;
+    } else if (arg.startsWith("-")) {
+      console.error(`Error: Unknown flag "${arg}"`);
+      console.log('Run without flags for usage information.');
+      process.exit(1);
     }
   }
 
@@ -204,9 +225,11 @@ async function saveTranscript(
     mkdirSync(outputDir, { recursive: true });
   }
 
-  // Generate output filename
+  // Generate output filename — include original extension to avoid collisions
+  // when multiple files share the same stem (e.g. podcast.m4a and podcast.mp3).
+  const origExt = extname(filePath).slice(1); // e.g. "m4a"
   const baseName = basename(filePath, extname(filePath));
-  const outputPath = join(outputDir, `${baseName}.${options.format}`);
+  const outputPath = join(outputDir, `${baseName}.${origExt}.${options.format}`);
 
   // Save to file
   await writeFile(outputPath, transcript, "utf-8");

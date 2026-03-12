@@ -27,9 +27,10 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, copyFileSync } from 'fs';
 import { join, basename } from 'path';
+import { homedir } from 'os';
 import { inference } from './Inference';
 
-const PAI_DIR = process.env.PAI_DIR || join(process.env.HOME!, '.claude');
+const PAI_DIR = process.env.PAI_DIR || join(process.env.HOME ?? homedir(), '.claude');
 
 interface FailureCaptureInput {
   transcriptPath: string;
@@ -342,7 +343,7 @@ session_id: ${sessionId || 'unknown'}
 # Failure Analysis: ${description.replace(/-/g, ' ')}
 
 **Date:** ${year}-${month}-${day}
-**Rating:** ${rating}/10
+**Rating:** ${rating}/3
 **Summary:** ${sentimentSummary}
 
 ---
@@ -487,7 +488,7 @@ source: migration
 # Migrated Failure: ${desc.replace(/-/g, ' ')}
 
 **Original Date:** ${entry.timestamp}
-**Rating:** ${entry.rating}/10
+**Rating:** ${entry.rating}/3
 **Summary:** ${entry.sentiment_summary || 'No summary available'}
 
 ---
