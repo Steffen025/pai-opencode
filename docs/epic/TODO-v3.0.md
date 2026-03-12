@@ -9,7 +9,7 @@ date: 2026-03-10
 
 > [!NOTE]
 > **Basis:** Gap-Analysis 2026-03-06 | Reference: `GAP-ANALYSIS-v3.0.md` | Plan: `OPTIMIZED-PR-PLAN.md`
-> **Updated:** 2026-03-11 — WP-N1 through WP-N4 complete (PR #50–#53). WP-N5 next.
+> **Updated:** 2026-03-12 — WP-N1 through WP-N5 complete (PR #50–#54). WP-N6 in progress.
 
 ---
 
@@ -32,6 +32,7 @@ WP-N2 ████████████ 100% ✅  ← Compaction Intelligence
 WP-N3 ████████████ 100% ✅  ← Algorithm Awareness complete, PR #52+#53
 WP-N4 ████████████ 100% ✅  ← LSP + Fork Documentation complete, PR #53
 WP-N5 ████████████ 100% ✅  ← Plan Update complete, PR #54
+WP-N6 ████████████ 100% ✅  ← System Self-Awareness complete, PR #55
 ```
 
 > **The port is done. The native transformation starts with WP-N1.**
@@ -426,22 +427,23 @@ graph TD
 
 ---
 
-### WP-N6: System Self-Awareness — ⏳ Planned
+### WP-N6: System Self-Awareness — ✅ Complete (PR #55)
 **Branch:** `feature/wp-n6-system-awareness`
 **Spec:** ADR-017
 **Dependencies:** WP-N3 (Algorithm Awareness) + WP-N4 (LSP/Fork documented)
 **Goal:** Algorithm understands its operating environment
 
-- [ ] Create `.opencode/skills/OpenCodeSystem/SKILL.md` with USE WHEN triggers
-- [ ] Create `SystemArchitecture.md` — PAI-OpenCode 3.0 structure
-- [ ] Create `ToolReference.md` — all native + MCP tools
-- [ ] Create `Configuration.md` — settings.json, opencode.json, model routing
-- [ ] Create `Troubleshooting.md` — self-diagnostic checklist
-- [ ] Create ADR-017: System Self-Awareness
-- [ ] Integration test: Algorithm consults skill when stuck
+- [x] Create `.opencode/skills/OpenCodeSystem/SKILL.md` with USE WHEN triggers
+- [x] Create `SystemArchitecture.md` — PAI-OpenCode 3.0 structure
+- [x] Create `ToolReference.md` — all native + MCP tools
+- [x] Create `Configuration.md` — settings.json, opencode.json, model routing
+- [x] Create `Troubleshooting.md` — self-diagnostic checklist
+- [x] Create ADR-017: System Self-Awareness
+- [x] Update skill-index.json with OpenCodeSystem entry
+- [x] Update ADR README + TODO + OPTIMIZED-PR-PLAN
 
 ---
 
 *Created: 2026-03-06*
-*Updated: 2026-03-11 — WP-N1 through WP-N4 complete (PR #50–#53); WP-N5 next; WP-N6 System Awareness defined*
+*Updated: 2026-03-12 — WP-N1 through WP-N5 complete (PR #50–#54); WP-N6 System Awareness in progress (PR #55)*
 *Basis: GAP-ANALYSIS-v3.0.md + EPIC-v3.0-Synthesis-Architecture.md + EPIC-v3.0-OpenCode-Native.md*

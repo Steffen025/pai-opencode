@@ -32,7 +32,8 @@ tags: [architecture, migration, v3.0, PR-strategy, native-transformation]
 | **WP-N2** | Compaction Intelligence | #51 | ✅ **Merged** | experimental.session.compacting hook + context injection |
 | **WP-N3** | Algorithm Awareness | #52+#53 | ✅ **Merged** | SKILL.md context recovery, PRD parent_session_id |
 | **WP-N4** | LSP + Fork Documentation | #53 | ✅ **Merged** | AGENTS.md LSP + Fork sections, installer .env |
-| **WP-N5** | Plan Update | #54 | 🔄 **In Progress** | Sync all planning docs to reflect N1-N4 complete |
+| **WP-N5** | Plan Update | #54 | ✅ **Merged** | Sync all planning docs to reflect N1-N4 complete |
+| **WP-N6** | System Self-Awareness | #55 | 🔄 **In Progress** | OpenCodeSystem skill, 4 architecture reference docs, ADR-017 |
 
 > [!NOTE]
 > **2026-03-08 Live Audit:** WP-C scope significantly reduced after comparing repo against v4.0.3.
@@ -214,10 +215,10 @@ Current state (dev branch):
 |--------|------------|--------------------------|
 | Port WPs done | 8 ✅ | **9 ✅ (WP-E merged PR #48)** |
 | Native WPs done | 0 | **4 ✅ (WP-N1–N4, PR #50–#53)** |
-| Open PRs | 2 (C, D) | **1 (WP-N5 #54 in progress)** |
-| Remaining native work | Not planned | **WP-N5 (docs sync), WP-N6 (system awareness)** |
+| Open PRs | 2 (C, D) | **1 (WP-N6 #55 in progress)** |
+| Remaining native work | Not planned | **WP-N6 (system awareness) in progress** |
 
-**Status:** Port complete (WP-E merged). Native transformation underway — WP-N1 through WP-N4 shipped. WP-N5 (plan sync) and WP-N6 (system self-awareness) remain.
+**Status:** Port complete (WP-E merged). Native transformation underway — WP-N1 through WP-N5 shipped. WP-N6 (system self-awareness) in progress.
 
 **Native transformation plan:** `docs/epic/EPIC-v3.0-OpenCode-Native.md`
 **Full gap analysis:** `docs/epic/GAP-ANALYSIS-v3.0.md`
@@ -229,3 +230,4 @@ Current state (dev branch):
 *Correction 1 (2026-03-06): Fixed WP3 completion status — was never fully done*
 *Correction 2 (2026-03-08): WP-A (#42) + WP-B (#43) merged; WP-C scope verified against v4.0.3 upstream*
 *Correction 3 (2026-03-11): WP-N1–N4 complete (PR #50–#53); WP-N5 plan sync in progress*
+*Correction 4 (2026-03-12): WP-N5 merged (PR #54); WP-N6 system self-awareness in progress (PR #55)*

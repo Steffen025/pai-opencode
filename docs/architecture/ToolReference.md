@@ -1,0 +1,166 @@
+# Tool Reference
+
+> **Authoritative source for all tools available in PAI-OpenCode (ADR-017 / WP-N6)**
+> Last updated: 2026-03-12
+
+---
+
+## Native OpenCode Tools
+
+These are built into OpenCode and always available regardless of configuration.
+
+| Tool | Description | Common Use |
+|------|-------------|------------|
+| `read` | Read file contents | Read source files, configs, PRDs |
+| `write` | Write file contents | Create or overwrite files |
+| `edit` | Apply diff to file | Targeted file modifications |
+| `bash` | Execute shell commands | Git, bun, build commands |
+| `glob` | Pattern file search | Find files by name pattern |
+| `grep` | Content search | Search code for patterns |
+| `webfetch` | Fetch a URL | Read documentation, APIs |
+| `websearch` | Web search | Research, lookup current info |
+| `codesearch` | Search codebase | Semantic code search (if enabled) |
+| `task` | Spawn a subagent | Delegate work to specialist agents |
+
+### Tool Permissions
+
+Configured in `opencode.json` under `permission:`:
+
+```json
+{
+  "permission": {
+    "*": "allow",
+    "websearch": "allow",
+    "codesearch": "allow",
+    "webfetch": "allow",
+    "doom_loop": "ask",
+    "external_directory": "ask"
+  }
+}
+```
+
+`"*": "allow"` grants all tools without prompting. `"ask"` requires user confirmation.
+
+---
+
+## Custom PAI Tools (WP-N1)
+
+Registered by `pai-unified.ts` plugin. Available in every session.
+
+### `session_registry`
+
+**Purpose:** Lists recent sessions with summaries — primary entry point for post-compaction CONTEXT RECOVERY.
+
+**When to use:**
+- After context compaction when prior work is lost from working memory
+- When user says "continue from where we left off"
+- During OBSERVE CONTEXT RECOVERY step
+
+**Returns:** List of sessions with IDs, timestamps, task descriptions, and summaries.
+
+**Example flow:**
+```
+1. Call session_registry → get list of recent sessions
+2. Identify session matching current task context
+3. Call session_results with that session ID → get detailed results
+4. Rebuild working memory from results
+```
+
+### `session_results`
+
+**Purpose:** Gets detailed output, ISC criteria, and work done for a specific session ID.
+
+**When to use:** After `session_registry` identifies a relevant prior session.
+
+**Input:** Session ID from `session_registry` output.
+
+**Returns:** Full session results including completed ISC criteria, decisions made, artifacts created.
+
+---
+
+## Subagent Types (task tool)
+
+When using the `task` tool to spawn agents, use these `subagent_type` values:
+
+| subagent_type | Model (default) | Best For |
+|---------------|----------------|----------|
+| `Algorithm` | claude-opus (advanced) | Full PAI Algorithm runs, complex reasoning |
+| `Architect` | claude-sonnet (standard) | System design, ADR writing, architecture decisions |
+| `Engineer` | claude-sonnet (standard) | Implementation, file edits, code writing |
+| `explore` | claude-haiku (quick) | Fast codebase exploration |
+| `Intern` | claude-haiku (quick) | Simple tasks, data transformation |
+| `Writer` | claude-sonnet (standard) | Documentation, content |
+| `DeepResearcher` | claude-sonnet (standard) | Multi-model research orchestration |
+| `GeminiResearcher` | gemini-2.5-flash | Google Gemini research |
+| `GrokResearcher` | grok-4-1-fast | xAI Grok contrarian analysis |
+| `PerplexityResearcher` | perplexity/sonar | Real-time web search |
+| `CodexResearcher` | claude-sonnet | Technical archaeology |
+| `QATester` | claude-sonnet | Quality assurance, test writing |
+| `Pentester` | claude-sonnet | Security testing |
+| `Designer` | claude-sonnet | UI/UX design |
+| `Artist` | claude-sonnet | Visual content generation |
+| `general` | claude-sonnet | General purpose fallback |
+
+**Model tier override:** Pass `model_tier: "quick" | "standard" | "advanced"` to override the default model for any agent type (see `opencode.json` `model_tiers` section for exact mappings).
+
+---
+
+## MCP Servers
+
+MCP (Model Context Protocol) servers extend the tool set with domain-specific capabilities.
+
+> **Check `opencode.json` for currently connected MCP servers.** The list below reflects a typical PAI-OpenCode setup — your installation may differ.
+
+### Detecting Connected MCP Servers
+
+If unsure which MCP servers are active, inspect `opencode.json` for an `mcp` or `mcpServers` section. You can also run:
+
+```bash
+# List configured MCP servers from opencode.json
+cat opencode.json | grep -A 5 '"mcp"'
+```
+
+MCP tools appear with the `mcp_` prefix in tool calls (e.g., `mcp_task`, `mcp_jira_create_issue`).
+
+---
+
+## Tool Selection Decision Tree
+
+```text
+Need to find files?
+    ├── By name/pattern → glob
+    └── By content → grep or codesearch
+
+Need to read a file?
+    └── read (always prefer over bash cat)
+
+Need to modify a file?
+    ├── Replace specific text → edit
+    └── Full rewrite → write
+
+Need to run commands?
+    └── bash (with workdir parameter — NEVER cd &&)
+
+Need prior session context?
+    ├── Step 1: session_registry (list sessions)
+    └── Step 2: session_results (get details)
+
+Need to delegate complex work?
+    └── task (with subagent_type, full context, effort level)
+
+Need current web information?
+    ├── Specific URL → webfetch
+    └── General search → websearch or PerplexityResearcher agent
+```
+
+---
+
+## Anti-Patterns
+
+| ❌ Don't | ✅ Do Instead |
+|---------|--------------|
+| `bash: cd /path && command` | Use `workdir` parameter on bash |
+| `bash: cat file.txt` | Use `read` tool |
+| Spawn agent for grep/glob | Use grep/glob directly (2-second rule) |
+| Guess tool names | Check this reference or inspect opencode.json |
+| Use `npm install` | Always `bun install` |
