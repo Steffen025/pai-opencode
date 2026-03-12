@@ -276,7 +276,7 @@ async function main() {
     const args = parseArgs(process.argv.slice(2));
 
     // Validate environment variables
-    const botToken = process.env.DISCORD_BOT_TOKEN;
+    const botToken = process.env.DISCORD_BOT_TOKEN; // pragma: allowlist secret
     const channelId = process.env.MIDJOURNEY_CHANNEL_ID;
 
     if (!botToken) {
