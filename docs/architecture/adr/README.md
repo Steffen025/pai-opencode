@@ -151,6 +151,7 @@ to "genuinely native". See `docs/epic/EPIC-v3.0-OpenCode-Native.md` for context.
 | ADR-015 | Compaction Intelligence via Plugin Hook | ✅ Merged | WP-N2 |
 | ADR-016 | Session Fork for Experiment Isolation | ✅ Merged | WP-N4 |
 | ADR-017 | System Self-Awareness Documentation | ✅ Merged | WP-N6 |
+| ADR-018 | roborev Code Review + Biome CI Pipeline | ✅ Accepted | WP-N7 |
 
 ## Legacy Future ADRs
 
@@ -192,4 +193,4 @@ to "genuinely native". See `docs/epic/EPIC-v3.0-OpenCode-Native.md` for context.
 ---
 
 *Last Updated: 2026-03-12*
-*ADRs Created: 17 (ADR-011: Security Hardening — WP-B; ADR-012–017: OpenCode-Native Transformation — ADR-012–016 merged, ADR-017 WP-N6)*
+*ADRs Created: 18 (ADR-011: Security Hardening — WP-B; ADR-012–018: OpenCode-Native Transformation — ADR-012–017 merged, ADR-018 WP-N7)*

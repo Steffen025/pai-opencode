@@ -32,7 +32,8 @@ WP-N2 ████████████ 100% ✅  ← Compaction Intelligence
 WP-N3 ████████████ 100% ✅  ← Algorithm Awareness complete, PR #52+#53
 WP-N4 ████████████ 100% ✅  ← LSP + Fork Documentation complete, PR #53
 WP-N5 ████████████ 100% ✅  ← Plan Update complete, PR #54
-WP-N6 ██████████░░  85% 🔄  ← System Self-Awareness, PR #55 (fix commit pending)
+WP-N6 ████████████ 100% ✅  ← System Self-Awareness, PR #55 merged
+WP-N7 ██████░░░░░░  50% 🔄  ← roborev + Biome CI, PR open (in progress)
 ```
 
 > **The port is done. The native transformation starts with WP-N1.**
@@ -451,10 +452,31 @@ graph TD
 
 ---
 
-### WP-N7: Obsidian CLI + Agent Capability Matrix — 📋 Planned
-**Branch:** TBD
+### WP-N7: roborev Code Review + Biome CI Pipeline — 🔄 In Progress
+**Branch:** `feature/wp-n7-code-review`
 **Dependencies:** WP-N6
-**Goal:** Obsidian formatting guidelines + agent permissions/tools/MCP capability matrix
+**Goal:** AI code review (roborev) + CI pipeline (Biome GitHub Actions) + documentation
+
+- [x] `.roborev.toml` — config with `agent = "opencode"` + PAI guidelines
+- [x] `handlers/roborev-trigger.ts` — `code_review` custom tool
+- [x] `pai-unified.ts` — import + tool registration
+- [x] `.opencode/skills/CodeReview/SKILL.md` — CodeReview skill
+- [x] `.github/workflows/code-quality.yml` — Biome CI on PRs
+- [x] `ADR-018` — architectural decision record
+- [x] `SystemArchitecture.md` — handler map + CI section updated
+- [x] `ToolReference.md` — `code_review` tool entry added
+- [x] `Configuration.md` — `.roborev.toml` + `biome.json` sections added
+- [x] `Troubleshooting.md` — roborev section added
+- [x] `adr/README.md` — ADR-018 row added
+- [x] `skill-index.json` — regenerated with CodeReview skill
+- [x] `OpenCodeSystem/SKILL.md` — updated to mention CodeReview
+
+---
+
+### WP-N8: Obsidian Formatting Guidelines — 📋 Planned
+**Branch:** TBD
+**Dependencies:** WP-N7
+**Goal:** Obsidian formatting guidelines + agent capability matrix
 
 - [ ] Obsidian CLI integration guide (frontmatter, callouts, collapsible sections)
 - [ ] Formatting guidelines document for all PAI-OpenCode docs
@@ -463,5 +485,5 @@ graph TD
 ---
 
 *Created: 2026-03-06*
-*Updated: 2026-03-12 — WP-N1 through WP-N5 complete (PR #50–#54); WP-N6 in progress (PR #55 open); WP-N7 planned*
+*Updated: 2026-03-12 — WP-N1 through WP-N6 merged; WP-N7 in progress; WP-N8 planned (Obsidian split out from WP-N7)*
 *Basis: GAP-ANALYSIS-v3.0.md + EPIC-v3.0-Synthesis-Architecture.md + EPIC-v3.0-OpenCode-Native.md*

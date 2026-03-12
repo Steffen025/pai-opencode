@@ -38,6 +38,9 @@
  * - PRD sync, session cleanup, last response cache,
  *   relationship memory, question tracking
  *
+ * v3.0-WP-N7 HANDLERS (added 2026-03-12):
+ * - roborev-trigger: code_review custom tool for AI-powered code review
+ *
  * IMPORTANT: This plugin NEVER uses console.log!
  * All logging goes through file-logger.ts to prevent TUI corruption.
  *
@@ -101,6 +104,7 @@ import {
 	sessionRegistryTool,
 	sessionResultsTool,
 } from "./handlers/session-registry";
+import { codeReviewTool } from "./handlers/roborev-trigger";
 import { injectCompactionContext } from "./handlers/compaction-intelligence";
 import {
 	extractVoiceCompletion,
@@ -368,9 +372,11 @@ export const PaiUnified: Plugin = async (ctx) => {
 		// ═══════════════════════════════════════════════════════════════
 
 		// WP-N1: Custom tools for session recovery AFTER compaction
+		// WP-N7: code_review tool via roborev
 		tool: {
 			session_registry: sessionRegistryTool,
 			session_results: sessionResultsTool,
+			code_review: codeReviewTool,
 		},
 
 		// WP-N2: Context Injection (WÄHREND compaction)

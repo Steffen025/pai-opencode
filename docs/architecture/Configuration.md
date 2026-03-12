@@ -162,6 +162,51 @@ Key sections:
 
 ---
 
+## Code Quality Configuration (WP-N7)
+
+### `.roborev.toml` — AI Code Review
+
+roborev configuration lives at the repo root. Key fields:
+
+```toml
+# Which AI agent to use (opencode is the correct value for this repo)
+agent = "opencode"
+
+# PAI-OpenCode-specific review guidelines
+# These are injected into every roborev review prompt
+review_guidelines = """
+...
+"""
+```
+
+**The `review_guidelines`** encode PAI-OpenCode architectural rules:
+- No `console.log` in plugin handlers (use `fileLog()`)
+- Handler pattern: new capability = new handler file + import in `pai-unified.ts`
+- No hardcoded model names (use `opencode.json` tier system)
+- Biome formatting (tabs, 100 char width, double quotes)
+
+> [!TIP]
+> Run `roborev review --dirty` to test the current config against your changes.
+
+### `biome.json` — Linting + Formatting
+
+Biome config at repo root. Runs automatically in CI (`.github/workflows/code-quality.yml`).
+
+Key settings:
+- `indentStyle: "tab"` — tabs (matches AGENTS.md)
+- `lineWidth: 100` — 100 character limit
+- `quoteStyle: "double"` — double quotes for strings
+- `organizeImports: "on"` — automatic import sorting
+
+**Local usage:**
+```bash
+bun run lint       # check (fails on issues)
+bun run lint:fix   # auto-fix formatting and safe lint issues
+bun run format     # format only
+```
+
+---
+
 ## Environment Variables
 
 Set in `.env` (auto-loaded by Bun, never committed). See `.opencode/.env.example` for template.

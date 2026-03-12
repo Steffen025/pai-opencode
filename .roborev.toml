@@ -1,0 +1,65 @@
+# roborev configuration for pai-opencode
+# https://github.com/roborev-dev/roborev
+#
+# roborev provides AI-powered code review via git post-commit hook or manual invocation.
+# It is MIT-licensed, fully local, and explicitly supports OpenCode as an agent.
+#
+# Installation:
+#   brew install roborev-dev/tap/roborev
+#   # or: go install github.com/roborev-dev/roborev@latest
+#
+# Setup (one-time):
+#   roborev init          # installs git post-commit hook
+#   roborev skills install # installs roborev skill for OpenCode
+#
+# Usage:
+#   roborev review --dirty  # review uncommitted changes
+#   roborev fix             # feed findings to agent for fixes
+#   roborev refine          # auto-fix loop until clean
+#   roborev review          # review last commit
+
+agent = "opencode"
+
+review_guidelines = """
+# PAI-OpenCode Review Guidelines
+
+## Architecture Constraints (CRITICAL)
+
+- Plugin handlers MUST use file-logger.ts for all logging. NO console.log anywhere.
+- All logging calls must use: fileLog(), fileLogError() from ../lib/file-logger
+- Imports MUST use the @opencode-ai/plugin package for tool(), Hooks, Plugin types
+- Custom tools MUST follow the tool() helper pattern from session-registry.ts
+
+## Code Quality
+
+- TypeScript strict mode — no implicit any
+- Prefer explicit return types on exported functions
+- Use named exports, not default exports
+- File imports must use .ts extension when importing local modules
+
+## Plugin Patterns
+
+- New capability = new handler file in handlers/ directory
+- Handler file = single responsibility (one handler per file)
+- Handler registered in pai-unified.ts (import + hooks object entry)
+- Tool registration in the top-level `tool:` section of hooks object
+
+## Security
+
+- No hardcoded secrets, API keys, or model names
+- Model routing lives in opencode.json only
+- No external network calls from plugin handlers (except explicit integrations)
+
+## Performance
+
+- Handlers should be fast and non-blocking where possible
+- Heavy operations should be wrapped in try/catch
+- Use async/await consistently
+- Avoid synchronous file operations in hot paths (use Bun.file() or async fs)
+
+## Style
+
+- Biome formatting (tabs, 100 char line width, double quotes)
+- Comments on exported functions (JSDoc preferred)
+- ISC naming: ISC-C{N} for criteria, ISC-A{N} for anti-criteria
+"""

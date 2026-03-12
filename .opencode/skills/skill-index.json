@@ -1,11 +1,11 @@
 {
-  "generated": "2026-03-12T07:24:22.833Z",
-  "totalSkills": 53,
+  "generated": "2026-03-12T08:28:30.465Z",
+  "totalSkills": 54,
   "categories": 7,
-  "flatSkills": 18,
+  "flatSkills": 19,
   "hierarchicalSkills": 35,
   "alwaysLoadedCount": 2,
-  "deferredCount": 51,
+  "deferredCount": 52,
   "skills": {
     "agents": {
       "name": "Agents",
@@ -233,6 +233,28 @@
       ],
       "tier": "deferred",
       "isHierarchical": true
+    },
+    "codereview": {
+      "name": "CodeReview",
+      "path": "CodeReview/SKILL.md",
+      "category": null,
+      "fullDescription": "AI-powered code review via roborev. USE WHEN review code, check code quality, roborev, audit changes, review before commit, review before PR, code quality check, lint review, architecture review.",
+      "triggers": [
+        "review",
+        "code",
+        "check",
+        "quality",
+        "roborev",
+        "audit",
+        "changes",
+        "before",
+        "commit",
+        "lint",
+        "architecture"
+      ],
+      "workflows": [],
+      "tier": "deferred",
+      "isHierarchical": false
     },
     "contentanalysis": {
       "name": "ContentAnalysis",
@@ -552,7 +574,9 @@
         "operating",
         "environment"
       ],
-      "workflows": [],
+      "workflows": [
+        "PAI"
+      ],
       "tier": "deferred",
       "isHierarchical": false
     },

@@ -25,7 +25,8 @@ Start — What's broken?
 ├── Path errors (~/.claude/ vs ~/.opencode/) → Path Errors
 ├── Skill not triggering               → Skill Not Triggering
 ├── Bun / npm errors                   → Runtime Errors
-└── Agent spawn failing                → Agent Spawn Issues
+├── Agent spawn failing                → Agent Spawn Issues
+└── roborev / code_review issues       → roborev / Code Review Issues
 ```
 
 | Symptom | Jump To |
@@ -38,6 +39,7 @@ Start — What's broken?
 | Skill not triggering | [Skill Not Triggering](#skill-not-triggering) |
 | Bun / npm errors | [Runtime Errors](#runtime-errors) |
 | Agent spawn failing | [Agent Spawn Issues](#agent-spawn-issues) |
+| roborev not found / code review fails | [roborev / Code Review Issues](#roborev--code-review-issues-wp-n7) |
 
 <details>
 <summary>Quick Triage Flowchart (Mermaid)</summary>
@@ -266,6 +268,41 @@ Task tool not spawning agents or agents failing:
     → opencode.json has "doom_loop": "ask"
     → If agent is recursively spawning agents, user sees a prompt
     → This is expected safety behavior
+```
+
+---
+
+## roborev / Code Review Issues (WP-N7)
+
+```text
+□ Is roborev installed?
+    → which roborev
+    → If not found: brew install roborev-dev/tap/roborev
+    → Or: go install github.com/roborev-dev/roborev@latest
+
+□ code_review tool returns "roborev not found"?
+    → Install roborev (see above)
+    → Ensure it's in PATH: echo $PATH
+    → Try: roborev --version
+
+□ Review hangs / times out?
+    → Large changeset: focus on specific files
+      roborev review --dirty -- src/specific/file.ts
+    → Default timeout is 2 minutes
+
+□ Post-commit hook not running after git commit?
+    → Verify hook exists: cat .git/hooks/post-commit
+    → Reinstall: roborev init
+
+□ Biome CI fails on PR?
+    → Run locally: bun run lint
+    → Auto-fix: bun run lint:fix
+    → Check biome.json at repo root for config
+
+□ roborev review passes locally but CI Biome fails?
+    → These are separate checks: roborev = AI review, Biome = format/lint
+    → Fix Biome issues with bun run lint:fix
+    → Re-push to trigger CI again
 ```
 
 ---

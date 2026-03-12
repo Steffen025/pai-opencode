@@ -45,6 +45,7 @@ This skill runs in the foreground. All lookups and diagnostic output should be v
 |------|---------|
 | `session_registry` | List recent sessions for CONTEXT RECOVERY |
 | `session_results` | Get detailed results for a specific session ID |
+| `code_review` | AI code review via roborev — call in VERIFY phase (WP-N7) |
 
 ### Model Tiers
 - `quick` → fast, cheap (exploration, simple tasks)

@@ -24,6 +24,7 @@ pai-opencode/
 │   │   ├── handlers/             ← Modular handler implementations
 │   │   │   ├── session-registry.ts      (WP-N1) Custom tools: session_registry, session_results
 │   │   │   ├── compaction-intelligence.ts (WP-N2) Context injection during compaction
+│   │   │   ├── roborev-trigger.ts       (WP-N7) Custom tool: code_review via roborev
 │   │   │   ├── agent-capture.ts         Agent output capture
 │   │   │   ├── algorithm-tracker.ts     Algorithm phase tracking
 │   │   │   ├── format-reminder.ts       Response format enforcement
@@ -54,6 +55,7 @@ pai-opencode/
 │       ├── skill-index.json      ← Skill registry — USE WHEN triggers for capability audit
 │       ├── PAI/SKILL.md          ← PAI Algorithm core skill
 │       ├── OpenCodeSystem/       ← System self-awareness (WP-N6)
+│       ├── CodeReview/           ← Code review via roborev (WP-N7)
 │       ├── Agents/               ← Agent composition skills
 │       ├── Research/             ← Research skills
 │       └── [40+ other skills]
@@ -92,14 +94,15 @@ PAI-OpenCode uses a **single unified plugin** (`pai-unified.ts`) that registers 
 | `tool.execute.after` | After any tool runs | Response capture, agent output capture |
 | `message.completed` | AI response finished | Format reminder, rating capture, PRD sync |
 
-### Custom Tools (WP-N1)
+### Custom Tools (WP-N1 + WP-N7)
 
-Two custom tools registered via `tool:` config in `pai-unified.ts`:
+Custom tools registered via `tool:` config in `pai-unified.ts`:
 
-| Tool | Purpose | When to Call |
-|------|---------|--------------|
-| `session_registry` | Lists recent sessions with summaries | Post-compaction CONTEXT RECOVERY |
-| `session_results` | Gets detailed results for a specific session ID | When session_registry returns relevant session |
+| Tool | WP | Purpose | When to Call |
+|------|----|---------|--------------|
+| `session_registry` | WP-N1 | Lists recent sessions with summaries | Post-compaction CONTEXT RECOVERY |
+| `session_results` | WP-N1 | Gets detailed results for a specific session ID | When session_registry returns relevant session |
+| `code_review` | WP-N7 | Runs roborev AI code review on changed files | VERIFY phase, after BUILD, before commit |
 
 **Note:** These are native OpenCode custom tools (not MCP), registered directly in the plugin's `tool:` object.
 
@@ -180,5 +183,31 @@ flowchart TD
 | ADR-013 | SKILL.md CONTEXT RECOVERY uses custom tools for post-compaction awareness |
 | ADR-015 | Compaction intelligence via `experimental.session.compacting` hook |
 | ADR-017 | System self-awareness skill + reference docs (this WP) |
+| ADR-018 | roborev code review integration + Biome CI pipeline |
 
 Full ADR index: `docs/architecture/adr/README.md`
+
+---
+
+## Code Quality Pipeline (WP-N7)
+
+PAI-OpenCode uses a two-layer quality check:
+
+| Layer | Tool | When | What It Checks |
+|-------|------|------|---------------|
+| **Local** | roborev | Before commit (via git hook) + on-demand | AI review of changed files against `.roborev.toml` guidelines |
+| **CI** | Biome | Every PR / push to dev/main | Formatting, imports, linting |
+
+**Setup:**
+```bash
+# Install roborev (one-time)
+brew install roborev-dev/tap/roborev
+roborev init            # installs post-commit hook
+roborev skills install  # installs OpenCode skill
+
+# Biome is bundled — runs automatically in CI
+bun run lint            # run Biome locally
+```
+
+**Algorithm integration:**
+The `code_review` tool is available in every session. Call it from VERIFY phase for evidence that code quality standards are met.
