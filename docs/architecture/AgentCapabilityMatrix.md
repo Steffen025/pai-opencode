@@ -81,16 +81,16 @@ graph TD
 
 ### Research Agents
 
-| Agent | Default Model | Primary Role | Data Source |
+| Agent | Default Tier | Primary Role | Data Source |
 |---|---|---|---|
 | `DeepResearcher` | standard | Research orchestration | Delegates to sub-researchers |
-| `GeminiResearcher` | google/gemini-2.5-flash | Multi-perspective research | Google Gemini |
-| `GrokResearcher` | xai/grok-4-1-fast | Contrarian / fact-based analysis | xAI Grok |
-| `PerplexityResearcher` | perplexity/sonar | Real-time web search | Perplexity |
+| `GeminiResearcher` | configured in `opencode.json` | Multi-perspective research | Google Gemini (or equivalent) |
+| `GrokResearcher` | configured in `opencode.json` | Contrarian / fact-based analysis | xAI Grok (or equivalent) |
+| `PerplexityResearcher` | configured in `opencode.json` | Real-time web search | Perplexity (or equivalent) |
 | `CodexResearcher` | standard | Technical archaeology | Multiple models |
 
 > [!NOTE]
-> Research agent models are configured in `opencode.json`. `GeminiResearcher` and `GrokResearcher` use non-Anthropic providers by default. `PerplexityResearcher` uses Perplexity Sonar for live web search.
+> Research agents that use external providers (Gemini, Grok, Perplexity) require the corresponding API keys and provider configuration in `opencode.json`. The specific model IDs are set by the user — see `Configuration.md` for the agent model routing schema.
 
 ---
 
@@ -188,22 +188,38 @@ All agents inherit the session's tool permissions from `opencode.json`. The curr
 
 MCP servers are configured globally and available to all agents in a session. Each server exposes its own tools.
 
-### Current MCP Servers
+### Configuring MCP Servers
 
-| Server | Tools Exposed | Typical User |
-|---|---|---|
-| Jira (`atlassian-jira`) | `jira_search`, `jira_create_issue`, `jira_update_issue`, etc. | Algorithm, Architect |
-| n8n | Workflow management tools | Algorithm |
-| Context7 | `resolve-library-id`, `get-library-docs` | Engineer, Researcher |
+MCP servers are defined in your `opencode.json` under the `mcp` key. Each server you add exposes its own tools automatically to all agents in a session.
+
+```jsonc
+// opencode.json
+{
+  "mcp": {
+    "my-server": {
+      "type": "local",
+      "command": "npx",
+      "args": ["-y", "@my-org/my-mcp-server"]
+    },
+    "remote-server": {
+      "type": "sse",
+      "url": "https://my-mcp-endpoint.example.com/sse"
+    }
+  }
+}
+```
 
 > [!TIP]
 > Run `/mcp` in an OpenCode session to see all currently connected MCP servers and their available tools.
 
-### MCP Server Detection
+> [!NOTE]
+> Which MCP servers you configure is entirely up to your workflow. Common categories include project management tools, documentation lookups, CI/CD systems, and external APIs. See [`Configuration.md`](./Configuration.md) for the full `mcp` schema.
+
+### Detecting Active MCP Servers
 
 ```bash
-# Detect active MCP servers from opencode config
-grep -r "mcpServers\|mcp_servers" ~/.opencode/settings.json opencode.json 2>/dev/null
+# List MCP server keys defined in your local opencode.json
+jq '.mcp | keys' opencode.json
 ```
 
 ---
