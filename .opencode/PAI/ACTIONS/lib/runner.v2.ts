@@ -10,7 +10,7 @@
  */
 
 import { readFile, readdir } from "fs/promises";
-import { join, dirname } from "path";
+import { join, dirname, resolve } from "path";
 import type {
   ActionManifest,
   ActionImplementation,
@@ -24,6 +24,12 @@ import { validateSchema } from "./types.v2";
 
 const ACTIONS_DIR = dirname(import.meta.dir);
 const USER_ACTIONS_DIR = join(ACTIONS_DIR, "..", "USER", "ACTIONS");
+
+// Regex for valid A_ flat-format action names (no path traversal possible)
+const FLAT_ACTION_NAME_RE = /^A_[A-Z0-9_]+$/;
+
+// Regex for valid legacy category/name segments (no dots, no slashes, no traversal)
+const LEGACY_SEGMENT_RE = /^[A-Za-z0-9_-]+$/;
 
 /**
  * Local LLM provider using PAI's Inference tool
@@ -127,15 +133,32 @@ export async function loadImplementation<TInput, TOutput>(
 }
 
 /**
+ * Containment check: ensure resolved path stays under baseDir.
+ * Prevents path traversal via symlinks or ".." in name after resolution.
+ */
+function isContained(baseDir: string, candidatePath: string): boolean {
+  const resolvedBase = resolve(baseDir);
+  const resolvedCandidate = resolve(candidatePath);
+  return resolvedCandidate.startsWith(resolvedBase + "/") || resolvedCandidate === resolvedBase;
+}
+
+/**
  * Find action directory by name
  * Resolution order: USER/ACTIONS (personal) → ACTIONS (system/framework)
  * Supports: A_NAME (flat, new) or category/name (legacy)
+ *
+ * Security: validates name format before any filesystem access to prevent
+ * path traversal attacks.
  */
 export async function findAction(name: string): Promise<string | null> {
   // New flat format: A_EXTRACT_TRANSCRIPT
   if (name.startsWith("A_")) {
+    // Validate: only A_ followed by uppercase letters, digits, underscores
+    if (!FLAT_ACTION_NAME_RE.test(name)) return null;
+
     // Check USER/ACTIONS first (personal actions override system)
     const userPath = join(USER_ACTIONS_DIR, name);
+    if (!isContained(USER_ACTIONS_DIR, userPath)) return null;
     try {
       await readFile(join(userPath, "action.json"), "utf-8");
       return userPath;
@@ -143,6 +166,7 @@ export async function findAction(name: string): Promise<string | null> {
 
     // Fall back to ACTIONS (system/framework)
     const systemPath = join(ACTIONS_DIR, name);
+    if (!isContained(ACTIONS_DIR, systemPath)) return null;
     try {
       await readFile(join(systemPath, "action.json"), "utf-8");
       return systemPath;
@@ -157,8 +181,12 @@ export async function findAction(name: string): Promise<string | null> {
 
   const [category, actionName] = parts;
 
+  // Validate each segment: no "..", no path separators, no special chars
+  if (!LEGACY_SEGMENT_RE.test(category) || !LEGACY_SEGMENT_RE.test(actionName)) return null;
+
   // Check USER/ACTIONS first
   const userPath = join(USER_ACTIONS_DIR, category, actionName);
+  if (!isContained(USER_ACTIONS_DIR, userPath)) return null;
   try {
     await readFile(join(userPath, "action.json"), "utf-8");
     return userPath;
@@ -166,6 +194,7 @@ export async function findAction(name: string): Promise<string | null> {
 
   // Fall back to ACTIONS (system)
   const systemPath = join(ACTIONS_DIR, category, actionName);
+  if (!isContained(ACTIONS_DIR, systemPath)) return null;
   try {
     await readFile(join(systemPath, "action.json"), "utf-8");
     return systemPath;
@@ -184,6 +213,15 @@ export async function runAction<TInput = unknown, TOutput = unknown>(
 ): Promise<ActionResult<TOutput>> {
   const startTime = Date.now();
   const mode = options.mode || "local";
+
+  // Cloud mode is not yet implemented — reject explicitly rather than silently
+  // executing locally and misleading the caller about where the action ran.
+  if (mode === "cloud") {
+    return {
+      success: false,
+      error: "Cloud execution mode is not yet implemented. Use mode: 'local' or omit the mode option.",
+    };
+  }
 
   // Find action
   const actionPath = await findAction(name);
