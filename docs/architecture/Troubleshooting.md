@@ -55,6 +55,7 @@ flowchart TD
     Q1 -->|Skill not triggering| SN[Skill Not Triggering]
     Q1 -->|Bun / npm errors| RE[Runtime Errors]
     Q1 -->|Agent spawn failing| AS[Agent Spawn Issues]
+    Q1 -->|roborev / code review issues| CR[roborev / Code Review Issues]
 
     style Start fill:#e8f0fe,stroke:#333
     style Q1 fill:#fff3e0,stroke:#333

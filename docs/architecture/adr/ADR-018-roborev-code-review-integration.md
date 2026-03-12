@@ -1,9 +1,40 @@
+---
+title: "ADR-018: roborev Code Review Integration"
+status: Accepted
+date: 2026-03-12
+deciders:
+  - Steffen (maintainer)
+tags:
+  - code-quality
+  - developer-experience
+  - ci
+  - plugin
+---
+
 # ADR-018: roborev Code Review Integration
 
-**Status:** Accepted
-**Date:** 2026-03-12
-**Deciders:** Steffen (maintainer)
-**Tags:** code-quality, developer-experience, ci, plugin
+## Overview
+
+```
+.roborev.toml
+    │  (review_guidelines + agent = "opencode")
+    ▼
+roborev-trigger.ts          ← ADR-001 handler pattern
+    │  (code_review tool)
+    ▼
+roborev CLI  ────────────►  LLM review output
+    │
+    ▼
+post-commit git hook        ← installed by `roborev init`
+
+CodeReview skill            ← SKILL.md documents usage
+    │
+    ▼
+.github/workflows/code-quality.yml
+    │  (Biome check on every PR / push)
+    ▼
+CI Pass / Fail
+```
 
 ---
 

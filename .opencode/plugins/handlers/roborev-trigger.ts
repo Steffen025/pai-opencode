@@ -73,10 +73,33 @@ function runRoborev(args: string[]): ReviewResult {
 			cwd: process.cwd(),
 		});
 
+		// Check for spawn errors (e.g. ENOENT — roborev not in PATH)
+		if (result.error) {
+			fileLogError("[roborev] Spawn error", result.error);
+			return {
+				success: false,
+				output: `Failed to spawn roborev: ${result.error.message}`,
+				exitCode: 1,
+			};
+		}
+
+		// Check for timeout (signal SIGTERM sent by spawnSync on timeout)
+		if (result.signal) {
+			const msg = `roborev timed out (signal: ${result.signal}). Try focusing the review with a path argument.`;
+			fileLog(`[roborev] ${msg}`, "warn");
+			return {
+				success: false,
+				output: msg,
+				exitCode: 1,
+			};
+		}
+
 		const output = [result.stdout, result.stderr].filter(Boolean).join("\n").trim();
 		const exitCode = result.status ?? 1;
 
 		fileLog(`[roborev] Exit code: ${exitCode}, output length: ${output.length}`, "info");
+		if (result.stdout) fileLog(`[roborev] stdout: ${result.stdout.slice(0, 500)}`, "info");
+		if (result.stderr) fileLog(`[roborev] stderr: ${result.stderr.slice(0, 500)}`, "info");
 
 		return {
 			success: exitCode === 0,

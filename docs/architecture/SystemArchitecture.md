@@ -195,7 +195,7 @@ PAI-OpenCode uses a two-layer quality check:
 
 | Layer | Tool | When | What It Checks |
 |-------|------|------|---------------|
-| **Local** | roborev | Before commit (via git hook) + on-demand | AI review of changed files against `.roborev.toml` guidelines |
+| **Local** | roborev | After commit (post-commit hook) + on-demand | AI review of changed files against `.roborev.toml` guidelines |
 | **CI** | Biome | Every PR / push to dev/main | Formatting, imports, linting |
 
 **Setup:**

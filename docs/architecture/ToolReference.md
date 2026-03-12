@@ -105,7 +105,7 @@ Registered by `pai-unified.ts` plugin. Available in every session.
 **Requires roborev installed:** If roborev is not in PATH, returns installation instructions.
 
 **Example:**
-```
+```text
 Use code_review tool with mode="dirty" to review uncommitted changes.
 ```
 

@@ -23,6 +23,37 @@ tool with explicit OpenCode support.
 
 ---
 
+## USE WHEN
+
+- Completing a BUILD phase and want to catch issues before committing
+- Running VERIFY phase and need reproducible quality evidence
+- Reviewing a PR diff before merging
+- Auditing plugin handler code for pattern violations (no `console.log`, handler structure)
+- You want AI-powered architectural review of your changes
+- Trigger phrases: "review code", "check my changes", "roborev", "code quality check"
+
+---
+
+## MANDATORY
+
+1. **roborev must be installed** — `brew install roborev-dev/tap/roborev`
+2. **One-time init** — `roborev init` (installs post-commit git hook)
+3. **`.roborev.toml` must exist** at repo root with `agent = "opencode"` and `review_guidelines`
+4. **Invoke** via `code_review` tool (preferred) or `roborev review --dirty` in EXECUTE phase
+5. **Cite exit code 0** as VERIFY evidence: `code_review tool returned exit 0 — no findings`
+
+---
+
+## OPTIONAL
+
+- `roborev skills install` — installs the roborev OpenCode skill (adds roborev commands to agent)
+- `mode: "last-commit"` — review the last git commit instead of dirty working tree
+- `mode: "fix"` — feed findings to the agent for automatic fixes
+- `mode: "refine"` — run auto-fix loop until review passes
+- `path` argument — focus review on a specific file or glob
+
+---
+
 ## What roborev Does
 
 roborev analyzes your staged/uncommitted changes (or last commit) using an LLM and surfaces:
@@ -69,7 +100,7 @@ The Algorithm invokes code review in two ways:
 **1. Via `code_review` tool (plugin-provided)**
 
 Call the `code_review` tool directly from any Algorithm phase:
-```
+```text
 Use code_review tool with mode="dirty" to review uncommitted changes before commit.
 ```
 
@@ -85,7 +116,7 @@ roborev review --dirty && echo "PASS" || echo "FINDINGS"
 
 ### Recommended Algorithm workflow
 
-```
+```text
 BUILD → commit changes
 EXECUTE: roborev review --dirty
   → If PASS: continue to VERIFY
