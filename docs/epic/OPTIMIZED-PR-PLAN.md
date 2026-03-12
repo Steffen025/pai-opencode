@@ -1,8 +1,8 @@
 ---
 title: PAI-OpenCode v3.0 - Corrected PR Plan
-description: Port complete — WP-N1..N5 shipped (PR #50–#54), WP-N6 in progress (PR #55 open)
+description: v3.0 COMPLETE — All 19 WPs shipped (PR #42–#59)
 version: "3.0-native-1"
-status: active
+status: complete
 authors: [Jeremy]
 date: 2026-03-10
 tags: [architecture, migration, v3.0, PR-strategy, native-transformation]
@@ -36,7 +36,8 @@ tags: [architecture, migration, v3.0, PR-strategy, native-transformation]
 | **WP-N6** | System Self-Awareness | #55 | ✅ **Merged** | OpenCodeSystem skill, 4 architecture reference docs, ADR-017 |
 | **WP-N7** | roborev + Biome CI | #56 | ✅ **Merged** | roborev plugin handler, CodeReview skill, GitHub Actions CI, ADR-018 |
 | **WP-N8** | Obsidian Formatting Guidelines | #57 | ✅ **Merged** | Formatting guidelines, agent capability matrix (split from WP-N7) |
-| **WP-N9** | Installer opencode.json Fix | — | 🔄 **In Progress** | provider-models.ts, full agent-tier generation, principalName in username |
+| **WP-N9** | Installer opencode.json Fix | #58 | ✅ **Merged** | provider-models.ts, full agent-tier generation, principalName in username |
+| **WP-N10** | Docs Consolidation | #59 | ✅ **Merged** | CHANGELOG released, CONTRIBUTING/INSTALL/README updated, planning docs deleted |
 
 > [!NOTE]
 > **2026-03-08 Live Audit:** WP-C scope significantly reduced after comparing repo against v4.0.3.
@@ -209,24 +210,26 @@ Current state (dev branch):
 ├── WP-N3 ✅ Algorithm Awareness (PR #52+#53)
 ├── WP-N4 ✅ LSP + Fork Documentation (PR #53)
 ├── WP-N5 ✅ Plan Update (PR #54)
-└── WP-N6 🔄 System Self-Awareness (PR #55)
+├── WP-N6 ✅ System Self-Awareness (PR #55)
+├── WP-N7 ✅ roborev + Biome CI (PR #56)
+├── WP-N8 ✅ Obsidian Formatting Guidelines (PR #57)
+├── WP-N9 ✅ Installer opencode.json Fix (PR #58)
+└── WP-N10 ✅ Docs Consolidation (PR #59)
 ```
 
 ---
 
 ## Summary (Updated 2026-03-12)
 
-| Metric | 2026-03-08 | 2026-03-11 | **Current (2026-03-12)** |
-|--------|------------|------------|--------------------------|
+| Metric | 2026-03-08 | 2026-03-11 | **Final (2026-03-12)** |
+|--------|------------|------------|------------------------|
 | Port WPs done | 8 ✅ | 9 ✅ (WP-E) | **9 ✅** |
-| Native WPs done | 0 | 4 ✅ (N1–N4) | **8 ✅ (N1–N8), N9 in progress** |
-| Open PRs | 2 (C, D) | 1 (#55) | **1 (WP-N9 — open, in progress)** |
-| Remaining native work | Not planned | WP-N6 in progress | **WP-N9 in progress (installer opencode.json fix)** |
+| Native WPs done | 0 | 4 ✅ (N1–N4) | **10 ✅ (N1–N10)** |
+| Open PRs | 2 (C, D) | 1 (#55) | **0 — all merged** |
+| Remaining native work | Not planned | WP-N6 in progress | **NONE — v3.0 complete** |
 
-**Status:** Port complete. Native transformation: WP-N1 through WP-N8 merged (PR #50–#57). WP-N9 in progress (installer opencode.json full agent-tier generation).
+**Status:** v3.0 COMPLETE. All 19 WPs shipped (PR #42–#59). Tag v3.0.0 released.
 
-**Native transformation plan:** `docs/epic/EPIC-v3.0-OpenCode-Native.md`
-**Full gap analysis:** `docs/epic/GAP-ANALYSIS-v3.0.md`
 **Granular task list:** `docs/epic/TODO-v3.0.md`
 
 ---
@@ -238,3 +241,4 @@ Current state (dev branch):
 *Correction 4 (2026-03-12): WP-N5 merged (PR #54); WP-N6 in progress (PR #55 open); WP-N7 planned*
 *Correction 5 (2026-03-12): WP-N6 merged (PR #55); WP-N7 in progress (roborev + Biome CI); WP-N8 planned (Obsidian — split from WP-N7)*
 *Correction 6 (2026-03-12): WP-N7 merged (PR #56); WP-N8 in progress (Obsidian formatting guidelines + agent capability matrix)*
+*Correction 7 (2026-03-12): WP-N8 merged (PR #57); WP-N9 merged (PR #58); WP-N10 merged (PR #59) — v3.0 COMPLETE*
