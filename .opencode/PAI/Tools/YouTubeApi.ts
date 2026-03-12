@@ -70,7 +70,19 @@ async function apiGet<T>(endpoint: string, params: Record<string, string>): Prom
   for (const [k, v] of Object.entries(params)) {
     url.searchParams.set(k, v)
   }
-  const res = await fetch(url.toString())
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 30_000)
+  let res: Response
+  try {
+    res = await fetch(url.toString(), { signal: controller.signal })
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error(`YouTube API request timed out after 30s: ${endpoint}`)
+    }
+    throw err
+  } finally {
+    clearTimeout(timeout)
+  }
   if (!res.ok) {
     const err = await res.json()
     throw new Error(err.error?.message || `API error: ${res.status}`)
@@ -265,12 +277,16 @@ async function main(): Promise<void> {
       await getChannel()
       break
     case 'videos': {
-      const count = parseInt(args[0], 10)
-      if (args[0] !== undefined && (!Number.isFinite(count) || count <= 0)) {
+      if (args[0] !== undefined && !/^\d+$/.test(args[0])) {
         console.error(`${colors.red}Error: invalid count "${args[0]}" — must be a positive integer${colors.reset}`)
         process.exit(1)
       }
-      await getRecentVideos(Number.isFinite(count) && count > 0 ? count : 10)
+      const count = args[0] !== undefined ? parseInt(args[0], 10) : 10
+      if (args[0] !== undefined && count <= 0) {
+        console.error(`${colors.red}Error: invalid count "${args[0]}" — must be a positive integer${colors.reset}`)
+        process.exit(1)
+      }
+      await getRecentVideos(count)
       break
     }
     case 'video':

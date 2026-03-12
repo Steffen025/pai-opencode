@@ -218,13 +218,17 @@ Generate the 8-word description:`;
       desc = desc.replace(/[^a-z0-9\s-]/g, '');
       desc = desc.replace(/\s+/g, '-');
 
-      // Ensure it's roughly 8 words
-      const words = desc.split('-').filter(w => w.length > 0);
-      if (words.length > 10) {
-        desc = words.slice(0, 8).join('-');
-      } else if (words.length < 5) {
-        desc = `low-rating-failure-${words.join('-')}`;
+      // Enforce exactly 8 words
+      let words = desc.split('-').filter(w => w.length > 0);
+      if (words.length > 8) {
+        words = words.slice(0, 8);
+      } else if (words.length < 8) {
+        const fillers = ['low', 'rating', 'failure', 'session'];
+        while (words.length < 8) {
+          words.push(fillers[words.length % fillers.length]);
+        }
       }
+      desc = words.join('-');
 
       return desc;
     }

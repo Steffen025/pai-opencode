@@ -72,12 +72,24 @@ interface EditDecision {
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
-  const inputFile = args.find((a) => !a.startsWith("--"));
-  const outputFlag = args.indexOf("--output");
-  const outputCandidate = outputFlag !== -1 ? args[outputFlag + 1] : undefined;
-  // Reject if the next token is itself a flag (starts with "--") or missing
-  const outputPath = outputCandidate && !outputCandidate.startsWith("--") ? outputCandidate : undefined;
-  const aggressive = args.includes("--aggressive");
+  // Sequential arg parsing: handle --output <path>, --aggressive, and positional input file
+  let inputFile: string | undefined;
+  let outputPath: string | undefined;
+  let aggressive = false;
+  for (let i = 0; i < args.length; i++) {
+    const token = args[i];
+    if (token === "--output") {
+      const next = args[i + 1];
+      if (next && !next.startsWith("--")) {
+        outputPath = next;
+        i++; // consume the value token
+      }
+    } else if (token === "--aggressive") {
+      aggressive = true;
+    } else if (!token.startsWith("--") && inputFile === undefined) {
+      inputFile = token;
+    }
+  }
 
   if (!inputFile) {
     console.error("Usage: bun Analyze.ts <transcript.json> [--output <path>] [--aggressive]");
@@ -253,27 +265,31 @@ If no edits found in a section, return: []`;
     try {
       const controller = new AbortController();
       const fetchTimeout = setTimeout(() => controller.abort(), 120_000);
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        signal: controller.signal,
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 4096,
-          system: systemPrompt,
-          messages: [
-            {
-              role: "user",
-              content: `Analyze this transcript section and return the JSON array of edits:\n\n${windowText}`,
-            },
-          ],
-        }),
-      });
-      clearTimeout(fetchTimeout);
+      let response: Response;
+      try {
+        response = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          signal: controller.signal,
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 4096,
+            system: systemPrompt,
+            messages: [
+              {
+                role: "user",
+                content: `Analyze this transcript section and return the JSON array of edits:\n\n${windowText}`,
+              },
+            ],
+          }),
+        });
+      } finally {
+        clearTimeout(fetchTimeout);
+      }
 
       if (!response.ok) {
         const err = await response.text();
