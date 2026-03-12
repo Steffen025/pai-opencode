@@ -120,13 +120,21 @@ type(scope): subject
 
 ```
 .opencode/
-├── skills/           # Skill definitions (SKILL.md files)
-├── agents/           # Agent configurations (PascalCase)
-├── plugins/          # Lifecycle plugins (TypeScript)
-├── MEMORY/           # Execution history (not in git)
-├── PAISECURITYSYSTEM/ # Security patterns
-├── PAISYSTEM/        # System documentation
-└── settings.json     # Configuration
+├── skills/                    # Skill library (hierarchical Category/SkillName/)
+│   ├── skill-index.json       # Auto-generated skill registry
+│   ├── PAI/                   # Core PAI skill (Algorithm, TELOS, etc.)
+│   ├── Research/              # Research category
+│   │   ├── SKILL.md           # Category descriptor
+│   │   └── WebSearch/         # Individual skill
+│   │       └── SKILL.md
+│   └── [40+ other categories/skills]
+├── agents/                    # Agent configurations (PascalCase .md files)
+├── plugins/                   # Lifecycle plugins (TypeScript)
+│   ├── pai-unified.ts         # Single plugin entry point
+│   └── handlers/              # Modular handler implementations
+├── MEMORY/                    # Execution history (not in git)
+├── PAI/                       # PAI system documentation
+└── settings.json              # PAI configuration
 ```
 
 ## Importing PAI Versions
@@ -143,14 +151,16 @@ This document covers:
 - **Pre/During/Post import checklists**
 
 **Critical rules:**
-- Skills are **FLAT**: `skills/SkillName/SKILL.md` (NOT `SkillName/SkillName/`)
+- Skills are **hierarchical**: `skills/Category/SkillName/SKILL.md` (e.g., `skills/Research/WebSearch/SKILL.md`)
+- Top-level categories (`Research/`, `Utilities/`, `Agents/`, etc.) each have their own `SKILL.md` describing the category
 - Agent colors must be **hex format**: `#00FFFF` (NOT `cyan`)
 - YAML descriptions must be **<220 characters**
 - Fabric patterns go **only** in `skills/Fabric/Patterns/`
 
 ### Adding a New Skill
 
-1. Create directory: `.opencode/skills/YourSkill/`
+1. Create directory under the appropriate category: `.opencode/skills/Category/YourSkill/`
+   - If the category doesn't exist yet, create `.opencode/skills/Category/SKILL.md` first
 2. Add `SKILL.md` with frontmatter:
    ```yaml
    ---
@@ -159,7 +169,8 @@ This document covers:
    ---
    ```
 3. Add skill content (instructions, examples)
-4. Test: Search for your skill and verify it loads
+4. Regenerate the skill index: `bun run .opencode/PAI/Tools/GenerateSkillIndex.ts`
+5. Test: Search for your skill and verify it loads
 
 ### Adding a Plugin Handler
 

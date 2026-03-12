@@ -8,8 +8,8 @@ date: 2026-03-10
 # PAI-OpenCode v3.0 — TODO
 
 > [!NOTE]
-> **Basis:** Gap-Analysis 2026-03-06 | Reference: `GAP-ANALYSIS-v3.0.md` | Plan: `OPTIMIZED-PR-PLAN.md`
-> **Updated:** 2026-03-12 — WP-N1 through WP-N5 complete (PR #50–#54). WP-N6 in progress.
+> **Basis:** Gap-Analysis 2026-03-06 | Plan: `OPTIMIZED-PR-PLAN.md`
+> **Updated:** 2026-03-12 — All WP-N1 through WP-N10 complete. v3.0 ready for release.
 
 ---
 
@@ -35,7 +35,8 @@ WP-N5 ████████████ 100% ✅  ← Plan Update complete, P
 WP-N6 ████████████ 100% ✅  ← System Self-Awareness, PR #55 merged
 WP-N7 ████████████ 100% ✅  ← roborev + Biome CI, PR #56 merged
 WP-N8 ████████████ 100% ✅  ← Obsidian formatting + agent matrix, PR #57 merged
-WP-N9 ██████████░░  90% 🔄  ← Installer opencode.json fix, PR #58 open
+WP-N9 ████████████ 100% ✅  ← Installer opencode.json fix, PR #58 merged
+WP-N10 ████████████ 100% ✅  ← Docs consolidation, PR #59 merged
 ```
 
 > **The port is done. The native transformation starts with WP-N1.**
@@ -475,7 +476,7 @@ graph TD
 
 ---
 
-### WP-N8: Obsidian Formatting Guidelines — 🔄 In Progress (PR open)
+### WP-N8: Obsidian Formatting Guidelines — ✅ Complete (PR #57)
 **Branch:** `feature/wp-n8-obsidian-formatting`
 **Dependencies:** WP-N7 ✅
 **Goal:** Obsidian formatting guidelines + agent capability matrix
@@ -488,6 +489,36 @@ graph TD
 
 ---
 
+### WP-N9: Installer opencode.json Fix — ✅ Complete (PR #58)
+**Branch:** `feature/wp-n9-installer-opencode-gen`
+**Dependencies:** WP-N8 ✅
+**Goal:** Full opencode.json generation in installer for all 4 providers
+
+- [x] `PAI-Install/engine/provider-models.ts` — NEW: 4 providers (anthropic/zen/openrouter/openai) × 3 tiers
+- [x] `PAI-Install/engine/steps-fresh.ts` — Full opencode.json generation with all agent tiers
+- [x] `PAI-Install/cli/quick-install.ts` — principalName written into username field
+
+---
+
+### WP-N10: Docs Consolidation — ✅ Complete (PR #59)
+**Branch:** `feature/wp-n10-docs-consolidation`
+**Dependencies:** WP-N9 ✅
+**Goal:** Bring all docs in sync with final v3.0 state; remove obsolete planning artifacts
+
+- [x] Delete `docs/epic/GAP-ANALYSIS-v3.0.md` — one-time audit artifact, all gaps closed
+- [x] Delete `docs/epic/EPIC-v3.0-OpenCode-Native.md` — all WP-Ns executed and merged
+- [x] Delete `docs/epic/OPENCODE-NATIVE-RESEARCH.md` — research that informed planning, no longer needed
+- [x] `docs/epic/TODO-v3.0.md` — WP-N9 → 100% ✅, WP-N10 added
+- [x] `docs/epic/OPTIMIZED-PR-PLAN.md` — WP-N9 PR #58 merged, WP-N10 added, summary updated
+- [x] `CHANGELOG.md` — [3.0.0] marked Released with date, WP-N1..N10 sections added
+- [x] `README.md` — broken links fixed (ROADMAP.md, SCOPE-BOUNDARY.md)
+- [x] `INSTALL.md` — preset list updated to 4 providers (anthropic/zen/openrouter/openai)
+- [x] `CONTRIBUTING.md` — skills structure corrected to hierarchical Category/SkillName
+- [x] `docs/architecture/SystemArchitecture.md` — WP-N9/N10 entries added
+- [x] `docs/architecture/AgentCapabilityMatrix.md` — installer presets verified (4 providers)
+
+---
+
 *Created: 2026-03-06*
-*Updated: 2026-03-12 — WP-N1 through WP-N7 merged (PR #50–#56); WP-N8 in progress (Obsidian formatting + agent matrix)*
-*Basis: GAP-ANALYSIS-v3.0.md + EPIC-v3.0-Synthesis-Architecture.md + EPIC-v3.0-OpenCode-Native.md*
+*Updated: 2026-03-12 — All WP-N1 through WP-N10 merged (PR #50–#59). v3.0 complete.*
+*Basis: EPIC-v3.0-Synthesis-Architecture.md + OPTIMIZED-PR-PLAN.md*

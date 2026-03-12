@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [3.0.0] - Unreleased
+## [3.0.0] - 2026-03-12
 
 ### Breaking Changes
 - Plugin system migrated from hooks to event-driven architecture (WP-A)
@@ -46,6 +46,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Standalone Archive Tool** — `Tools/db-archive.ts` with --dry-run, --vacuum, --restore
 - **Custom Command** — `/db-archive` for in-session DB stats
 - **Maintenance Guide** — `docs/DB-MAINTENANCE.md`
+
+#### Session Registry (WP-N1 — PR #50)
+- **`session_registry` tool** — Lists recent sessions with summaries for post-compaction CONTEXT RECOVERY
+- **`session_results` tool** — Gets detailed results for a specific session ID
+- **AGENTS.md** — Post-compaction recovery pattern documented
+
+#### Compaction Intelligence (WP-N2 — PR #51)
+- **`experimental.session.compacting` hook** — Context injection during compaction
+- **`compaction-intelligence.ts` handler** — Injects registry, ISC, and PRD context into compaction summary
+- **ADR-015** — Compaction intelligence architectural decision
+
+#### Algorithm Awareness (WP-N3 — PR #52+#53)
+- **SKILL.md CONTEXT RECOVERY** — Uses `session_registry` first, never claims results lost
+- **PRD `parent_session_id`** — Cross-session ISC tracking
+- **ADR-013** — Algorithm awareness architectural decision
+
+#### LSP + Fork Documentation (WP-N4 — PR #53)
+- **`OPENCODE_EXPERIMENTAL_LSP_TOOL=true`** — Documented and added to `.env.example` (opt-in)
+- **AGENTS.md LSP section** — LSP vs Grep decision table, activation instructions
+- **AGENTS.md Fork section** — Session Fork API use-cases, reference, workflow
+- **ADR-014 + ADR-016** — LSP and Fork architectural decisions
+
+#### System Self-Awareness (WP-N6 — PR #55)
+- **`OpenCodeSystem` skill** — Algorithm knows its operating environment (USE WHEN triggers)
+- **`docs/architecture/SystemArchitecture.md`** — Authoritative directory layout, hooks, custom tools
+- **`docs/architecture/ToolReference.md`** — All native + MCP tools catalog
+- **`docs/architecture/Configuration.md`** — settings.json, opencode.json, model routing reference
+- **`docs/architecture/Troubleshooting.md`** — Self-diagnostic checklist
+- **ADR-017** — System self-awareness architectural decision
+
+#### roborev + Biome CI (WP-N7 — PR #56)
+- **`.roborev.toml`** — roborev config with `agent = "opencode"` + PAI guidelines
+- **`handlers/roborev-trigger.ts`** — `code_review` custom tool
+- **`CodeReview` skill** — Skill for invoking AI code review
+- **`.github/workflows/code-quality.yml`** — Biome CI on every PR
+- **ADR-018** — roborev + Biome CI architectural decision
+
+#### Obsidian Formatting Guidelines (WP-N8 — PR #57)
+- **`docs/architecture/FormattingGuidelines.md`** — Frontmatter, callouts, Mermaid, code blocks, SKILL.md/ADR schemas
+- **`docs/architecture/AgentCapabilityMatrix.md`** — All agent types, model tiers, tool/MCP access, decision rules
+
+#### Installer opencode.json Fix (WP-N9 — PR #58)
+- **`PAI-Install/engine/provider-models.ts`** — NEW: 4 providers (anthropic/zen/openrouter/openai) × 3 model tiers
+- **`PAI-Install/engine/steps-fresh.ts`** — Full opencode.json generation with all agent tier entries
+- **`PAI-Install/cli/quick-install.ts`** — `principalName` written into `username` field
 
 ### Changed
 - Skills organization: flat → hierarchical (Category/Skill)
@@ -634,5 +679,4 @@ See `.opencode/voice-server/README.md` for full documentation.
 **Links:**
 - [PAI v3.0 Upstream](https://github.com/danielmiessler/Personal_AI_Infrastructure)
 - [OpenCode](https://github.com/anomalyco/opencode)
-- [ROADMAP.md](ROADMAP.md)
 - [Upstream Sync Spec](docs/specs/UPSTREAM-SYNC-v1.8.0-SPEC.md)

@@ -13,7 +13,7 @@
 > [!note]
 > **v3.0 Release** — Plugin event bus, security hardening (prompt injection protection), Electron GUI installer, DB health tooling, hierarchical skills structure, and 52 skills. See [CHANGELOG.md](CHANGELOG.md) and [UPGRADE.md](UPGRADE.md).
 
-> **🎯 Scope Note:** PAI-OpenCode is a **community port** of PAI to OpenCode. For the future vision (Voice-to-Voice, Ambient AI, OMI integration), see **[Open Arc](https://github.com/jeremaiah-ai/openark)**. [Read the Scope Boundary →](docs/SCOPE-BOUNDARY.md)
+> **🎯 Scope Note:** PAI-OpenCode is a **community port** of PAI to OpenCode. For the future vision (Voice-to-Voice, Ambient AI, OMI integration), see **[Open Arc](https://github.com/jeremaiah-ai/openark)**.
 
 ---
 
@@ -88,7 +88,7 @@ PAI-OpenCode is the complete port of **Daniel Miessler's Personal AI Infrastruct
 
 **The Rule:** If it's an OpenCode-native feature that improves PAI → **PAI-OpenCode**. If it's a new product abstraction → **Open Arc**.
 
-**Read more:** [`docs/SCOPE-BOUNDARY.md`](docs/SCOPE-BOUNDARY.md)
+**Read more:** [`docs/PLATFORM-DIFFERENCES.md`](docs/PLATFORM-DIFFERENCES.md)
 
 ---
 
@@ -399,7 +399,6 @@ PAI-OpenCode's design is documented through **Architecture Decision Records (ADR
 | [docs/PLUGIN-SYSTEM.md](docs/PLUGIN-SYSTEM.md) | Plugin architecture (20 handlers) |
 | [docs/PAI-ADAPTATIONS.md](docs/PAI-ADAPTATIONS.md) | Changes from PAI v3.0 |
 | [docs/MIGRATION.md](docs/MIGRATION.md) | Migration from Claude Code PAI |
-| [ROADMAP.md](ROADMAP.md) | Version roadmap |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines |
 
 **For Contributors:**

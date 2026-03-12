@@ -68,10 +68,10 @@ pai-opencode/
 │   │   ├── Troubleshooting.md        ← Self-diagnostic checklist
 │   │   ├── FormattingGuidelines.md   ← Obsidian formatting patterns (WP-N8)
 │   │   └── AgentCapabilityMatrix.md  ← Agent types, model tiers, tool access (WP-N8)
-│   └── epic/                     ← Project planning documents
-│       ├── TODO-v3.0.md
-│       ├── OPTIMIZED-PR-PLAN.md
-│       └── EPIC-v3.0-OpenCode-Native.md
+│   └── epic/                     ← Project planning documents (v3.0 complete)
+│       ├── TODO-v3.0.md                        ← Granular task history
+│       ├── OPTIMIZED-PR-PLAN.md                ← PR lineage reference (#32–#59)
+│       └── EPIC-v3.0-Synthesis-Architecture.md ← Architectural vision
 ├── PAI-Install/                  ← Installer system
 ├── opencode.json                 ← OpenCode configuration (model routing, permissions, agents)
 └── AGENTS.md                     ← Algorithm operating instructions
@@ -187,6 +187,8 @@ flowchart TD
 | ADR-017 | System self-awareness skill + reference docs (this WP) |
 | ADR-018 | roborev code review integration + Biome CI pipeline |
 | —       | WP-N8: Obsidian formatting guidelines + agent capability matrix |
+| —       | WP-N9: Full opencode.json generation — 4 providers × 3 tiers in installer |
+| —       | WP-N10: Docs consolidation — obsolete planning docs deleted, all docs synced to v3.0 |
 
 Full ADR index: `docs/architecture/adr/README.md`
 

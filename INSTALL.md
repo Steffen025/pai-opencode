@@ -41,9 +41,10 @@ The wizard will:
 1. ✅ Check prerequisites (git, bun 1.3.9+)
 2. ✅ **Build OpenCode from dev source** using Bun's native compiler (required for model tiers feature)
 3. ✅ Ask you to choose a preset:
-   - **Anthropic Max** (recommended) — Best quality, full PAI experience
-   - **ZEN PAID** — Budget-friendly, paid tier models
-   - **ZEN FREE** — Try it out, free tier models
+   - **Anthropic** (recommended) — Best quality, full PAI experience
+   - **Zen** — Budget-friendly, privacy-conscious, 75+ providers via Zen AI Gateway
+   - **OpenRouter** — Provider diversity, experimental models, 100+ models
+   - **OpenAI** — GPT model family with dynamic tier routing
 4. ✅ Configure research agents (optional)
 5. ✅ Set up your identity (name, AI assistant name, timezone)
 6. ✅ Generate all configuration files
