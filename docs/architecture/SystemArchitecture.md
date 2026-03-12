@@ -71,7 +71,7 @@ pai-opencode/
 │   └── epic/                     ← Project planning documents
 │       ├── TODO-v3.0.md
 │       ├── OPTIMIZED-PR-PLAN.md
-│       └── EPIC-v3.0-OpenCode-Native.md
+│       └── EPIC-v3.0-Synthesis-Architecture.md
 ├── PAI-Install/                  ← Installer system
 ├── opencode.json                 ← OpenCode configuration (model routing, permissions, agents)
 └── AGENTS.md                     ← Algorithm operating instructions
@@ -187,6 +187,8 @@ flowchart TD
 | ADR-017 | System self-awareness skill + reference docs (this WP) |
 | ADR-018 | roborev code review integration + Biome CI pipeline |
 | —       | WP-N8: Obsidian formatting guidelines + agent capability matrix |
+| —       | WP-N9: Installer 4-provider opencode.json generation |
+| —       | WP-N10: Docs consolidation — v3.0 release state |
 
 Full ADR index: `docs/architecture/adr/README.md`
 
