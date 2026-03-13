@@ -19,8 +19,8 @@ import { parseArgs } from "util";
 // CONFIGURATION
 // ============================================================================
 
-const FRED_API_KEY = process.env.FRED_API_KEY;
-const EIA_API_KEY = process.env.EIA_API_KEY;
+const FRED_API_KEY = process.env.FRED_API_KEY; // pragma: allowlist secret
+const EIA_API_KEY = process.env.EIA_API_KEY; // pragma: allowlist secret
 
 // Priority series for the analysis (most impactful metrics)
 const PRIORITY_SERIES = {

@@ -76,7 +76,7 @@ async function main(): Promise<void> {
     throw new Error("Audio file not found");
   }
 
-  const apiKey = process.env.CLEANVOICE_API_KEY;
+  const apiKey = process.env.CLEANVOICE_API_KEY; // pragma: allowlist secret
   if (!apiKey) {
     console.error("CLEANVOICE_API_KEY not found. Set it in ~/.config/PAI/.env");
     console.error("Get key at: https://cleanvoice.ai → Dashboard → Settings → API Key");

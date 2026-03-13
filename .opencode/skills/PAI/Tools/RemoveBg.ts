@@ -94,7 +94,7 @@ async function removeBackground(
   inputPath: string,
   outputPath?: string
 ): Promise<void> {
-  const apiKey = process.env.REMOVEBG_API_KEY;
+  const apiKey = process.env.REMOVEBG_API_KEY; // pragma: allowlist secret
   if (!apiKey) {
     console.error("❌ Missing environment variable: REMOVEBG_API_KEY");
     console.error("   Add it to ${PAI_DIR}/.env or export it in your shell");

@@ -19,12 +19,52 @@ interface ChunkInfo {
 }
 
 /**
+ * Convert SRT/VTT timestamp string to total seconds.
+ * Supports "HH:MM:SS,mmm" (SRT) and "HH:MM:SS.mmm" (VTT).
+ */
+function srtTimeToSeconds(ts: string): number {
+  const [hhmmss, ms = "0"] = ts.replace(",", ".").split(".");
+  const parts = hhmmss.split(":").map(Number);
+  const [hh, mm, ss] = parts.length === 3 ? parts : [0, parts[0], parts[1]];
+  return hh * 3600 + mm * 60 + ss + Number(ms) / 1000;
+}
+
+/**
+ * Convert total seconds back to SRT timestamp "HH:MM:SS,mmm".
+ */
+function secondsToSrtTime(totalSeconds: number): string {
+  const ms = Math.round((totalSeconds % 1) * 1000);
+  const s = Math.floor(totalSeconds) % 60;
+  const m = Math.floor(totalSeconds / 60) % 60;
+  const h = Math.floor(totalSeconds / 3600);
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")},${String(ms).padStart(3, "0")}`;
+}
+
+/**
+ * Shift all SRT timestamps in a transcript by offsetSeconds.
+ * Renumbers subtitle blocks sequentially starting from startIndex.
+ */
+function shiftSrtTimestamps(srtContent: string, offsetSeconds: number, startIndex: number): { shifted: string; blockCount: number } {
+  // SRT timestamp line pattern: "HH:MM:SS,mmm --> HH:MM:SS,mmm"
+  const tsPattern = /(\d{2}:\d{2}:\d{2}[,\.]\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2}[,\.]\d{3})/g;
+  let blockCount = 0;
+  const shifted = srtContent
+    .replace(/^\d+$/gm, () => String(startIndex + blockCount++)) // renumber blocks
+    .replace(tsPattern, (_match, start, end) => {
+      const newStart = secondsToSrtTime(srtTimeToSeconds(start) + offsetSeconds);
+      const newEnd = secondsToSrtTime(srtTimeToSeconds(end) + offsetSeconds);
+      return `${newStart} --> ${newEnd}`;
+    });
+  return { shifted, blockCount };
+}
+
+/**
  * Split audio file into chunks using FFmpeg
  */
 async function splitAudioFile(
   filePath: string,
   chunkSizeMB: number = 20
-): Promise<{chunks: ChunkInfo[], tempDir: string}> {
+): Promise<{chunks: ChunkInfo[], tempDir: string, chunkMinutes: number}> {
   const tempDir = `/tmp/transcript-${Date.now()}`;
   mkdirSync(tempDir, { recursive: true });
 
@@ -76,7 +116,7 @@ async function splitAudioFile(
       }));
 
       console.log(`✓ Split into ${chunks.length} chunks`);
-      resolve({ chunks, tempDir });
+      resolve({ chunks, tempDir, chunkMinutes });
     });
 
     ffmpeg.on("error", reject);
@@ -121,7 +161,7 @@ export async function splitAndTranscribe(
   console.log("Splitting file for transcription...");
 
   // Split file into 20MB chunks (safe margin under 25MB)
-  const { chunks, tempDir } = await splitAudioFile(filePath, 20);
+  const { chunks, tempDir, chunkMinutes } = await splitAudioFile(filePath, 20);
 
   try {
     const transcripts: string[] = [];
@@ -143,15 +183,30 @@ export async function splitAndTranscribe(
     console.log("\n✓ All chunks transcribed");
 
     // Merge transcripts
+    const CHUNK_DURATION_SECONDS = chunkMinutes * 60;
     let merged: string;
     if (format === "txt") {
       merged = transcripts.join("\n\n");
     } else if (format === "json") {
-      // Merge JSON arrays if applicable
-      merged = transcripts.join("\n");
+      // Each chunk returns a transcription object — collect into a JSON array
+      try {
+        const parsed = transcripts.map(t => JSON.parse(t));
+        merged = JSON.stringify(parsed, null, 2);
+      } catch {
+        // Fall back to newline-joined raw strings if parsing fails
+        merged = transcripts.join("\n");
+      }
     } else {
-      // For SRT/VTT, adjust timestamps and merge
-      merged = transcripts.join("\n\n");
+      // SRT/VTT: shift timestamps by chunk offset so all blocks have correct absolute times
+      let totalBlocks = 0;
+      const shiftedChunks: string[] = [];
+      for (let i = 0; i < transcripts.length; i++) {
+        const offsetSeconds = i * CHUNK_DURATION_SECONDS;
+        const { shifted, blockCount } = shiftSrtTimestamps(transcripts[i], offsetSeconds, totalBlocks + 1);
+        shiftedChunks.push(shifted.trim());
+        totalBlocks += blockCount;
+      }
+      merged = shiftedChunks.join("\n\n");
     }
 
     return merged;

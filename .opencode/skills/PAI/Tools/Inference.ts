@@ -137,7 +137,7 @@ function loadConfig(): InferenceConfig | null {
       }
       // Also check env directly if no apiKey in config
       if (!apiKey) {
-        apiKey = process.env.PAI_INFERENCE_API_KEY || undefined;
+        apiKey = process.env.PAI_INFERENCE_API_KEY || undefined; // pragma: allowlist secret
       }
 
       // Build models map with sensible defaults

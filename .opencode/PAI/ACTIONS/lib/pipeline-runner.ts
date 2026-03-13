@@ -7,8 +7,8 @@
  * The pipeline output is the last action's output.
  */
 
-import { readFile } from "fs/promises";
-import { join } from "path";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
 
 const ACTIONS_DIR = join(import.meta.dir, "..");
@@ -73,7 +73,7 @@ export async function runPipeline(
  * List all pipelines from both USER (personal) and SYSTEM (framework) directories.
  */
 export async function listPipelines(): Promise<string[]> {
-  const { readdir } = await import("fs/promises");
+  const { readdir } = await import("node:fs/promises");
   const seen = new Set<string>();
   const result: string[] = [];
 

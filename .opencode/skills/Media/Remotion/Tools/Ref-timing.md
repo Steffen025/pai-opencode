@@ -69,13 +69,12 @@ const heavy = {damping: 15, stiffness: 80, mass: 2}; // Heavy, slow, small bounc
 ### Delay
 
 The animation starts immediately by default.  
-Use the `delay` parameter to delay the animation by a number of frames.
+To delay the animation, subtract the delay in frames from the `frame` parameter.
 
 ```tsx
 const entrance = spring({
   frame: frame - ENTRANCE_DELAY,
   fps,
-  delay: 20,
 });
 ```
 
@@ -85,7 +84,7 @@ A `spring()` has a natural duration based on the physical properties.
 To stretch the animation to a specific duration, use the `durationInFrames` parameter.
 
 ```tsx
-const spring = spring({
+const springProgress = spring({
   frame,
   fps,
   durationInFrames: 40,

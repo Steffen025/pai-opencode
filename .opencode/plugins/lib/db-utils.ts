@@ -71,15 +71,15 @@ export async function archiveSessions(sessions: Session[], archivePath: string):
 	// Open writable DB connection for read + delete
 	// biome-ignore lint/suspicious/noExplicitAny: bun:sqlite Database type varies by environment
 	let db: any;
+	// biome-ignore lint/suspicious/noExplicitAny: bun:sqlite Database type varies by environment
+	let archiveDb: any;
 	try {
-		const { Database } = require("bun:sqlite");
+		const { Database } = await import("bun:sqlite");
 		db = new Database(DB_PATH, { readonly: false });
+		archiveDb = new Database(archivePath);
 	} catch {
 		return 0;
 	}
-
-	// Create archive DB connection
-	const archiveDb = new (await import("bun:sqlite")).Database(archivePath);
 
 	// Create schema
 	archiveDb.run(`
@@ -96,25 +96,41 @@ export async function archiveSessions(sessions: Session[], archivePath: string):
 
 	try {
 		for (const session of sessions) {
-			// Get full conversation data
-			const messages = db
-				.query("SELECT content FROM messages WHERE conversation_id = ?1")
-				.all(session.id);
+			try {
+				// Get full conversation data
+				const messages = db
+					.query("SELECT content FROM messages WHERE conversation_id = ?1")
+					.all(session.id);
 
-			const messageData = JSON.stringify(messages);
+				const messageData = JSON.stringify(messages);
 
-			// Insert into archive
-			archiveDb.run(
-				`INSERT OR REPLACE INTO conversations (id, created_at, updated_at, title, messages)
-       VALUES (?, ?, ?, ?, ?)`,
-				[session.id, session.created_at, session.updated_at, session.title || null, messageData]
-			);
+				// Only overwrite archive row when we have messages to preserve.
+				// If messages is empty (e.g. on a retry after partial failure), use
+				// INSERT OR IGNORE so an existing full archive row is never clobbered.
+				if (messages.length > 0) {
+					archiveDb.run(
+						`INSERT OR REPLACE INTO conversations (id, created_at, updated_at, title, messages)
+           VALUES (?, ?, ?, ?, ?)`,
+						[session.id, session.created_at, session.updated_at, session.title || null, messageData]
+					);
+				} else {
+					archiveDb.run(
+						`INSERT OR IGNORE INTO conversations (id, created_at, updated_at, title, messages)
+           VALUES (?, ?, ?, ?, ?)`,
+						[session.id, session.created_at, session.updated_at, session.title || null, messageData]
+					);
+				}
 
-			// Delete from source DB after successful archive
-			db.run("DELETE FROM messages WHERE conversation_id = ?", [session.id]);
-			db.run("DELETE FROM conversations WHERE id = ?", [session.id]);
+				// Delete from source DB only after successful archive
+				db.run("DELETE FROM messages WHERE conversation_id = ?", [session.id]);
+				db.run("DELETE FROM conversations WHERE id = ?", [session.id]);
 
-			archived++;
+				archived++;
+			} catch (sessionError) {
+				const msg = sessionError instanceof Error ? sessionError.message : String(sessionError);
+				fileLog(`[db-utils] Failed to archive session ${session.id}: ${msg}`, "error");
+				// Continue with remaining sessions — don't abort the whole batch
+			}
 		}
 	} finally {
 		// Always close both DB handles
@@ -144,7 +160,8 @@ export async function vacuumDb(): Promise<void> {
 		db.run("VACUUM");
 		fileLog("✓ Database vacuumed successfully", "info");
 	} catch (error) {
-		throw new Error(`Vacuum failed: ${error.message}. Is OpenCode running?`);
+		const msg = error instanceof Error ? error.message : String(error);
+		throw new Error(`Vacuum failed: ${msg}. Is OpenCode running?`);
 	} finally {
 		db.close();
 	}

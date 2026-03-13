@@ -9,8 +9,8 @@
  * ============================================================================
  */
 
-import { readFile, readdir } from "fs/promises";
-import { join, dirname } from "path";
+import { readFile, readdir } from "node:fs/promises";
+import { dirname, join, resolve, sep } from "node:path";
 import type {
   ActionManifest,
   ActionImplementation,
@@ -25,12 +25,18 @@ import { validateSchema } from "./types.v2";
 const ACTIONS_DIR = dirname(import.meta.dir);
 const USER_ACTIONS_DIR = join(ACTIONS_DIR, "..", "USER", "ACTIONS");
 
+// Regex for valid A_ flat-format action names (no path traversal possible)
+const FLAT_ACTION_NAME_RE = /^A_[A-Z0-9_]+$/;
+
+// Regex for valid legacy category/name segments (no dots, no slashes, no traversal)
+const LEGACY_SEGMENT_RE = /^[A-Za-z0-9_-]+$/;
+
 /**
  * Local LLM provider using PAI's Inference tool
  */
 async function createLocalLLM(): Promise<ActionCapabilities["llm"]> {
   const inferenceModule = await import(
-    join(process.env.HOME!, ".opencode/PAI/Tools/Inference.ts")
+    join(process.env.HOME ?? "/root", ".opencode/PAI/Tools/Inference.ts")
   );
   const { inference } = inferenceModule;
 
@@ -77,7 +83,9 @@ async function createLocalCapabilities(
         capabilities.shell = async (cmd: string) => {
           const { $ } = await import("bun");
           try {
-            const result = await $`sh -c ${cmd}`.quiet();
+            // Use Bun Shell directly (cross-platform) instead of "sh -c" wrapper.
+            // Bun Shell handles Windows/POSIX transparently.
+            const result = await $.raw`${cmd}`.quiet();
             return { stdout: result.text(), stderr: "", code: 0 };
           } catch (err: unknown) {
             const e = err as { stderr?: { toString(): string }; exitCode?: number };
@@ -127,15 +135,36 @@ export async function loadImplementation<TInput, TOutput>(
 }
 
 /**
+ * Containment check: ensure resolved path stays under baseDir.
+ * Prevents path traversal via symlinks or ".." in name after resolution.
+ * Uses path.sep for cross-platform compatibility (works on Windows too).
+ */
+function isContained(baseDir: string, candidatePath: string): boolean {
+  const resolvedBase = resolve(baseDir);
+  const resolvedCandidate = resolve(candidatePath);
+  return (
+    resolvedCandidate.startsWith(resolvedBase + sep) ||
+    resolvedCandidate === resolvedBase
+  );
+}
+
+/**
  * Find action directory by name
  * Resolution order: USER/ACTIONS (personal) → ACTIONS (system/framework)
  * Supports: A_NAME (flat, new) or category/name (legacy)
+ *
+ * Security: validates name format before any filesystem access to prevent
+ * path traversal attacks.
  */
 export async function findAction(name: string): Promise<string | null> {
   // New flat format: A_EXTRACT_TRANSCRIPT
   if (name.startsWith("A_")) {
+    // Validate: only A_ followed by uppercase letters, digits, underscores
+    if (!FLAT_ACTION_NAME_RE.test(name)) return null;
+
     // Check USER/ACTIONS first (personal actions override system)
     const userPath = join(USER_ACTIONS_DIR, name);
+    if (!isContained(USER_ACTIONS_DIR, userPath)) return null;
     try {
       await readFile(join(userPath, "action.json"), "utf-8");
       return userPath;
@@ -143,6 +172,7 @@ export async function findAction(name: string): Promise<string | null> {
 
     // Fall back to ACTIONS (system/framework)
     const systemPath = join(ACTIONS_DIR, name);
+    if (!isContained(ACTIONS_DIR, systemPath)) return null;
     try {
       await readFile(join(systemPath, "action.json"), "utf-8");
       return systemPath;
@@ -157,8 +187,12 @@ export async function findAction(name: string): Promise<string | null> {
 
   const [category, actionName] = parts;
 
+  // Validate each segment: no "..", no path separators, no special chars
+  if (!LEGACY_SEGMENT_RE.test(category) || !LEGACY_SEGMENT_RE.test(actionName)) return null;
+
   // Check USER/ACTIONS first
   const userPath = join(USER_ACTIONS_DIR, category, actionName);
+  if (!isContained(USER_ACTIONS_DIR, userPath)) return null;
   try {
     await readFile(join(userPath, "action.json"), "utf-8");
     return userPath;
@@ -166,12 +200,47 @@ export async function findAction(name: string): Promise<string | null> {
 
   // Fall back to ACTIONS (system)
   const systemPath = join(ACTIONS_DIR, category, actionName);
+  if (!isContained(ACTIONS_DIR, systemPath)) return null;
   try {
     await readFile(join(systemPath, "action.json"), "utf-8");
     return systemPath;
   } catch {
     return null;
   }
+}
+
+/**
+ * Simple input field spec used in the simplified (non-JSON-Schema) format.
+ */
+interface SimpleFieldSpec {
+  type?: string;
+  required?: boolean;
+}
+
+/**
+ * Validate input against a simplified field spec map.
+ * Checks required fields and basic type matching.
+ * Returns an array of error strings (empty = valid).
+ */
+function validateSimplifiedInput(
+  input: Record<string, unknown>,
+  spec: Record<string, SimpleFieldSpec>
+): string[] {
+  const errors: string[] = [];
+  for (const [field, fieldSpec] of Object.entries(spec)) {
+    const value = input[field];
+    if (fieldSpec.required && (value === undefined || value === null)) {
+      errors.push(`Missing required input: ${field}`);
+      continue;
+    }
+    if (value !== undefined && value !== null && fieldSpec.type) {
+      const actualType = Array.isArray(value) ? "array" : typeof value;
+      if (actualType !== fieldSpec.type) {
+        errors.push(`Invalid type for '${field}': expected ${fieldSpec.type}, got ${actualType}`);
+      }
+    }
+  }
+  return errors;
 }
 
 /**
@@ -185,6 +254,15 @@ export async function runAction<TInput = unknown, TOutput = unknown>(
   const startTime = Date.now();
   const mode = options.mode || "local";
 
+  // Cloud mode is not yet implemented — reject explicitly rather than silently
+  // executing locally and misleading the caller about where the action ran.
+  if (mode === "cloud") {
+    return {
+      success: false,
+      error: "Cloud execution mode is not yet implemented. Use mode: 'local' or omit the mode option.",
+    };
+  }
+
   // Find action
   const actionPath = await findAction(name);
   if (!actionPath) {
@@ -196,14 +274,15 @@ export async function runAction<TInput = unknown, TOutput = unknown>(
     const manifest = await loadManifest(actionPath);
     const implementation = await loadImplementation<TInput, TOutput>(actionPath);
 
-    // Validate required input fields (simplified — no ajv for new format)
+    // Validate input
     if (manifest.input && !manifest.input.type) {
-      // New simplified format: { field: { type, required } }
-      const inputObj = input as Record<string, unknown>;
-      for (const [field, spec] of Object.entries(manifest.input as Record<string, { required?: boolean }>)) {
-        if (spec.required && (inputObj[field] === undefined || inputObj[field] === null)) {
-          return { success: false, error: `Missing required input: ${field}` };
-        }
+      // Simplified format: { field: { type, required } } — validate required + types
+      const errors = validateSimplifiedInput(
+        input as Record<string, unknown>,
+        manifest.input as Record<string, SimpleFieldSpec>
+      );
+      if (errors.length > 0) {
+        return { success: false, error: errors.join("; ") };
       }
     } else if (manifest.input?.type === "object") {
       // Legacy JSON Schema format — use ajv
@@ -224,6 +303,17 @@ export async function runAction<TInput = unknown, TOutput = unknown>(
 
     // Execute
     const output = await implementation.execute(input, ctx);
+
+    // Validate output against the declared output schema
+    if (manifest.output) {
+      const outputValidation = await validateSchema(output, manifest.output);
+      if (!outputValidation.valid) {
+        return {
+          success: false,
+          error: `Output validation failed for action '${manifest.name}' v${manifest.version || "1.0.0"}: ${outputValidation.errors?.join(", ")}`,
+        };
+      }
+    }
 
     return {
       success: true,

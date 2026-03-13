@@ -54,7 +54,7 @@ function loadEnv(): Record<string, string> {
 }
 
 const env = loadEnv()
-const API_KEY = process.env.YOUTUBE_API_KEY || env.YOUTUBE_API_KEY
+const API_KEY = process.env.YOUTUBE_API_KEY || env.YOUTUBE_API_KEY // pragma: allowlist secret
 const CHANNEL_ID = process.env.YOUTUBE_CHANNEL_ID || env.YOUTUBE_CHANNEL_ID || 'UCnCikd0s4i9KoDtaHPlK-JA'
 const BASE_URL = 'https://www.googleapis.com/youtube/v3'
 

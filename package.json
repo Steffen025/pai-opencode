@@ -1,22 +1,13 @@
 {
-	"name": "pai-opencode",
-	"version": "2.0.0",
-	"description": "Personal AI Infrastructure for OpenCode (based on PAI v3.0, Algorithm v1.8.0)",
-	"type": "module",
-	"scripts": {
-		"skills:index": "bun run .opencode/skills/PAI/Tools/GenerateSkillIndex.ts",
-		"skills:validate": "bun run .opencode/skills/PAI/Tools/ValidateSkillStructure.ts",
-		"skills:check": "bun run .opencode/skills/PAI/Tools/ValidateSkillStructure.ts && bun run .opencode/skills/PAI/Tools/GenerateSkillIndex.ts",
-		"lint": "bunx biome check .",
-		"lint:fix": "bunx biome check --write .",
-		"format": "bunx biome format --write ."
-	},
-	"dependencies": {
-		"diff": "^8.0.3",
-		"yaml": "^2.8.2",
-		"zod": "^3.25.42"
-	},
-	"devDependencies": {
-		"@biomejs/biome": "^2.4.6"
-	}
+  "name": "pai-opencode",
+  "version": "2.0.0",
+  "description": "Personal AI Infrastructure for OpenCode (based on PAI v3.0, Algorithm v1.8.0)",
+  "type": "module",
+  "scripts": {
+    "lint": "bunx @biomejs/biome check ."
+  },
+  "dependencies": {
+    "diff": "^8.0.3",
+    "yaml": "^2.8.2"
+  }
 }

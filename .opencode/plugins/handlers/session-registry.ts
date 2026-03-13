@@ -47,32 +47,71 @@ function getRegistryPath(sessionId: string): string {
 	return path.join(getStateDir(), `subagent-registry-${sessionId}.json`);
 }
 
+function normalizeRegistry(data: unknown, sessionId: string): SubagentRegistry {
+	const obj = data && typeof data === "object" ? (data as Record<string, unknown>) : {};
+	return {
+		parentSessionId: typeof obj.parentSessionId === "string" ? obj.parentSessionId : sessionId,
+		entries: Array.isArray(obj.entries)
+			? (obj.entries as unknown[]).filter(
+					(e): e is SubagentEntry =>
+						!!e &&
+						typeof e === "object" &&
+						typeof (e as Record<string, unknown>).sessionId === "string" &&
+						typeof (e as Record<string, unknown>).agentType === "string" &&
+						typeof (e as Record<string, unknown>).description === "string" &&
+						typeof (e as Record<string, unknown>).spawnedAt === "string" &&
+						(["running", "completed", "failed"] as const).includes(
+							(e as Record<string, unknown>).status as SubagentEntry["status"]
+						)
+				)
+			: [],
+		updatedAt:
+			typeof obj.updatedAt === "string" ? obj.updatedAt : new Date().toISOString(),
+		version: typeof obj.version === "number" ? obj.version : 0,
+	};
+}
+
 function readRegistry(sessionId: string): SubagentRegistry {
 	const filePath = getRegistryPath(sessionId);
-	if (fs.existsSync(filePath)) {
-		try {
-			const data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
-			// Ensure version field exists (for backward compatibility)
-			if (typeof data.version !== "number") {
-				data.version = 0;
-			}
-			return data;
-		} catch {
-			// Corrupted file — start fresh
-		}
+	if (!fs.existsSync(filePath)) {
+		return {
+			parentSessionId: sessionId,
+			entries: [],
+			updatedAt: new Date().toISOString(),
+			version: 0,
+		};
 	}
-	return {
-		parentSessionId: sessionId,
-		entries: [],
-		updatedAt: new Date().toISOString(),
-		version: 0,
-	};
+
+	let raw: string;
+	try {
+		raw = fs.readFileSync(filePath, "utf-8");
+	} catch (err) {
+		// I/O error (e.g. EACCES) — propagate so the caller knows the registry is inaccessible
+		fileLog(`[session-registry] Failed to read registry at ${filePath}: ${err}`, "error");
+		throw err;
+	}
+
+	try {
+		const data = JSON.parse(raw);
+		return normalizeRegistry(data, sessionId);
+	} catch (err) {
+		if (err instanceof SyntaxError) {
+			fileLog(`[session-registry] Corrupted registry file at ${filePath} — starting fresh`, "warn");
+			return {
+				parentSessionId: sessionId,
+				entries: [],
+				updatedAt: new Date().toISOString(),
+				version: 0,
+			};
+		}
+		throw err;
+	}
 }
 
 /**
  * Write registry with compare-and-swap semantics.
- * Only writes if the current on-disk version matches expectedVersion.
  * Returns true if write succeeded, false if version mismatch (caller should retry).
+ * Throws on I/O errors (e.g. ENOSPC, EACCES) — these are not retryable CAS conflicts.
  */
 function writeRegistryAtomic(
 	sessionId: string,
@@ -81,7 +120,7 @@ function writeRegistryAtomic(
 ): boolean {
 	const filePath = getRegistryPath(sessionId);
 	const dir = path.dirname(filePath);
-	const tempPath = `${filePath}.tmp.${Date.now()}`;
+	const tempPath = `${filePath}.tmp.${process.pid}.${Date.now()}`;
 
 	if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
@@ -101,19 +140,13 @@ function writeRegistryAtomic(
 		// Atomic rename
 		fs.renameSync(tempPath, filePath);
 		return true;
-	} catch (_error) {
-		// Cleanup temp file on failure
+	} catch (err) {
+		// Cleanup temp file, then rethrow — I/O errors are not CAS conflicts
 		try {
 			if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
 		} catch {}
-		return false;
+		throw err;
 	}
-}
-
-// Legacy non-atomic write for compatibility (no CAS check)
-function _writeRegistry(sessionId: string, registry: SubagentRegistry): void {
-	const current = readRegistry(sessionId);
-	writeRegistryAtomic(sessionId, registry, current.version);
 }
 
 // --- Task Tool Output Parser ---
@@ -267,7 +300,13 @@ export const sessionRegistryTool = tool({
 		"The results are always available — subagent data survives compaction.",
 	args: {},
 	async execute(_args: {}, context: ToolContext): Promise<string> {
-		const registry = readRegistry(context.sessionID);
+		let registry: SubagentRegistry;
+		try {
+			registry = readRegistry(context.sessionID);
+		} catch (err) {
+			fileLog(`[session-registry] sessionRegistryTool: failed to read registry: ${err}`, "error");
+			return "Registry unavailable: could not read session data (I/O error). Check file permissions on the state directory.";
+		}
 
 		if (registry.entries.length === 0) {
 			return "No subagent sessions found for this session. No subagents have been spawned via the Task tool yet.";
@@ -319,7 +358,13 @@ export const sessionResultsTool = tool({
 	},
 	async execute(args: { session_id: string }, context: ToolContext): Promise<string> {
 		// Read the registry file to get stored metadata for this session
-		const registry = readRegistry(context.sessionID);
+		let registry: SubagentRegistry;
+		try {
+			registry = readRegistry(context.sessionID);
+		} catch (err) {
+			fileLog(`[session-registry] sessionResultsTool: failed to read registry: ${err}`, "error");
+			return "Registry unavailable: could not read session data (I/O error). Check file permissions on the state directory.";
+		}
 		const entry = registry.entries.find((e) => e.sessionId === args.session_id);
 
 		if (!entry) {
@@ -349,7 +394,13 @@ export const sessionResultsTool = tool({
  * Called by WP-N2 compaction intelligence handler.
  */
 export function buildRegistryContext(sessionId: string): string | null {
-	const registry = readRegistry(sessionId);
+	let registry: SubagentRegistry;
+	try {
+		registry = readRegistry(sessionId);
+	} catch (err) {
+		fileLog(`[session-registry] buildRegistryContext: failed to read registry: ${err}`, "error");
+		return null;
+	}
 	if (registry.entries.length === 0) return null;
 
 	const lines = [

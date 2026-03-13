@@ -94,53 +94,41 @@ async function removeBackground(
   inputPath: string,
   outputPath?: string
 ): Promise<void> {
-  const apiKey = process.env.REMOVEBG_API_KEY;
+  const apiKey = process.env.REMOVEBG_API_KEY; // pragma: allowlist secret
   if (!apiKey) {
-    console.error("❌ Missing environment variable: REMOVEBG_API_KEY");
-    console.error("   Add it to ${PAI_DIR}/.env or export it in your shell");
-    process.exit(1);
+    // Throw so batch mode can continue with remaining files instead of aborting
+    throw new Error("Missing environment variable: REMOVEBG_API_KEY\n   Add it to ${PAI_DIR}/.env or export it in your shell");
   }
 
   // Validate input file exists
   if (!existsSync(inputPath)) {
-    console.error(`❌ File not found: ${inputPath}`);
-    process.exit(1);
+    throw new Error(`File not found: ${inputPath}`);
   }
 
   const output = outputPath || inputPath;
   console.log(`🔲 Removing background: ${inputPath}`);
 
-  try {
-    const imageBuffer = await readFile(inputPath);
-    const formData = new FormData();
-    formData.append("image_file", new Blob([imageBuffer]), "image.png");
-    formData.append("size", "auto");
+  const imageBuffer = await readFile(inputPath);
+  const formData = new FormData();
+  formData.append("image_file", new Blob([imageBuffer]), "image.png");
+  formData.append("size", "auto");
 
-    const response = await fetch("https://api.remove.bg/v1.0/removebg", {
-      method: "POST",
-      headers: {
-        "X-Api-Key": apiKey,
-      },
-      body: formData,
-    });
+  const response = await fetch("https://api.remove.bg/v1.0/removebg", {
+    method: "POST",
+    headers: {
+      "X-Api-Key": apiKey,
+    },
+    body: formData,
+  });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`❌ remove.bg API error: ${response.status}`);
-      console.error(`   ${errorText}`);
-      process.exit(1);
-    }
-
-    const resultBuffer = Buffer.from(await response.arrayBuffer());
-    await writeFile(output, resultBuffer);
-    console.log(`✅ Saved: ${output}`);
-  } catch (error) {
-    console.error(
-      `❌ Error processing ${inputPath}:`,
-      error instanceof Error ? error.message : String(error)
-    );
-    process.exit(1);
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`remove.bg API error: ${response.status}\n   ${errorText}`);
   }
+
+  const resultBuffer = Buffer.from(await response.arrayBuffer());
+  await writeFile(output, resultBuffer);
+  console.log(`✅ Saved: ${output}`);
 }
 
 // ============================================================================
@@ -159,7 +147,12 @@ async function main(): Promise<void> {
 
   // Single file with optional output
   if (args.length === 1) {
-    await removeBackground(args[0]);
+    try {
+      await removeBackground(args[0]);
+    } catch (error) {
+      console.error(`❌ ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
     return;
   }
 
@@ -170,12 +163,26 @@ async function main(): Promise<void> {
     // Otherwise treat as input/output pair
     if (existsSync(args[1])) {
       // Both files exist - batch mode
+      let success = 0;
+      let failed = 0;
       for (const file of args) {
-        await removeBackground(file);
+        try {
+          await removeBackground(file);
+          success++;
+        } catch (error) {
+          console.error(`❌ ${file}: ${error instanceof Error ? error.message : String(error)}`);
+          failed++;
+        }
       }
+      console.log(`\n📊 Complete: ${success} succeeded, ${failed} failed`);
     } else {
       // Second arg is output path
-      await removeBackground(args[0], args[1]);
+      try {
+        await removeBackground(args[0], args[1]);
+      } catch (error) {
+        console.error(`❌ ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
     }
     return;
   }
@@ -189,7 +196,8 @@ async function main(): Promise<void> {
     try {
       await removeBackground(file);
       success++;
-    } catch {
+    } catch (error) {
+      console.error(`❌ ${file}: ${error instanceof Error ? error.message : String(error)}`);
       failed++;
     }
   }

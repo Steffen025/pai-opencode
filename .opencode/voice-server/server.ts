@@ -44,7 +44,7 @@ if (TTS_PROVIDER === 'elevenlabs' && !process.env.ELEVENLABS_API_KEY && process.
 }
 
 // ElevenLabs Configuration
-const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
+const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY; // pragma: allowlist secret
 const DEFAULT_ELEVENLABS_VOICE = process.env.ELEVENLABS_VOICE_ID || "s3TPKV1kjDlVtZbl4Ksh";
 
 // =============================================================================
@@ -55,7 +55,7 @@ const DEFAULT_ELEVENLABS_VOICE = process.env.ELEVENLABS_VOICE_ID || "s3TPKV1kjDl
 //
 // Switch tiers: GOOGLE_TTS_TIER=premium or GOOGLE_TTS_TIER=standard in .env
 // =============================================================================
-const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY; // pragma: allowlist secret
 const GOOGLE_TTS_TIER = (process.env.GOOGLE_TTS_TIER || 'premium').toLowerCase();
 
 // Tier-specific default voices

@@ -65,6 +65,49 @@ function ensureRelationshipDir(): void {
   }
 }
 
+function ensureOpinionsDir(): void {
+  const dir = join(PAI_DIR, 'PAI/USER');
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
+  }
+}
+
+/**
+ * Serialize a Map of opinions back to OPINIONS.md format and write to disk.
+ */
+function serializeAndSaveOpinions(opinions: Map<string, Opinion>): void {
+  ensureOpinionsDir();
+
+  // Group by category
+  const byCategory = new Map<string, Opinion[]>();
+  for (const opinion of opinions.values()) {
+    const list = byCategory.get(opinion.category) || [];
+    list.push(opinion);
+    byCategory.set(opinion.category, list);
+  }
+
+  const lines: string[] = ['# Opinions\n'];
+  for (const [category, opinionList] of byCategory) {
+    lines.push(`## ${category.charAt(0).toUpperCase() + category.slice(1)} Opinions\n`);
+    for (const op of opinionList.sort((a, b) => b.confidence - a.confidence)) {
+      lines.push(`### ${op.statement}\n`);
+      lines.push(`**Confidence:** ${op.confidence.toFixed(2)}`);
+      lines.push(`*Last updated: ${op.last_updated}*\n`);
+      if (op.evidence.length > 0) {
+        lines.push('| Type | Description |');
+        lines.push('|------|-------------|');
+        for (const e of op.evidence) {
+          const type = e.type.charAt(0).toUpperCase() + e.type.slice(1);
+          lines.push(`| ${type} | ${e.description} |`);
+        }
+        lines.push('');
+      }
+    }
+  }
+
+  writeFileSync(OPINIONS_FILE, lines.join('\n'));
+}
+
 /**
  * Parse OPINIONS.md into structured data
  * Note: This is a simplified parser - the file is primarily human-readable
@@ -159,6 +202,10 @@ function addEvidence(
   const confidenceChange = opinion.confidence - oldConfidence;
   const needsNotification = Math.abs(confidenceChange) >= NOTIFICATION_THRESHOLD;
 
+  // Persist updated opinions map back to OPINIONS.md
+  opinions.set(key, opinion);
+  serializeAndSaveOpinions(opinions);
+
   // Log to relationship memory
   logRelationshipEvent('opinion_update', {
     statement: opinion.statement,
@@ -187,6 +234,11 @@ function addOpinion(
     last_updated: getISODate(),
     created: getISODate()
   };
+
+  // Persist new opinion to OPINIONS.md
+  const opinions = parseOpinions();
+  opinions.set(statement.toLowerCase(), opinion);
+  serializeAndSaveOpinions(opinions);
 
   logRelationshipEvent('opinion_created', {
     statement,

@@ -415,7 +415,7 @@ async function addBackgroundColor(inputPath: string, outputPath: string, hexColo
 }
 
 async function removeBackground(imagePath: string): Promise<void> {
-  const apiKey = process.env.REMOVEBG_API_KEY;
+  const apiKey = process.env.REMOVEBG_API_KEY; // pragma: allowlist secret
   if (!apiKey) {
     throw new CLIError("Missing environment variable: REMOVEBG_API_KEY");
   }
@@ -450,7 +450,7 @@ async function removeBackground(imagePath: string): Promise<void> {
 // ============================================================================
 
 async function generateWithFlux(prompt: string, size: ReplicateSize, output: string): Promise<void> {
-  const token = process.env.REPLICATE_API_TOKEN;
+  const token = process.env.REPLICATE_API_TOKEN; // pragma: allowlist secret
   if (!token) {
     throw new CLIError("Missing environment variable: REPLICATE_API_TOKEN");
   }
@@ -474,7 +474,7 @@ async function generateWithFlux(prompt: string, size: ReplicateSize, output: str
 }
 
 async function generateWithNanoBanana(prompt: string, size: ReplicateSize, output: string): Promise<void> {
-  const token = process.env.REPLICATE_API_TOKEN;
+  const token = process.env.REPLICATE_API_TOKEN; // pragma: allowlist secret
   if (!token) {
     throw new CLIError("Missing environment variable: REPLICATE_API_TOKEN");
   }
@@ -496,7 +496,7 @@ async function generateWithNanoBanana(prompt: string, size: ReplicateSize, outpu
 }
 
 async function generateWithGPTImage(prompt: string, size: OpenAISize, output: string): Promise<void> {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY; // pragma: allowlist secret
   if (!apiKey) {
     throw new CLIError("Missing environment variable: OPENAI_API_KEY");
   }
@@ -529,7 +529,7 @@ async function generateWithNanoBananaPro(
   output: string,
   referenceImages?: string[]
 ): Promise<void> {
-  const apiKey = process.env.GOOGLE_API_KEY;
+  const apiKey = process.env.GOOGLE_API_KEY; // pragma: allowlist secret
   if (!apiKey) {
     throw new CLIError("Missing environment variable: GOOGLE_API_KEY");
   }

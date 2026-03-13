@@ -12,7 +12,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY
+    const apiKey = process.env.ANTHROPIC_API_KEY // pragma: allowlist secret
     if (!apiKey) {
       return NextResponse.json(
         { error: "API key not configured" },

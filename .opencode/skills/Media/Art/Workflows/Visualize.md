@@ -85,7 +85,7 @@ TRANSPARENT: Use Images skill to remove background for overlay use
 **For transparent background** — use the **Images skill** for background removal:
 
 ```bash
-bun ~/.opencode/skills/CORE/Tools/RemoveBg.ts /path/to/visualization.png
+bun ~/.opencode/skills/PAI/Tools/RemoveBg.ts /path/to/visualization.png
 ```
 
 ### Title/Subtitle Alignment
@@ -581,7 +581,7 @@ Optional: Sign small in bottom right corner in charcoal (#2D2D2D).
 **Construct command based on intent:**
 
 ```bash
-bun run ~/.opencode/skills/Art/Tools/Generate.ts \
+bun run ~/.opencode/skills/Media/Art/Tools/Generate.ts \
   --model [SELECTED_MODEL] \
   --prompt "[YOUR COMPREHENSIVE PROMPT]" \
   --size [SELECTED_SIZE] \

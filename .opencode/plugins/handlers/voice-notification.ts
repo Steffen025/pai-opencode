@@ -14,7 +14,8 @@
  * @module voice-notification
  */
 
-import { exec } from "node:child_process";
+import { exec, execFile } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import {
 	appendFileSync,
 	existsSync,
@@ -23,7 +24,7 @@ import {
 	unlinkSync,
 	writeFileSync,
 } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { promisify } from "node:util";
 import { fileLog } from "../lib/file-logger";
 import { getIdentity, getSettings } from "../lib/identity";
@@ -31,6 +32,7 @@ import { getOpenCodeDir, getStateDir, getWorkDir } from "../lib/paths";
 import { getISOTimestamp } from "../lib/time";
 
 const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 // ============================================================================
 // Types
@@ -86,8 +88,12 @@ function getActiveWorkDir(): string | null {
 		const content = readFileSync(currentWorkPath, "utf-8");
 		const state = JSON.parse(content);
 		if (state.work_dir) {
-			const workPath = join(getWorkDir(), state.work_dir);
-			if (existsSync(workPath)) return workPath;
+			const workRoot = resolve(getWorkDir());
+			const workPath = resolve(join(getWorkDir(), state.work_dir));
+			// Guard against path traversal (e.g. work_dir = "../../etc")
+			if (workPath.startsWith(workRoot + "/") || workPath === workRoot) {
+				if (existsSync(workPath)) return workPath;
+			}
 		}
 	} catch {
 		// Silent fail
@@ -181,6 +187,7 @@ async function sendElevenLabs(message: string, sessionId: string): Promise<boole
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(payload),
+			signal: AbortSignal.timeout(1000),
 		});
 
 		if (!response.ok) {
@@ -227,6 +234,11 @@ interface GoogleTTSRequest {
 }
 
 async function sendGoogleTTS(message: string, sessionId: string): Promise<boolean> {
+	if (!isMacOS()) {
+		fileLog("[Voice:Google] Skipping — afplay requires macOS", "debug");
+		return false;
+	}
+
 	const settings = getSettings();
 	const googleApiKey = settings.env?.GOOGLE_TTS_API_KEY || process.env.GOOGLE_TTS_API_KEY;
 
@@ -270,6 +282,7 @@ async function sendGoogleTTS(message: string, sessionId: string): Promise<boolea
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(requestBody),
+			signal: AbortSignal.timeout(10000),
 		});
 
 		if (!response.ok) {
@@ -288,11 +301,11 @@ async function sendGoogleTTS(message: string, sessionId: string): Promise<boolea
 		const audioBuffer = Buffer.from(data.audioContent, "base64");
 
 		// Save to temp file and play (macOS)
-		const tempFile = `/tmp/pai-voice-${Date.now()}.mp3`;
+		const tempFile = `/tmp/pai-voice-${randomUUID()}.mp3`;
 		writeFileSync(tempFile, audioBuffer);
 
 		try {
-			await execAsync(`afplay "${tempFile}"`);
+			await execFileAsync("afplay", [tempFile], { timeout: 10000 });
 		} finally {
 			// Cleanup temp file
 			try {
@@ -334,6 +347,7 @@ async function isElevenLabsAvailable(): Promise<boolean> {
 }
 
 function isGoogleTTSConfigured(): boolean {
+	if (!isMacOS()) return false;
 	const settings = getSettings();
 	return !!(settings.env?.GOOGLE_TTS_API_KEY || process.env.GOOGLE_TTS_API_KEY);
 }
@@ -367,9 +381,9 @@ async function sendMacOSSay(message: string, sessionId: string): Promise<boolean
 	};
 
 	try {
-		// Escape message for shell
-		const escapedMessage = message.replace(/"/g, '\\"').replace(/`/g, "\\`").replace(/\$/g, "\\$");
-		await execAsync(`say -v "${macosConfig.voice}" -r ${macosConfig.rate} "${escapedMessage}"`);
+		// Use execFile to avoid shell injection — args passed as array, no escaping needed
+		const rate = Math.max(1, Math.min(500, Math.round(Number(macosConfig.rate) || 200)));
+		await execFileAsync("say", ["-v", String(macosConfig.voice || "Daniel"), "-r", String(rate), message]);
 
 		logVoiceEvent({ ...baseEvent, event_type: "sent" });
 		fileLog(`[Voice:macOS] Spoke: "${message.substring(0, 50)}..."`, "info");
@@ -447,8 +461,8 @@ export async function handleVoiceNotification(
 export function extractVoiceCompletion(text: string): string | null {
 	if (!text) return null;
 
-	// Pattern: 🗣️ Name: message
-	const match = text.match(/🗣️\s*[\w\s]+:\s*(.+?)(?:\n|$)/);
+	// Pattern: 🗣️ Name: message (Unicode-aware to support non-ASCII names like "Ava", accented chars)
+	const match = text.match(/🗣️\s*[\p{L}\p{M}\w\s\-.']+:\s*(.+?)(?:\n|$)/u);
 	if (match) {
 		return match[1].trim();
 	}

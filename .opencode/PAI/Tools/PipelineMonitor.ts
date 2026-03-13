@@ -15,7 +15,8 @@
  * ============================================================================
  */
 
-const PORT = parseInt(process.argv.find(a => a.startsWith("--port="))?.split("=")[1] || "8765");
+const rawPort = parseInt(process.argv.find(a => a.startsWith("--port="))?.split("=")[1] || "8765", 10);
+const PORT = Number.isFinite(rawPort) && rawPort > 0 && rawPort < 65536 ? rawPort : 8765;
 
 // State
 interface PipelineExecution {
@@ -43,6 +44,16 @@ interface StepExecution {
 
 const executions: Map<string, PipelineExecution> = new Map();
 const clients: Set<WebSocket> = new Set();
+
+/** Escape user-controlled strings before inserting into innerHTML. */
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 // Broadcast to all connected clients
 function broadcast(event: string, data: unknown) {
@@ -332,6 +343,16 @@ const HTML = `<!DOCTYPE html>
   </div>
 
   <script>
+    /** Escape user-controlled strings before inserting into innerHTML. */
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
     const pipelines = new Map();
     let ws;
 
@@ -446,7 +467,7 @@ const HTML = `<!DOCTYPE html>
           <div class="kanban-column \${isCompleted ? 'completed' : ''} \${isFailed ? 'failed' : ''}">
             <div class="column-header">
               <div class="column-title">
-                \${col.type === 'action' ? \`<code>\${col.action}</code>\` : col.action}
+                \${col.type === 'action' ? \`<code>\${escapeHtml(col.action)}</code>\` : escapeHtml(col.action)}
                 <span class="column-count">\${cards.length}</span>
               </div>
             </div>
@@ -459,20 +480,20 @@ const HTML = `<!DOCTYPE html>
                 return \`
                   <div class="card \${exec.status}">
                     <div class="card-header">
-                      <span class="card-pipeline">\${exec.pipeline}</span>
-                      <span class="card-agent">\${exec.agent}</span>
+                      <span class="card-pipeline">\${escapeHtml(exec.pipeline)}</span>
+                      <span class="card-agent">\${escapeHtml(exec.agent)}</span>
                     </div>
                     \${exec.status === 'running' && currentStep ? \`
                       <div class="card-step">
                         \${currentStep.status === 'running' ? '◉' : '○'}
-                        Step: <code>\${currentStep.id}</code>
+                        Step: <code>\${escapeHtml(currentStep.id)}</code>
                       </div>
                     \` : ''}
                     <div class="card-progress">
                       \${exec.steps.map(s => \`<div class="progress-dot \${s.status}"></div>\`).join('')}
                     </div>
                     \${duration ? \`<div class="card-time">\${duration}</div>\` : ''}
-                    \${exec.error ? \`<div class="card-error">\${exec.error}</div>\` : ''}
+                    \${exec.error ? \`<div class="card-error">\${escapeHtml(exec.error)}</div>\` : ''}
                   </div>
                 \`;
               }).join('')}

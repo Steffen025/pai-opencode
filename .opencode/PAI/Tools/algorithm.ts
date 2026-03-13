@@ -676,13 +676,21 @@ async function runParallelIteration(
     return { assignment, proc };
   });
 
-  // Wait for all agents to complete
+  // Wait for all agents to complete — with per-agent timeout matching sequential path (10 min)
+  const AGENT_TIMEOUT_MS = 600_000;
   const results = await Promise.all(
     processes.map(async ({ assignment, proc }) => {
-      const exitCode = await proc.exited;
-      const stdout = await new Response(proc.stdout).text();
-      const stderr = await new Response(proc.stderr).text();
-      return { assignment, exitCode, stdout, stderr };
+      const timeoutHandle = setTimeout(() => {
+        try { proc.kill(); } catch {}
+      }, AGENT_TIMEOUT_MS);
+      try {
+        const exitCode = await proc.exited;
+        const stdout = await new Response(proc.stdout).text();
+        const stderr = await new Response(proc.stderr).text();
+        return { assignment, exitCode, stdout, stderr };
+      } finally {
+        clearTimeout(timeoutHandle);
+      }
     })
   );
 
@@ -1429,7 +1437,8 @@ async function resumeLoop(prdPath: string): Promise<void> {
     console.log(`Loop is not paused on ${frontmatter.id} (status: ${frontmatter.loopStatus || "idle"})`);
     return;
   }
-  updateFrontmatter(absPath, { loopStatus: "running" });
+  // Don't set loopStatus: "running" here — runLoop() sets it itself.
+  // Setting it here causes runLoop() to abort immediately with "already running".
   voiceNotify(`Resuming loop on ${frontmatter.id}.`);
   console.log(`\x1b[36m\u25B6 Resuming\x1b[0m Loop on ${frontmatter.id}`);
   await runLoop(absPath);

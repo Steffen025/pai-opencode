@@ -5,6 +5,7 @@
   "dependencies": {
     "@google/genai": "^1.38.0",
     "@opencode-ai/plugin": "1.1.39",
+    "ajv": "^8.17.1",
     "handlebars": "^4.7.8",
     "openai": "^6.16.0",
     "replicate": "^1.4.0",

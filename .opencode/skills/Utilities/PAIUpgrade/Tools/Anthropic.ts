@@ -221,7 +221,7 @@ async function fetchBlog(source: Source, state: State): Promise<Update[]> {
 
 async function fetchGitHubRepo(source: Source, state: State): Promise<Update[]> {
   const updates: Update[] = [];
-  const token = process.env.GITHUB_TOKEN || '';
+  const token = process.env.GITHUB_TOKEN || ''; // pragma: allowlist secret
   const headers: Record<string, string> = {
     'Accept': 'application/vnd.github.v3+json',
     'User-Agent': 'PAI-Anthropic-Monitor'

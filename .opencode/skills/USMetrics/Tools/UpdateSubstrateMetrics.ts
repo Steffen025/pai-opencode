@@ -27,8 +27,8 @@ import { join } from "path";
 // ============================================================================
 
 const SUBSTRATE_PATH = join(process.env.PROJECTS_DIR || join(process.env.HOME || "", "Projects"), "your-data-project/Data/US-Common-Metrics");
-const FRED_API_KEY = process.env.FRED_API_KEY;
-const EIA_API_KEY = process.env.EIA_API_KEY;
+const FRED_API_KEY = process.env.FRED_API_KEY; // pragma: allowlist secret
+const EIA_API_KEY = process.env.EIA_API_KEY; // pragma: allowlist secret
 
 // All metrics with their configuration
 interface MetricConfig {

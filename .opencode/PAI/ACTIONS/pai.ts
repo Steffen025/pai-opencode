@@ -8,21 +8,21 @@
  *
  * USAGE:
  *   # Run an action
- *   pai action parse/topic --input '{"text":"quantum computing"}'
- *   echo '{"text":"quantum"}' | pai action parse/topic
+ *   pai action A_EXAMPLE_SUMMARIZE --input '{"text":"quantum computing"}'
+ *   echo '{"text":"quantum"}' | pai action A_EXAMPLE_SUMMARIZE
  *
  *   # Run a pipeline
- *   pai pipeline research --topic "quantum computing"
+ *   pai pipeline P_EXAMPLE_SUMMARIZE_AND_FORMAT --topic "quantum computing"
  *
  *   # Piping actions together
- *   pai action parse/topic | pai action transform/summarize
+ *   pai action A_EXAMPLE_SUMMARIZE | pai action A_EXAMPLE_FORMAT
  *
  *   # List available actions/pipelines
  *   pai actions
  *   pai pipelines
  *
  *   # Show action/pipeline info
- *   pai info parse/topic
+ *   pai info A_EXAMPLE_SUMMARIZE
  *
  * OPTIONS:
  *   --mode local|cloud    Execution mode (default: local)
@@ -32,9 +32,9 @@
  * ============================================================================
  */
 
-import { runAction, listActions } from "./lib/runner";
-import { dirname, join } from "path";
-import { readdir, readFile } from "fs/promises";
+import { readdir } from "node:fs/promises";
+import { dirname, join } from "node:path";
+import { findAction, listActionsV2, loadManifest, runAction } from "./lib/runner.v2";
 
 const PIPELINES_DIR = join(dirname(import.meta.dir), "PIPELINES");
 
@@ -55,9 +55,19 @@ function parseArgs(args: string[]): { command: string; target?: string; options:
     const arg = args[i];
 
     if (expectingValue) {
-      if (expectingValue === "mode") options.mode = arg as "local" | "cloud";
-      else if (expectingValue === "input") options.input = arg;
-      else extra[expectingValue] = arg;
+      if (expectingValue === "mode") {
+        // Validate mode value — only "local" or "cloud" accepted
+        if (arg === "local" || arg === "cloud") {
+          options.mode = arg;
+        } else {
+          console.error(`Error: Invalid mode "${arg}". Must be "local" or "cloud".`);
+          process.exit(1);
+        }
+      } else if (expectingValue === "input") {
+        options.input = arg;
+      } else {
+        extra[expectingValue] = arg;
+      }
       expectingValue = null;
       continue;
     }
@@ -68,7 +78,7 @@ function parseArgs(args: string[]): { command: string; target?: string; options:
     if (arg.startsWith("--")) { expectingValue = arg.slice(2); continue; }
 
     if (!command) { command = arg; continue; }
-    if (!target) { target = arg; continue; }
+    if (!target) { target = arg; }
   }
 
   return { command, target, options, extra };
@@ -85,12 +95,15 @@ async function readStdin(): Promise<string | null> {
   return content || null;
 }
 
+/**
+ * List pipeline files using the current P_*.yaml naming convention.
+ */
 async function listPipelines(): Promise<string[]> {
   try {
     const files = await readdir(PIPELINES_DIR);
     return files
-      .filter(f => f.endsWith(".pipeline.yaml") || f.endsWith(".pipeline.yml"))
-      .map(f => f.replace(/\.pipeline\.(yaml|yml)$/, ""));
+      .filter(f => /^P_[A-Z0-9_]+\.ya?ml$/.test(f))
+      .map(f => f.replace(/\.ya?ml$/, ""));
   } catch {
     return [];
   }
@@ -102,10 +115,10 @@ PAI - Personal AI Actions & Pipelines
 
 USAGE:
   pai action <name> [--input '<json>']     Run an action
-  pai pipeline <name> [--<param> <value>]  Run a pipeline
+  pai pipeline <name> [--<param> <value>]  Run a pipeline (not yet implemented)
   pai actions                               List all actions
   pai pipelines                             List all pipelines
-  pai info <name>                           Show action/pipeline details
+  pai info <name>                           Show action details
 
 OPTIONS:
   --mode local|cloud    Execution mode (default: local)
@@ -113,10 +126,9 @@ OPTIONS:
   --verbose, -v         Show execution details
 
 EXAMPLES:
-  pai action parse/topic --input '{"text":"quantum computing"}'
-  echo '{"text":"AI"}' | pai action parse/topic
-  pai action parse/topic | pai action transform/summarize
-  pai pipeline research --topic "machine learning"
+  pai action A_EXAMPLE_SUMMARIZE --input '{"text":"quantum computing"}'
+  echo '{"text":"AI"}' | pai action A_EXAMPLE_SUMMARIZE
+  pai action A_EXAMPLE_SUMMARIZE | pai action A_EXAMPLE_FORMAT
 `);
 }
 
@@ -177,15 +189,16 @@ async function main() {
         console.error("Error: Pipeline name required. Usage: pai pipeline <name>");
         process.exit(1);
       }
-      // TODO: Implement pipeline runner
+      // TODO: Pipeline runner not yet implemented — use individual actions for now
       console.error(`Pipeline execution not yet implemented: ${target}`);
-      console.error(`Params: ${JSON.stringify(extra)}`);
+      console.error(`Use 'pai action <name>' to run individual actions.`);
       process.exit(1);
+      break;
     }
 
     case "actions": {
-      const actions = await listActions();
-      console.log(JSON.stringify({ actions }, null, 2));
+      const actions = await listActionsV2();
+      console.log(JSON.stringify({ actions: actions.map(a => a.name) }, null, 2));
       break;
     }
 
@@ -197,26 +210,32 @@ async function main() {
 
     case "info": {
       if (!target) {
-        console.error("Error: Name required. Usage: pai info <action-or-pipeline-name>");
+        console.error("Error: Name required. Usage: pai info <action-name>");
         process.exit(1);
       }
 
-      // Try loading as action first
+      // Load action using v2 runner
+      const actionPath = await findAction(target);
+      if (!actionPath) {
+        console.error(`Not found: ${target}`);
+        process.exit(1);
+      }
+
       try {
-        const { loadAction } = await import("./lib/runner");
-        const action = await loadAction(target);
+        const manifest = await loadManifest(actionPath);
         console.log(JSON.stringify({
           type: "action",
-          name: action.name,
-          version: action.version,
-          description: action.description,
-          tags: action.tags,
-          deployment: action.deployment,
-          inputSchema: action.inputSchema._def,
-          outputSchema: action.outputSchema._def,
+          name: manifest.name,
+          version: manifest.version,
+          description: manifest.description,
+          tags: manifest.tags,
+          requires: manifest.requires,
+          deployment: manifest.deployment,
+          input: manifest.input,
+          output: manifest.output,
         }, null, 2));
-      } catch {
-        console.error(`Not found: ${target}`);
+      } catch (err) {
+        console.error(`Error loading action info: ${err instanceof Error ? err.message : String(err)}`);
         process.exit(1);
       }
       break;

@@ -19,7 +19,8 @@
  * ============================================================================
  */
 
-import { resolve, dirname, join, relative } from "path";
+import { access } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
 import type { ActionSpec, ActionContext, ActionResult } from "./types";
 
 const ACTIONS_DIR = dirname(import.meta.dir);
@@ -48,21 +49,26 @@ export async function loadAction(name: string): Promise<ActionSpec> {
     throw new Error(`Path traversal detected: ${name} resolves outside actions directory`);
   }
 
+  // Check file existence before importing so a missing file produces a clear
+  // "not found" error rather than masking a real broken-import error as
+  // ERR_MODULE_NOT_FOUND (which can also fire when the file exists but has a
+  // missing internal dependency).
   try {
-    const module = await import(actionPath);
-    const action = module.default || module.action;
-
-    if (!action || !action.execute) {
-      throw new Error(`Action ${name} does not export a valid ActionSpec`);
-    }
-
-    return action;
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ERR_MODULE_NOT_FOUND') {
-      throw new Error(`Action not found: ${name} (looked in ${actionPath})`);
-    }
-    throw error;
+    await access(actionPath);
+  } catch {
+    throw new Error(`Action not found: ${name} (looked in ${actionPath})`);
   }
+
+  // File exists — import it and surface real errors (e.g. broken dependencies)
+  // without wrapping them in a misleading "not found" message.
+  const module = await import(actionPath);
+  const action = module.default || module.action;
+
+  if (!action || !action.execute) {
+    throw new Error(`Action ${name} does not export a valid ActionSpec`);
+  }
+
+  return action;
 }
 
 /**
@@ -140,8 +146,18 @@ async function dispatchToCloud<TInput, TOutput>(
   const startTime = Date.now();
 
   // Worker URL pattern: pai-{category}-{name}.{subdomain}.workers.dev
+  // CF_ACCOUNT_SUBDOMAIN is required — a missing/default value produces an invalid URL.
+  // Read from ctx.env (caller-supplied env) consistent with ACTION_TIMEOUT_MS usage.
+  const subdomain = ctx.env?.CF_ACCOUNT_SUBDOMAIN;
+  if (!subdomain) {
+    return {
+      success: false,
+      error: "CF_ACCOUNT_SUBDOMAIN environment variable is required for cloud execution. " +
+        "Set it to your Cloudflare account subdomain (e.g. 'myaccount' for myaccount.workers.dev).",
+      metadata: { durationMs: Date.now() - startTime, action: name, mode: "cloud" },
+    };
+  }
   const workerName = name.replace("/", "-");
-  const subdomain = process.env.CF_ACCOUNT_SUBDOMAIN || 'workers';
   const workerUrl = `https://pai-${workerName}.${subdomain}.workers.dev`;
 
   // Setup timeout with AbortController
@@ -224,19 +240,20 @@ async function dispatchToCloud<TInput, TOutput>(
 }
 
 /**
- * List all available actions
+ * List all available actions using Bun's native glob (no external dependency).
+ * Returns POSIX-style names (forward slashes) compatible with loadAction().
  */
 export async function listActions(): Promise<string[]> {
-  const { glob } = await import("glob");
-  const pattern = join(ACTIONS_DIR, "**/*.action.ts");
-  const files = await glob(pattern);
+  const glob = new Bun.Glob("**/*.action.ts");
+  const files: string[] = [];
+  for await (const file of glob.scan({ cwd: ACTIONS_DIR, absolute: false })) {
+    files.push(file);
+  }
 
-  return files.map(f => {
-    // Use path.relative for cross-platform compatibility
-    const relativePath = relative(ACTIONS_DIR, f);
-    // Remove .action.ts extension
-    return relativePath.replace(/\.action\.ts$/, "");
-  });
+  return files.map(f =>
+    // Bun.Glob returns POSIX paths; normalize any platform separator and strip suffix
+    f.replace(/\\/g, "/").replace(/\.action\.ts$/, "")
+  );
 }
 
 /**

@@ -72,10 +72,24 @@ interface EditDecision {
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
-  const inputFile = args.find((a) => !a.startsWith("--"));
-  const outputFlag = args.indexOf("--output");
-  const outputPath = outputFlag !== -1 ? args[outputFlag + 1] : undefined;
-  const aggressive = args.includes("--aggressive");
+  // Sequential arg parsing: handle --output <path>, --aggressive, and positional input file
+  let inputFile: string | undefined;
+  let outputPath: string | undefined;
+  let aggressive = false;
+  for (let i = 0; i < args.length; i++) {
+    const token = args[i];
+    if (token === "--output") {
+      const next = args[i + 1];
+      if (next && !next.startsWith("--")) {
+        outputPath = next;
+        i++; // consume the value token
+      }
+    } else if (token === "--aggressive") {
+      aggressive = true;
+    } else if (!token.startsWith("--") && inputFile === undefined) {
+      inputFile = token;
+    }
+  }
 
   if (!inputFile) {
     console.error("Usage: bun Analyze.ts <transcript.json> [--output <path>] [--aggressive]");
@@ -87,20 +101,23 @@ async function main(): Promise<void> {
     throw new Error("Input file not found");
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.ANTHROPIC_API_KEY; // pragma: allowlist secret
   if (!apiKey) {
     console.error("ANTHROPIC_API_KEY not found. Set it in ~/.config/PAI/.env");
     throw new Error("Missing ANTHROPIC_API_KEY");
   }
 
-  // FIX: Only apply one replacement - check for .transcript.json first, then .json
+  // Determine output path — ensure outFile never equals inputFile (self-overwrite)
   let outFile: string;
   if (outputPath) {
     outFile = outputPath;
   } else if (inputFile.endsWith(".transcript.json")) {
     outFile = inputFile.replace(/\.transcript\.json$/, ".edits.json");
-  } else {
+  } else if (inputFile.endsWith(".json")) {
     outFile = inputFile.replace(/\.json$/, ".edits.json");
+  } else {
+    // Non-JSON input (e.g. bare filename without extension): append suffix to avoid self-overwrite
+    outFile = inputFile + ".edits.json";
   }
 
   console.log(`Analyzing: ${inputFile}`);
@@ -160,7 +177,8 @@ async function main(): Promise<void> {
 
     for (let i = startIdx; i < endIdx && i < chunks.length; i++) {
       const word = chunks[i].text;
-      currentLine += word;
+      // Whisper chunks do not include trailing spaces — add separator explicitly
+      currentLine += currentLine.length > 0 ? " " + word : word;
 
       const wordCount = currentLine.trim().split(/\s+/).length;
       if (wordCount >= 15 || i === endIdx - 1 || i === chunks.length - 1) {
@@ -245,25 +263,33 @@ If no edits found in a section, return: []`;
     );
 
     try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 4096,
-          system: systemPrompt,
-          messages: [
-            {
-              role: "user",
-              content: `Analyze this transcript section and return the JSON array of edits:\n\n${windowText}`,
-            },
-          ],
-        }),
-      });
+      const controller = new AbortController();
+      const fetchTimeout = setTimeout(() => controller.abort(), 120_000);
+      let response: Response;
+      try {
+        response = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          signal: controller.signal,
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 4096,
+            system: systemPrompt,
+            messages: [
+              {
+                role: "user",
+                content: `Analyze this transcript section and return the JSON array of edits:\n\n${windowText}`,
+              },
+            ],
+          }),
+        });
+      } finally {
+        clearTimeout(fetchTimeout);
+      }
 
       if (!response.ok) {
         const err = await response.text();

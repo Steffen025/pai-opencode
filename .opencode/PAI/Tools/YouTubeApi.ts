@@ -54,7 +54,7 @@ function loadEnv(): Record<string, string> {
 }
 
 const env = loadEnv()
-const API_KEY = process.env.YOUTUBE_API_KEY || env.YOUTUBE_API_KEY
+const API_KEY = process.env.YOUTUBE_API_KEY || env.YOUTUBE_API_KEY // pragma: allowlist secret
 const CHANNEL_ID = process.env.YOUTUBE_CHANNEL_ID || env.YOUTUBE_CHANNEL_ID || 'UCnCikd0s4i9KoDtaHPlK-JA'
 const BASE_URL = 'https://www.googleapis.com/youtube/v3'
 
@@ -70,7 +70,19 @@ async function apiGet<T>(endpoint: string, params: Record<string, string>): Prom
   for (const [k, v] of Object.entries(params)) {
     url.searchParams.set(k, v)
   }
-  const res = await fetch(url.toString())
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 30_000)
+  let res: Response
+  try {
+    res = await fetch(url.toString(), { signal: controller.signal })
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error(`YouTube API request timed out after 30s: ${endpoint}`)
+    }
+    throw err
+  } finally {
+    clearTimeout(timeout)
+  }
   if (!res.ok) {
     const err = await res.json()
     throw new Error(err.error?.message || `API error: ${res.status}`)
@@ -97,6 +109,9 @@ async function getChannel(): Promise<void> {
     id: CHANNEL_ID
   })
 
+  if (!data.items?.length) {
+    throw new Error(`Channel not found for ID: ${CHANNEL_ID}`)
+  }
   const ch = data.items[0]
   console.log(`\n${colors.bold}${colors.cyan}Channel: ${ch.snippet.title}${colors.reset}`)
   console.log(`${colors.dim}${ch.snippet.customUrl}${colors.reset}\n`)
@@ -129,7 +144,12 @@ async function getRecentVideos(count: number = 10): Promise<void> {
     type: 'video'
   })
 
-  const videoIds = search.items.map(v => v.id.videoId).join(',')
+  const videoIds = search.items.map(v => v.id.videoId).filter(Boolean).join(',')
+
+  if (!videoIds) {
+    console.log('No videos found.')
+    return
+  }
 
   // Get stats
   const stats = await apiGet<VideosResponse>('/videos', {
@@ -249,36 +269,53 @@ ${colors.cyan}Examples:${colors.reset}
 }
 
 // Main
-const [cmd, ...args] = process.argv.slice(2)
+async function main(): Promise<void> {
+  const [cmd, ...args] = process.argv.slice(2)
 
-switch (cmd) {
-  case 'channel':
-    await getChannel()
-    break
-  case 'videos':
-    await getRecentVideos(parseInt(args[0]) || 10)
-    break
-  case 'video':
-    if (!args[0]) {
-      console.error(`${colors.red}Error: video ID or title required${colors.reset}`)
-      process.exit(1)
+  switch (cmd) {
+    case 'channel':
+      await getChannel()
+      break
+    case 'videos': {
+      if (args[0] !== undefined && !/^\d+$/.test(args[0])) {
+        console.error(`${colors.red}Error: invalid count "${args[0]}" — must be a positive integer${colors.reset}`)
+        process.exit(1)
+      }
+      const count = args[0] !== undefined ? parseInt(args[0], 10) : 10
+      if (args[0] !== undefined && count <= 0) {
+        console.error(`${colors.red}Error: invalid count "${args[0]}" — must be a positive integer${colors.reset}`)
+        process.exit(1)
+      }
+      await getRecentVideos(count)
+      break
     }
-    await getVideoStats(args.join(' '))
-    break
-  case 'search':
-    if (!args[0]) {
-      console.error(`${colors.red}Error: search query required${colors.reset}`)
+    case 'video':
+      if (!args[0]) {
+        console.error(`${colors.red}Error: video ID or title required${colors.reset}`)
+        process.exit(1)
+      }
+      await getVideoStats(args.join(' '))
+      break
+    case 'search':
+      if (!args[0]) {
+        console.error(`${colors.red}Error: search query required${colors.reset}`)
+        process.exit(1)
+      }
+      await searchVideos(args.join(' '))
+      break
+    case '--help':
+    case '-h':
+    case undefined:
+      showHelp()
+      break
+    default:
+      console.error(`${colors.red}Unknown command: ${cmd}${colors.reset}`)
+      showHelp()
       process.exit(1)
-    }
-    await searchVideos(args.join(' '))
-    break
-  case '--help':
-  case '-h':
-  case undefined:
-    showHelp()
-    break
-  default:
-    console.error(`${colors.red}Unknown command: ${cmd}${colors.reset}`)
-    showHelp()
-    process.exit(1)
+  }
 }
+
+main().catch(err => {
+  console.error(`${colors.red}Error: ${err instanceof Error ? err.message : String(err)}${colors.reset}`)
+  process.exit(1)
+})

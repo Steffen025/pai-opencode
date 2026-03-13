@@ -20,8 +20,9 @@
 import { readdirSync, existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { spawnSync } from "child_process";
+import { homedir } from "os";
 
-const HOME = process.env.HOME!;
+const HOME = process.env.HOME ?? homedir();
 const CLAUDE_DIR = join(HOME, ".claude");
 
 // =============================================================================
@@ -322,7 +323,7 @@ function countWorkItems(): number {
       if (entry.isDirectory()) count++;
     }
   } catch {}
-  return count > 100 ? "100+" as any : count;
+  return count > 100 ? 100 : count;
 }
 
 function countLearnings(): number {
@@ -425,14 +426,16 @@ function createMicroBanner(stats: SystemStats): string {
 
   const lines: string[] = [];
 
-  // Rain header
-  const rainLine = Array.from({ length: width }, () => {
+  // Rain header — build char+color tuples so we can reverse safely
+  type RainChar = { char: string; color: string };
+  const rainChars: RainChar[] = Array.from({ length: width }, () => {
     const r = Math.random();
-    if (r > 0.9) return `${g}${randomKatakana()}${RESET}`;
-    if (r > 0.7) return `${p}${randomMatrixChar()}${RESET}`;
-    if (r > 0.4) return `${d}${randomMatrixChar()}${RESET}`;
-    return `${dk}${randomMatrixChar()}${RESET}`;
-  }).join("");
+    if (r > 0.9) return { char: randomKatakana(), color: g };
+    if (r > 0.7) return { char: randomMatrixChar(), color: p };
+    if (r > 0.4) return { char: randomMatrixChar(), color: d };
+    return { char: randomMatrixChar(), color: dk };
+  });
+  const rainLine = rainChars.map(({ char, color }) => `${color}${char}${RESET}`).join("");
 
   lines.push(rainLine);
 
@@ -444,8 +447,9 @@ function createMicroBanner(stats: SystemStats): string {
   const statsStr = `${d}  skills:${RESET}${p}${stats.skills}${RESET} ${d}hooks:${RESET}${p}${stats.hooks}${RESET} ${g}[ONLINE]${RESET}`;
   lines.push(statsStr);
 
-  // Rain footer
-  lines.push(rainLine.split("").reverse().join(""));
+  // Rain footer — reverse the underlying chars (not the ANSI string) so escape sequences stay intact
+  const rainFooter = rainChars.slice().reverse().map(({ char, color }) => `${color}${char}${RESET}`).join("");
+  lines.push(rainFooter);
 
   return lines.join("\n");
 }
@@ -652,8 +656,24 @@ function createNormalBanner(stats: SystemStats): string {
 // Main
 // =============================================================================
 
+const MODE_MIN_WIDTH: Record<DisplayMode, number> = {
+  nano: 20,
+  micro: 40,
+  mini: 60,
+  normal: 85,
+};
+
 function createBanner(forceMode?: DisplayMode): string {
   const mode = forceMode || getDisplayMode();
+  // When a mode is forced, ensure terminal width is at least the minimum for that mode
+  // so that internal `repeat()` calls never receive a negative count.
+  if (forceMode) {
+    const minWidth = MODE_MIN_WIDTH[forceMode];
+    const actual = getTerminalWidth();
+    if (actual < minWidth) {
+      process.env.COLUMNS = String(minWidth);
+    }
+  }
   const stats = getStats();
 
   switch (mode) {

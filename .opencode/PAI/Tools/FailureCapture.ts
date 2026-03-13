@@ -27,9 +27,10 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, copyFileSync } from 'fs';
 import { join, basename } from 'path';
+import { homedir } from 'os';
 import { inference } from './Inference';
 
-const PAI_DIR = process.env.PAI_DIR || join(process.env.HOME!, '.claude');
+const PAI_DIR = process.env.PAI_DIR || join(process.env.HOME ?? homedir(), '.claude');
 
 interface FailureCaptureInput {
   transcriptPath: string;
@@ -50,6 +51,7 @@ interface TranscriptEntry {
 }
 
 interface ToolCall {
+  id?: string;
   name: string;
   input: unknown;
   output?: string;
@@ -124,6 +126,7 @@ function parseTranscript(transcriptPath: string): {
             for (const block of entry.message.content as any[]) {
               if (block.type === 'tool_use') {
                 toolCalls.push({
+                  id: block.id,
                   name: block.name,
                   input: block.input,
                   timestamp: entry.timestamp,
@@ -133,11 +136,15 @@ function parseTranscript(transcriptPath: string): {
           }
         }
 
-        // Capture tool results
+        // Capture tool results — match by tool_use_id first, fall back to last unmatched
         if (entry.type === 'tool_result' || entry.type === 'tool_output') {
-          const lastToolCall = toolCalls[toolCalls.length - 1];
-          if (lastToolCall && !lastToolCall.output) {
-            lastToolCall.output = contentToText((entry as any).content || (entry as any).output);
+          const resultEntry = entry as any;
+          const toolUseId: string | undefined = resultEntry.tool_use_id;
+          const matchedCall = toolUseId
+            ? toolCalls.find(tc => tc.id === toolUseId && !tc.output)
+            : toolCalls[toolCalls.length - 1];
+          if (matchedCall && !matchedCall.output) {
+            matchedCall.output = contentToText(resultEntry.content || resultEntry.output);
           }
         }
       } catch {
@@ -177,7 +184,7 @@ REQUIREMENTS:
 EXAMPLES OF GOOD DESCRIPTIONS:
 - "assistant-deleted-users-file-without-asking-permission-first"
 - "ignored-explicit-python-prohibition-and-used-it-anyway"
-- "claimed-task-complete-when-build-was-still-failing"
+- "claimed-task-complete-when-build-was-still-failing" # pragma: allowlist secret
 - "overwrote-working-code-with-broken-implementation-silently"
 - "asked-clarifying-question-instead-of-just-doing-task"
 
@@ -211,13 +218,17 @@ Generate the 8-word description:`;
       desc = desc.replace(/[^a-z0-9\s-]/g, '');
       desc = desc.replace(/\s+/g, '-');
 
-      // Ensure it's roughly 8 words
-      const words = desc.split('-').filter(w => w.length > 0);
-      if (words.length > 10) {
-        desc = words.slice(0, 8).join('-');
-      } else if (words.length < 5) {
-        desc = `low-rating-failure-${words.join('-')}`;
+      // Enforce exactly 8 words
+      let words = desc.split('-').filter(w => w.length > 0);
+      if (words.length > 8) {
+        words = words.slice(0, 8);
+      } else if (words.length < 8) {
+        const fillers = ['low', 'rating', 'failure', 'session'];
+        while (words.length < 8) {
+          words.push(fillers[words.length % fillers.length]);
+        }
       }
+      desc = words.join('-');
 
       return desc;
     }
@@ -266,9 +277,9 @@ function getPSTComponents(): {
 export async function captureFailure(input: FailureCaptureInput): Promise<string | null> {
   const { transcriptPath, rating, sentimentSummary, detailedContext, sessionId } = input;
 
-  // Only capture ratings 1-3
-  if (rating > 3) {
-    console.error(`[FailureCapture] Rating ${rating} is above threshold (1-3), skipping`);
+  // Only capture ratings 1-3; reject invalid values (NaN, negative, out of range)
+  if (!Number.isInteger(rating) || rating < 1 || rating > 3) {
+    console.error(`[FailureCapture] Rating ${rating} is outside valid threshold (1-3), skipping`);
     return null;
   }
 
@@ -283,9 +294,10 @@ export async function captureFailure(input: FailureCaptureInput): Promise<string
   // Generate description
   const description = await generateDescription(sentimentSummary, conversations, toolCalls);
 
-  // Create directory structure
+  // Create directory structure — include ms suffix to avoid collisions at the same second
   const { year, month, day, hours, minutes, seconds } = getPSTComponents();
-  const timestamp = `${year}-${month}-${day}-${hours}${minutes}${seconds}`;
+  const ms = String(Date.now() % 1000).padStart(3, "0");
+  const timestamp = `${year}-${month}-${day}-${hours}${minutes}${seconds}-${ms}`;
   const dirName = `${timestamp}_${description}`;
   const yearMonth = `${year}-${month}`;
 
@@ -335,7 +347,7 @@ session_id: ${sessionId || 'unknown'}
 # Failure Analysis: ${description.replace(/-/g, ' ')}
 
 **Date:** ${year}-${month}-${day}
-**Rating:** ${rating}/10
+**Rating:** ${rating}/3
 **Summary:** ${sentimentSummary}
 
 ---
@@ -480,7 +492,7 @@ source: migration
 # Migrated Failure: ${desc.replace(/-/g, ' ')}
 
 **Original Date:** ${entry.timestamp}
-**Rating:** ${entry.rating}/10
+**Rating:** ${entry.rating}/3
 **Summary:** ${entry.sentiment_summary || 'No summary available'}
 
 ---
@@ -528,6 +540,9 @@ if (import.meta.main) {
       if (results.errors.length > 0) {
         console.error(`[FailureCapture] Errors: ${results.errors.join(', ')}`);
       }
+    }).catch(err => {
+      console.error(`[FailureCapture] Migration failed: ${err}`);
+      process.exit(1);
     });
   } else if (args.length >= 3) {
     const [transcriptPath, rating, sentimentSummary, detailedContext] = args;
@@ -542,6 +557,9 @@ if (import.meta.main) {
       } else {
         process.exit(1);
       }
+    }).catch(err => {
+      console.error(`[FailureCapture] Unexpected error: ${err}`);
+      process.exit(1);
     });
   } else {
     console.log(`Usage:

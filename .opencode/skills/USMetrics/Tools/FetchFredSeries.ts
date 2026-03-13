@@ -114,7 +114,7 @@ async function fetchFredSeries(
   seriesId: string,
   years: number = 10
 ): Promise<SeriesData | null> {
-  const apiKey = process.env.FRED_API_KEY;
+  const apiKey = process.env.FRED_API_KEY; // pragma: allowlist secret
 
   if (!apiKey) {
     console.error("Error: FRED_API_KEY environment variable not set");
