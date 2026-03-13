@@ -78,7 +78,7 @@ Generate complete YouTube thumbnails from content input with dramatic tech backg
 
 ### Extraction Prompt
 
-```
+```text
 Analyze this content and extract:
 
 1. TITLE (max 6 words): The attention-grabbing hook
@@ -101,7 +101,7 @@ Content: [INPUT]
 
 ### Background Prompt Template
 
-```
+```text
 Dramatic futuristic technology background. Dark hexagonal circuit board pattern
 with glowing cyan/blue neon edge lighting. 3D depth perspective. Metallic dark
 grey hexagons with embedded circuit patterns. Glowing cyan (#7dcfff) and purple
@@ -115,12 +115,13 @@ Topic context: [EXTRACTED TOPIC]
 ### Generate Command
 
 ```bash
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 bun run ~/.opencode/skills/Media/Art/Tools/Generate.ts \
   --model nano-banana-pro \
   --prompt "[BACKGROUND PROMPT]" \
   --size 2K \
   --aspect-ratio 16:9 \
-  --output ~/Downloads/yt-bg-$(date +%Y%m%d-%H%M%S).png
+  --output ~/Downloads/yt-bg-${TIMESTAMP}.png
 ```
 
 ---
@@ -129,7 +130,7 @@ bun run ~/.opencode/skills/Media/Art/Tools/Generate.ts \
 
 **🚨 MANDATORY: Generate a FRESH, VARIED, FACE-ONLY headshot EVERY time.**
 
-```
+```text
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ⚠️  FACE ONLY: Forehead to chin, ear to ear                        ⚠️
 ⚠️  NO shoulders, NO neck, NO body visible                         ⚠️
@@ -166,7 +167,7 @@ bun run ~/.opencode/skills/Media/Art/Tools/Generate.ts \
 ### Example FACE-ONLY Prompts
 
 **Variation A (confident, straight-on):**
-```
+```text
 Extreme close-up of the subject's FACE ONLY. Frame shows forehead to chin, ear to ear.
 Absolutely NO shoulders, NO neck, NO body visible. Face fills entire image.
 Confident, authoritative expression - NOT smiling. Looking directly at camera.
@@ -175,7 +176,7 @@ Soft diffused key lighting. Ultra-tight crop on face only.
 ```
 
 **Variation B (contemplative, 3/4 angle):**
-```
+```text
 Extreme close-up of the subject's FACE ONLY. Frame shows forehead to chin, ear to ear.
 Absolutely NO shoulders, NO neck, NO body visible. Face fills entire image.
 Contemplative, thoughtful expression with subtle intensity - NOT smiling.
@@ -185,7 +186,7 @@ Dramatic side lighting creating depth. Ultra-tight crop on face only.
 ```
 
 **Variation C (focused, head tilt):**
-```
+```text
 Extreme close-up of the subject's FACE ONLY. Frame shows forehead to chin, ear to ear.
 Absolutely NO shoulders, NO neck, NO body visible. Face fills entire image.
 Focused, direct engagement expression - NOT smiling. Head tilted slightly.
@@ -198,8 +199,6 @@ Rembrandt lighting pattern. Looking at camera. Ultra-tight crop on face only.
 **NOTE: The Headshot.ts tool is NOT IMPLEMENTED.** Use your preferred AI image generation tool (e.g., Nano Banana Pro, Midjourney, or similar) with the face-only prompts above.
 
 ```bash
-TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-
 # Generate face-only headshot using your preferred AI image generation service
 # Examples: Nano Banana Pro, Midjourney, DALL-E 3, etc.
 # Key requirement: Follow the "FACE ONLY" prompts in the variations above
@@ -249,7 +248,7 @@ bun ~/.opencode/skills/Media/Art/Tools/ComposeThumbnail.ts \
 
 **🚨 MANDATORY: ALL checks must pass before presenting to the user.**
 
-```
+```text
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ⚠️  THE 320x180 TEST IS MANDATORY                                  ⚠️
 ⚠️  If text isn't readable at thumbnail size → FAIL                ⚠️
@@ -316,7 +315,7 @@ open /tmp/yt-preview.png
 ## Quick Reference
 
 ### Tokyo Night Colors
-```
+```text
 Purple (border):  #bb9af7
 Cyan (accents):   #7dcfff
 Blue (accents):   #7aa2f7
@@ -324,7 +323,7 @@ Dark base:        #1a1b26
 ```
 
 ### Workflow Summary
-```
+```text
 1. ANALYZE content → Extract TITLE + SUBTITLE
 2. GENERATE background → Dramatic tech art (Nano Banana Pro)
 3. GENERATE headshot → FACE-ONLY (1:1 aspect), WITH VARIATION + RemoveBg
