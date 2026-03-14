@@ -125,6 +125,7 @@ export class BugBountyTracker {
 
     return {
       ...results,
+      total_checked: 4, // four platforms: hackerone, bugcrowd, intigriti, yeswehack
       check_duration_ms: duration,
     };
   }
