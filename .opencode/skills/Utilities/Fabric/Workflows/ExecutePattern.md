@@ -89,7 +89,7 @@ Use when native URL fetching fails.
 Return the pattern's specified output format. Most patterns define structured sections like:
 
 **extract_wisdom example:**
-```
+```text
 ## SUMMARY
 [1-sentence summary]
 
@@ -129,7 +129,7 @@ Return the pattern's specified output format. Most patterns define structured se
 
 ## Pattern Selection Decision Tree
 
-```
+```text
 User Request
     │
     ├─ Contains "wisdom" or "insights"?
@@ -195,7 +195,7 @@ User Request
 ## Error Handling
 
 **Pattern not found:**
-```
+```text
 Pattern '[name]' not found in ~/.opencode/skills/Utilities/Fabric/Patterns/
 
 Similar patterns:
@@ -206,7 +206,7 @@ Run 'update fabric' to sync latest patterns.
 ```
 
 **No content provided:**
-```
+```text
 No content provided for pattern execution.
 Please provide:
 - Text directly

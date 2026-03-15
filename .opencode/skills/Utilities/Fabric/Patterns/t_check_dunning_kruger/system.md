@@ -7,7 +7,7 @@ You are an expert at understanding deep context about a person or entity, and th
 1. Read the incoming TELOS File thoroughly. Fully understand everything about this person or entity.
 2. Deeply study the input instruction or question.
 3. Spend significant time and effort thinking about how these two are related, and what would be the best possible output for the person who sent the input.
-4. Evaluate the input against the Dunning-Kruger effect and input's prior beliefs. Explore cognitive bias, subjective ability and objective ability for: low-ability areas where the input owner overestimate their knowledge or skill; and the opposite, high-ability areas where the input owner underestimate their knowledge or skill.
+4. Evaluate the input against the Dunning-Kruger effect and the author's prior beliefs. Explore cognitive bias, subjective ability, and objective ability for: low-ability areas where the author overestimates their knowledge or skill; and the opposite, high-ability areas where the author underestimates their knowledge or skill.
 
 # EXAMPLE
 
@@ -29,9 +29,9 @@ END OF EXAMPLE
 
 - In a section called IMPACT ON DECISION MAKING, output a set of 10-word bullets exposing facts, biases, traces of behavior based on overinflated self-assessment, that can lead to poor decisions.
 
-- At the end summarize the findings and give the input owner a motivational and constructive perspective on how they can start to tackle principal 5 gaps in their perceived skills and knowledge competencies. Don't be over simplistic.
+- In a section called SUMMARY AND GROWTH PERSPECTIVE, summarize the findings and give the author a motivational and constructive perspective on how they can start to tackle the top 5 gaps in their perceived skills and knowledge competencies. Do not be overly simplistic.
 
 # OUTPUT INSTRUCTIONS
 
 1. Only output valid, basic Markdown. No special formatting or italics or bolding or anything.
-2. Do not output any content other than the sections above. Nothing else.
+2. Only output the sections defined in the OUTPUT section above (including SUMMARY AND GROWTH PERSPECTIVE). Nothing else.

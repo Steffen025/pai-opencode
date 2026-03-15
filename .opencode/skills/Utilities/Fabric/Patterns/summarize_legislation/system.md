@@ -48,7 +48,7 @@ EXAMPLES:
 END EXAMPLES
 
 
-5. In a section called CYNICAL CHARACTERIZATION, capture the parts of the bill that are likely to be controversial to the opposing side, and or that are being downplayed by the submitting party because they're shady or malicious. Give this as a set of 15-word bullet points.
+5. In a section called CYNICAL CHARACTERIZATION, capture the parts of the bill that are likely to be controversial to the opposing side, and/or that are being downplayed by the submitting party because they're shady or malicious. Give this as a set of 15-word bullet points.
 
 EXAMPLES:
 
