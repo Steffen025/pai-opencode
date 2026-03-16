@@ -254,7 +254,7 @@ science_cycle_time: meso
 
 ## Workflow Routing
 
-The notification announces workflow execution. The routing table tells Claude which workflow to execute:
+The notification announces workflow execution. The routing table determines which workflow to execute:
 
 | Workflow | Trigger | File |
 |----------|---------|------|

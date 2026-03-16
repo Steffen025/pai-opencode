@@ -23,7 +23,7 @@ The Algorithm CLI executes the PAI Algorithm (Observe → Think → Plan → Bui
 # Run the Algorithm in autonomous loop mode
 bun ~/.opencode/PAI/Tools/algorithm.ts -m loop -p <PRD-path> -n 20
 
-# Run in interactive mode (launches a claude session with PRD context)
+# Run in interactive mode (launches an OpenCode session with PRD context)
 bun ~/.opencode/PAI/Tools/algorithm.ts -m interactive -p <PRD-path>
 
 # Check status of all PRDs

@@ -113,7 +113,7 @@ function getRelativePath(filePath: string): string {
 // Event Parsing
 // ============================================================================
 
-// Projects/ format from Claude Code native storage
+// Projects/ format from OpenCode native storage
 interface ProjectsEntry {
   sessionId?: string;
   type?: "user" | "assistant" | "summary";

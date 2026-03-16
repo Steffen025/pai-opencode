@@ -10,7 +10,7 @@ PAI is a general problem-solving system that magnifies human capabilities. It ru
 
 ## Directory Structure
 
-```
+```text
 ~/.opencode/
   AGENTS.md                    # Master config (generated from template)
   AGENTS.md.template           # Source template with variables
