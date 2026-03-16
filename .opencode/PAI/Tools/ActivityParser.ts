@@ -21,10 +21,10 @@ import * as path from "path";
 // Configuration
 // ============================================================================
 
-const CLAUDE_DIR = path.join(process.env.HOME!, ".claude");
-const MEMORY_DIR = path.join(CLAUDE_DIR, "MEMORY");
+const OPENCODE_DIR = path.join(process.env.HOME!, ".opencode");
+const MEMORY_DIR = path.join(OPENCODE_DIR, "MEMORY");
 const USERNAME = process.env.USER || require("os").userInfo().username;
-const PROJECTS_DIR = path.join(CLAUDE_DIR, "projects", `-Users-${USERNAME}--claude`);  // Claude Code native storage
+const PROJECTS_DIR = path.join(OPENCODE_DIR, "projects");  // OpenCode session storage
 const SYSTEM_UPDATES_DIR = path.join(MEMORY_DIR, "PAISYSTEMUPDATES");  // Canonical system change history
 
 // ============================================================================
@@ -86,7 +86,7 @@ function shouldSkip(filePath: string): boolean {
 
 function categorizeFile(filePath: string): keyof ParsedActivity["categories"] | null {
   if (shouldSkip(filePath)) return null;
-  if (!filePath.includes("/.claude/")) return null;
+  if (!filePath.includes("/.opencode/")) return null;
 
   if (PATTERNS.skills.test(filePath)) return "skills";
   if (PATTERNS.workflows.test(filePath)) return "workflows";
@@ -104,9 +104,9 @@ function extractSkillName(filePath: string): string | null {
 }
 
 function getRelativePath(filePath: string): string {
-  const claudeIndex = filePath.indexOf("/.claude/");
-  if (claudeIndex === -1) return filePath;
-  return filePath.substring(claudeIndex + 9); // Skip "/.claude/"
+  const opencodeIndex = filePath.indexOf("/.opencode/");
+  if (opencodeIndex === -1) return filePath;
+  return filePath.substring(opencodeIndex + 11); // Skip "/.opencode/"
 }
 
 // ============================================================================
@@ -203,7 +203,7 @@ async function parseEvents(sessionFilter?: string): Promise<ParsedActivity> {
       // Write tool = new files
       if (contentItem.name === "Write" && contentItem.input?.file_path) {
         const filePath = contentItem.input.file_path;
-        if (filePath.includes("/.claude/")) {
+        if (filePath.includes("/.opencode/")) {
           filesCreated.add(filePath);
         }
       }
@@ -211,7 +211,7 @@ async function parseEvents(sessionFilter?: string): Promise<ParsedActivity> {
       // Edit tool = modified files
       if (contentItem.name === "Edit" && contentItem.input?.file_path) {
         const filePath = contentItem.input.file_path;
-        if (filePath.includes("/.claude/")) {
+        if (filePath.includes("/.opencode/")) {
           filesModified.add(filePath);
         }
       }

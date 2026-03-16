@@ -1,23 +1,23 @@
 #!/usr/bin/env bun
 
 /**
- * BuildCLAUDE.ts — Generate CLAUDE.md from template + settings
+ * BuildAGENTS.ts — Generate AGENTS.md from template + settings
  *
- * Reads CLAUDE.md.template, resolves variables from settings.json
- * and PAI/Algorithm/LATEST, writes CLAUDE.md.
+ * Reads AGENTS.md.template, resolves variables from settings.json
+ * and PAI/Algorithm/LATEST, writes AGENTS.md.
  *
  * Called by:
  *   - PAI installer (first install)
- *   - SessionStart hook (keeps fresh automatically)
- *   - Manual: bun PAI/Tools/BuildCLAUDE.ts
+ *   - SessionStart plugin (keeps fresh automatically)
+ *   - Manual: bun PAI/Tools/BuildAGENTS.ts
  */
 
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
 
-const PAI_DIR = join(process.env.HOME!, ".claude");
-const TEMPLATE_PATH = join(PAI_DIR, "CLAUDE.md.template");
-const OUTPUT_PATH = join(PAI_DIR, "CLAUDE.md");
+const PAI_DIR = join(process.env.HOME!, ".opencode");
+const TEMPLATE_PATH = join(PAI_DIR, "AGENTS.md.template");
+const OUTPUT_PATH = join(PAI_DIR, "AGENTS.md");
 const SETTINGS_PATH = join(PAI_DIR, "settings.json");
 const ALGORITHM_DIR = join(PAI_DIR, "PAI/Algorithm");
 const LATEST_PATH = join(ALGORITHM_DIR, "LATEST");
@@ -89,7 +89,7 @@ export function needsRebuild(): boolean {
 
 export function build(): { rebuilt: boolean; reason?: string } {
   if (!existsSync(TEMPLATE_PATH)) {
-    return { rebuilt: false, reason: "No CLAUDE.md.template found" };
+    return { rebuilt: false, reason: "No AGENTS.md.template found" };
   }
 
   let content = readFileSync(TEMPLATE_PATH, "utf-8");
@@ -103,7 +103,7 @@ export function build(): { rebuilt: boolean; reason?: string } {
   if (existsSync(OUTPUT_PATH)) {
     const existing = readFileSync(OUTPUT_PATH, "utf-8");
     if (existing === content) {
-      return { rebuilt: false, reason: "CLAUDE.md already current" };
+      return { rebuilt: false, reason: "AGENTS.md already current" };
     }
   }
 
@@ -117,7 +117,7 @@ if (import.meta.main) {
   const result = build();
   if (result.rebuilt) {
     const vars = loadVariables();
-    console.log("✅ Built CLAUDE.md from template");
+    console.log("✅ Built AGENTS.md from template");
     console.log(`   Algorithm: ${vars["{{ALGO_VERSION}}"]}`);
     console.log(`   DA: ${vars["{DAIDENTITY.NAME}"]}`);
     console.log(`   Principal: ${vars["{PRINCIPAL.NAME}"]}`);

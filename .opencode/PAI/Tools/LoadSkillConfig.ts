@@ -7,11 +7,11 @@
  * base config with user customizations from SKILLCUSTOMIZATIONS directory.
  *
  * Usage:
- *   import { loadSkillConfig } from '~/.claude/PAI/Tools/LoadSkillConfig';
+ *   import { loadSkillConfig } from '~/.opencode/PAI/Tools/LoadSkillConfig';
  *   const config = loadSkillConfig<MyConfigType>(__dirname, 'config.json');
  *
  * Or CLI:
- *   bun ~/.claude/PAI/Tools/LoadSkillConfig.ts <skill-dir> <filename>
+ *   bun ~/.opencode/PAI/Tools/LoadSkillConfig.ts <skill-dir> <filename>
  */
 
 import { readFileSync, existsSync, readdirSync } from 'fs';
@@ -35,7 +35,7 @@ interface ExtendManifest {
 
 // Constants
 const HOME = homedir();
-const CUSTOMIZATION_DIR = join(HOME, '.claude', 'PAI', 'USER', 'SKILLCUSTOMIZATIONS');
+const CUSTOMIZATION_DIR = join(HOME, '.opencode', 'PAI', 'USER', 'SKILLCUSTOMIZATIONS');
 
 /**
  * Deep merge two objects recursively
@@ -250,7 +250,7 @@ Usage:
   bun LoadSkillConfig.ts --check <skill-name>      Check if skill has customizations
 
 Examples:
-  bun LoadSkillConfig.ts ~/.claude/skills/PAIUpgrade sources.json
+  bun LoadSkillConfig.ts ~/.opencode/skills/PAIUpgrade sources.json
   bun LoadSkillConfig.ts --list
   bun LoadSkillConfig.ts --check PAIUpgrade
 `);

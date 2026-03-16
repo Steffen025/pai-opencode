@@ -1,10 +1,10 @@
 # PAI — Personal AI Infrastructure
 
-PAI is a general problem-solving system that magnifies human capabilities. It runs inside Claude Code as an interconnected set of skills, hooks, tools, memory, and configuration — all orchestrated by The Algorithm.
+PAI is a general problem-solving system that magnifies human capabilities. It runs inside OpenCode as an interconnected set of skills, hooks, tools, memory, and configuration — all orchestrated by The Algorithm.
 
 ## How It Works
 
-**CLAUDE.md** is the master config — generated from `CLAUDE.md.template` via `BuildCLAUDE.ts`. It defines execution modes, The Algorithm, and the context routing table. Claude Code loads it natively every session. A SessionStart hook keeps it fresh automatically.
+**AGENTS.md** is the master config — generated from `AGENTS.md.template` via `BuildAGENTS.ts`. It defines execution modes, The Algorithm, and the context routing table. OpenCode loads it natively every session. A SessionStart plugin keeps it fresh automatically.
 
 **This directory (`PAI/`)** contains all system documentation, tools, user context, and the SKILL.md that defines PAI as a skill. The rest of the system lives alongside it under `~/.opencode/` (hooks, skills, settings, memory).
 
@@ -12,8 +12,8 @@ PAI is a general problem-solving system that magnifies human capabilities. It ru
 
 ```
 ~/.opencode/
-  CLAUDE.md                    # Master config (generated from template)
-  CLAUDE.md.template           # Source template with variables
+  AGENTS.md                    # Master config (generated from template)
+  AGENTS.md.template           # Source template with variables
   settings.json                # Single source of truth for all configuration
   hooks/                       # Event lifecycle hooks (21+)
   skills/                      # 12 categories, 49 skills — each with SKILL.md
@@ -42,7 +42,7 @@ Persistent storage across sessions:
 - **WISDOM/** — Domain knowledge frames that compound over time
 
 ### Tools (`Tools/`)
-TypeScript utilities in `PAI/Tools/`: `BuildCLAUDE.ts` (generate CLAUDE.md from template), `Inference.ts` (AI calls), `GenerateSkillIndex.ts`, `SessionProgress.ts`, `Banner.ts`, and more.
+TypeScript utilities in `PAI/Tools/`: `BuildAGENTS.ts` (generate AGENTS.md from template), `Inference.ts` (AI calls), `GenerateSkillIndex.ts`, `SessionProgress.ts`, `Banner.ts`, and more.
 
 ### Agents (`PAIAGENTSYSTEM.md`)
 14 specialized agent types (Algorithm, Engineer, Architect, Designer, Researcher variants). Custom agents via the Agents skill. Agent teams for coordinated multi-agent work.
@@ -69,17 +69,17 @@ Personal data directory. See `USER/README.md` for full index:
 ## Startup & Context Loading
 
 At session start, three things happen:
-1. **CLAUDE.md** loads natively (identity, algorithm, routing table)
+1. **AGENTS.md** loads natively (identity, algorithm, routing table)
 2. **`loadAtStartup` files** from `settings.json` are force-loaded by `LoadContext.hook.ts`
 3. **Dynamic context** injected by `LoadContext.hook.ts`: relationship context, learning readback, active work summary (each toggleable in `settings.json → dynamicContext`)
 
-All other documentation loads on-demand based on the routing table in CLAUDE.md.
+All other documentation loads on-demand based on the routing table in AGENTS.md.
 
 ## Build System
 
 | Target | Source | Builder | Trigger |
 |--------|--------|---------|---------|
-| `CLAUDE.md` | `CLAUDE.md.template` + `settings.json` + `PAI/Algorithm/LATEST` | `bun PAI/Tools/BuildCLAUDE.ts` | SessionStart hook + manual |
+| `AGENTS.md` | `AGENTS.md.template` + `settings.json` + `PAI/Algorithm/LATEST` | `bun PAI/Tools/BuildAGENTS.ts` | SessionStart plugin + manual |
 
 ## Extending PAI
 
