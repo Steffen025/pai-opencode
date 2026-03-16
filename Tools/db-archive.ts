@@ -154,8 +154,7 @@ async function performArchiving(days: number): Promise<void> {
 		const timestampFile = join(ARCHIVE_DIR, ".last-archive");
 		await Bun.write(timestampFile, new Date().toISOString());
 	} else {
-		log(`Archive incomplete: ${archived}/${sessions.length} sessions archived`, "error");
-		process.exit(1);
+		throw new Error(`Archive incomplete: ${archived}/${sessions.length} sessions archived`);
 	}
 }
 
@@ -170,11 +169,7 @@ async function performVacuum(): Promise<void> {
 		});
 		testDb.close();
 	} catch {
-		log(
-			"Database appears to be in use. Stop OpenCode before vacuuming.",
-			"error",
-		);
-		process.exit(1);
+		throw new Error("Database appears to be in use. Stop OpenCode before vacuuming.");
 	}
 
 	const beforeSize = await getDbSizeMB();
@@ -195,8 +190,7 @@ async function performVacuum(): Promise<void> {
 // rows from the archive DB into the live DB manually.
 async function performRestore(archivePath: string): Promise<void> {
 	if (!existsSync(archivePath)) {
-		log(`Archive not found: ${archivePath}`, "error");
-		process.exit(1);
+		throw new Error(`Archive not found: ${archivePath}`);
 	}
 
 	log(`Restore instructions for ${archivePath}:`, "info");
@@ -267,7 +261,7 @@ async function main(): Promise<void> {
 // Run if main
 if (import.meta.main) {
 	main().catch((err) => {
-		log(`Error: ${err.message}`, "error");
+		log(`Error: ${err instanceof Error ? err.message : String(err)}`, "error");
 		process.exit(1);
 	});
 }
