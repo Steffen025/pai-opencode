@@ -1,0 +1,1323 @@
+{
+  "generated": "2026-03-12T08:28:30.465Z",
+  "totalSkills": 54,
+  "categories": 7,
+  "flatSkills": 19,
+  "hierarchicalSkills": 35,
+  "alwaysLoadedCount": 2,
+  "deferredCount": 52,
+  "skills": {
+    "agents": {
+      "name": "Agents",
+      "path": "Agents/SKILL.md",
+      "category": null,
+      "fullDescription": "Dynamic agent composition. USE WHEN custom agents, agent personalities, traits, voices.",
+      "triggers": [
+        "custom",
+        "agents",
+        "agent",
+        "personalities",
+        "traits",
+        "voices"
+      ],
+      "workflows": [
+        "CREATECUSTOMAGENT",
+        "CreateCustomAgent",
+        "LISTTRAITS",
+        "ListTraits",
+        "SPAWNPARALLEL",
+        "SpawnParallelAgents",
+        "CORE"
+      ],
+      "tier": "deferred",
+      "isHierarchical": false
+    },
+    "annualreports": {
+      "name": "AnnualReports",
+      "path": "Security/AnnualReports/SKILL.md",
+      "category": "Security",
+      "fullDescription": "Security report aggregation. USE WHEN annual reports, security reports, threat reports.",
+      "triggers": [
+        "annual",
+        "reports",
+        "security",
+        "threat"
+      ],
+      "workflows": [
+        "UPDATE",
+        "Update",
+        "ANALYZE",
+        "Analyze",
+        "FETCH",
+        "Fetch"
+      ],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "aphorisms": {
+      "name": "Aphorisms",
+      "path": "Utilities/Aphorisms/SKILL.md",
+      "category": "Utilities",
+      "fullDescription": "Aphorism management. USE WHEN aphorism, quote, saying. SkillSearch('aphorisms') for docs.",
+      "triggers": [
+        "aphorism",
+        "quote",
+        "saying"
+      ],
+      "workflows": [],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "apify": {
+      "name": "Apify",
+      "path": "Scraping/Apify/SKILL.md",
+      "category": "Scraping",
+      "fullDescription": "Social media scraping, business data, e-commerce via Apify actors. USE WHEN Twitter, Instagram, LinkedIn, TikTok, YouTube, Facebook, Google Maps, Amazon scraping.",
+      "triggers": [
+        "twitter",
+        "instagram",
+        "linkedin",
+        "tiktok",
+        "youtube",
+        "facebook",
+        "google",
+        "maps",
+        "amazon",
+        "scraping"
+      ],
+      "workflows": [],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "art": {
+      "name": "Art",
+      "path": "Media/Art/SKILL.md",
+      "category": "Media",
+      "fullDescription": "Visual content system. USE WHEN art, illustrations, diagrams, visualizations, mermaid, flowchart.",
+      "triggers": [
+        "art",
+        "illustrations",
+        "diagrams",
+        "visualizations",
+        "mermaid",
+        "flowchart",
+        "visual"
+      ],
+      "workflows": [
+        "Essay",
+        "D3Dashboards",
+        "Visualize",
+        "Mermaid",
+        "TechnicalDiagrams",
+        "Taxonomies",
+        "Timelines",
+        "Frameworks",
+        "Comparisons",
+        "AnnotatedScreenshots",
+        "step",
+        "Aphorisms",
+        "Maps",
+        "Stats",
+        "Comics",
+        "YouTubeThumbnail",
+        "AdHocYouTubeThumbnail",
+        "CreatePAIPackIcon",
+        "RecipeCards"
+      ],
+      "tier": "always",
+      "isHierarchical": true
+    },
+    "audioeditor": {
+      "name": "AudioEditor",
+      "path": "AudioEditor/SKILL.md",
+      "category": null,
+      "fullDescription": "AI-powered audio/video editing — transcription, intelligent cut detection, automated editing with crossfades, and optional cloud polish. USE WHEN clean audio, edit audio, remove filler words, clean podcast, remove ums, fix audio, cut dead air, polish audio, clean recording, transcribe and edit.",
+      "triggers": [
+        "clean",
+        "audio",
+        "edit",
+        "remove",
+        "filler",
+        "words",
+        "podcast",
+        "ums",
+        "fix",
+        "cut",
+        "dead",
+        "air",
+        "polish",
+        "recording",
+        "transcribe"
+      ],
+      "workflows": [
+        "Clean"
+      ],
+      "tier": "deferred",
+      "isHierarchical": false
+    },
+    "becreative": {
+      "name": "BeCreative",
+      "path": "Thinking/BeCreative/SKILL.md",
+      "category": "Thinking",
+      "fullDescription": "Extended thinking mode. USE WHEN be creative, deep thinking, deep thinking, extended reasoning. SkillSearch('becreative') for docs.",
+      "triggers": [
+        "creative",
+        "deep",
+        "thinking",
+        "extended",
+        "reasoning"
+      ],
+      "workflows": [
+        "StandardCreativity",
+        "MaximumCreativity",
+        "IdeaGeneration",
+        "TreeOfThoughts",
+        "DomainSpecific"
+      ],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "brightdata": {
+      "name": "BrightData",
+      "path": "Scraping/BrightData/SKILL.md",
+      "category": "Scraping",
+      "fullDescription": "\"Progressive URL scraping. USE WHEN Bright Data, scrape URL, web scraping tiers. SkillSearch('brightdata') for docs.\"",
+      "triggers": [
+        "bright",
+        "data",
+        "scrape",
+        "url",
+        "web",
+        "scraping",
+        "tiers"
+      ],
+      "workflows": [
+        "FourTierScrape"
+      ],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "browser": {
+      "name": "Browser",
+      "path": "Utilities/Browser/SKILL.md",
+      "category": "Utilities",
+      "fullDescription": "Browser automation with debug visibility. USE WHEN browser, screenshot, debug web, verify UI.",
+      "triggers": [
+        "browser",
+        "screenshot",
+        "debug",
+        "web",
+        "verify",
+        "automation"
+      ],
+      "workflows": [],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "cloudflare": {
+      "name": "Cloudflare",
+      "path": "Utilities/Cloudflare/SKILL.md",
+      "category": "Utilities",
+      "fullDescription": "Deploy Cloudflare Workers/Pages. USE WHEN Cloudflare, worker, deploy, Pages, MCP server. SkillSearch('cloudflare') for docs.",
+      "triggers": [
+        "cloudflare",
+        "worker",
+        "deploy",
+        "pages",
+        "mcp",
+        "server"
+      ],
+      "workflows": [
+        "Create",
+        "Troubleshoot"
+      ],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "codereview": {
+      "name": "CodeReview",
+      "path": "CodeReview/SKILL.md",
+      "category": null,
+      "fullDescription": "AI-powered code review via roborev. USE WHEN review code, check code quality, roborev, audit changes, review before commit, review before PR, code quality check, lint review, architecture review.",
+      "triggers": [
+        "review",
+        "code",
+        "check",
+        "quality",
+        "roborev",
+        "audit",
+        "changes",
+        "before",
+        "commit",
+        "lint",
+        "architecture"
+      ],
+      "workflows": [],
+      "tier": "deferred",
+      "isHierarchical": false
+    },
+    "contentanalysis": {
+      "name": "ContentAnalysis",
+      "path": "ContentAnalysis/SKILL.md",
+      "category": null,
+      "fullDescription": "Content analysis and wisdom extraction. USE WHEN analyze content, extract insights, process media, understand content.",
+      "triggers": [
+        "analyze",
+        "content",
+        "extract",
+        "insights",
+        "process",
+        "media",
+        "understand"
+      ],
+      "workflows": [],
+      "tier": "deferred",
+      "isHierarchical": false
+    },
+    "council": {
+      "name": "Council",
+      "path": "Thinking/Council/SKILL.md",
+      "category": "Thinking",
+      "fullDescription": "\"Multi-agent debate system. USE WHEN council, debate, perspectives, agents discuss. SkillSearch('council') for docs.\"",
+      "triggers": [
+        "council",
+        "debate",
+        "perspectives",
+        "agents",
+        "discuss"
+      ],
+      "workflows": [
+        "Debate",
+        "Quick"
+      ],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "createcli": {
+      "name": "CreateCLI",
+      "path": "Utilities/CreateCLI/SKILL.md",
+      "category": "Utilities",
+      "fullDescription": "\"Generate TypeScript CLIs. USE WHEN create CLI, build CLI, command-line tool. SkillSearch('createcli') for docs.\"",
+      "triggers": [
+        "create",
+        "cli",
+        "build",
+        "command-line",
+        "tool"
+      ],
+      "workflows": [
+        "CreateCli",
+        "AddCommand",
+        "UpgradeTier"
+      ],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "createskill": {
+      "name": "CreateSkill",
+      "path": "Utilities/CreateSkill/SKILL.md",
+      "category": "Utilities",
+      "fullDescription": "\"Create and validate skills. USE WHEN create skill, new skill, skill structure, canonicalize. SkillSearch('createskill') for docs.\"",
+      "triggers": [
+        "create",
+        "skill",
+        "new",
+        "structure",
+        "canonicalize"
+      ],
+      "workflows": [
+        "Create",
+        "CompanyDueDiligence",
+        "WorkflowName",
+        "CreateSkill",
+        "ValidateSkill",
+        "UpdateSkill",
+        "CanonicalizeSkill"
+      ],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "delegation": {
+      "name": "Delegation",
+      "path": "Utilities/Delegation/SKILL.md",
+      "category": "Utilities",
+      "fullDescription": "Parallelize work via background/foreground agents, built-in types, custom agents, or agent teams/swarms. USE WHEN 3+ independent workstreams, parallel execution, agent specialization, Extended+ effort, agent team, swarm, create an agent team.",
+      "triggers": [
+        "independent",
+        "workstreams",
+        "parallel",
+        "execution",
+        "agent",
+        "specialization",
+        "extended+",
+        "effort",
+        "team",
+        "swarm",
+        "create"
+      ],
+      "workflows": [],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "documents": {
+      "name": "Documents",
+      "path": "Utilities/Documents/SKILL.md",
+      "category": "Utilities",
+      "fullDescription": "Document processing. USE WHEN document, process file. SkillSearch('documents') for docs.",
+      "triggers": [
+        "document",
+        "process",
+        "file"
+      ],
+      "workflows": [
+        "DOCX",
+        "PDF",
+        "PPTX",
+        "XLSX"
+      ],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "docx": {
+      "name": "Docx",
+      "path": "Utilities/Docx/SKILL.md",
+      "category": "Utilities",
+      "fullDescription": "Word document processing. USE WHEN docx, Word document. SkillSearch('docx') for docs.",
+      "triggers": [
+        "docx",
+        "word",
+        "document"
+      ],
+      "workflows": [],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "evals": {
+      "name": "Evals",
+      "path": "Utilities/Evals/SKILL.md",
+      "category": "Utilities",
+      "fullDescription": "Agent evaluation framework. USE WHEN eval, evaluate, test agent, benchmark, verify behavior.",
+      "triggers": [
+        "eval",
+        "evaluate",
+        "test",
+        "agent",
+        "benchmark",
+        "verify",
+        "behavior"
+      ],
+      "workflows": [
+        "ALGORITHM"
+      ],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "extractwisdom": {
+      "name": "ExtractWisdom",
+      "path": "ContentAnalysis/ExtractWisdom/SKILL.md",
+      "category": "ContentAnalysis",
+      "fullDescription": "Dynamic wisdom extraction that adapts sections to content. USE WHEN extract wisdom, analyze video, analyze podcast, extract insights, what's interesting, extract from YouTube, what did I miss, key takeaways. Replaces static extract_wisdom with content-adaptive extraction.",
+      "triggers": [
+        "extract",
+        "wisdom",
+        "analyze",
+        "video",
+        "podcast",
+        "insights",
+        "whats",
+        "interesting",
+        "youtube",
+        "what",
+        "did",
+        "miss",
+        "key",
+        "takeaways"
+      ],
+      "workflows": [
+        "Extract"
+      ],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "fabric": {
+      "name": "Fabric",
+      "path": "Utilities/Fabric/SKILL.md",
+      "category": "Utilities",
+      "fullDescription": "240+ prompt patterns for content analysis and transformation. USE WHEN fabric, extract wisdom, summarize, threat model.",
+      "triggers": [
+        "fabric",
+        "extract",
+        "wisdom",
+        "summarize",
+        "threat",
+        "model"
+      ],
+      "workflows": [
+        "ExecutePattern",
+        "UpdatePatterns"
+      ],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "firstprinciples": {
+      "name": "FirstPrinciples",
+      "path": "Thinking/FirstPrinciples/SKILL.md",
+      "category": "Thinking",
+      "fullDescription": "\"First principles analysis. USE WHEN first principles, fundamental, root cause, decompose. SkillSearch('firstprinciples') for docs.\"",
+      "triggers": [
+        "first",
+        "principles",
+        "fundamental",
+        "root",
+        "cause",
+        "decompose"
+      ],
+      "workflows": [
+        "Deconstruct",
+        "Challenge",
+        "Reconstruct"
+      ],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "investigation": {
+      "name": "Investigation",
+      "path": "Investigation/SKILL.md",
+      "category": null,
+      "fullDescription": "Investigation and research skills. USE WHEN investigate, research person, company intel, due diligence, OSINT, background check.",
+      "triggers": [
+        "investigate",
+        "research",
+        "person",
+        "company",
+        "intel",
+        "due",
+        "diligence",
+        "osint",
+        "background",
+        "check"
+      ],
+      "workflows": [],
+      "tier": "deferred",
+      "isHierarchical": false
+    },
+    "iterativedepth": {
+      "name": "IterativeDepth",
+      "path": "Thinking/IterativeDepth/SKILL.md",
+      "category": "Thinking",
+      "fullDescription": "Multi-angle iterative exploration for deeper ISC extraction. USE WHEN iterative depth, deep exploration, multi-angle analysis, explore deeper, multiple perspectives on problem, examine from angles, OR when the Algorithm's OBSERVE phase needs enhanced ISC extraction.",
+      "triggers": [
+        "iterative",
+        "depth",
+        "deep",
+        "exploration",
+        "multi-angle",
+        "analysis",
+        "explore",
+        "deeper",
+        "multiple",
+        "perspectives",
+        "problem",
+        "examine",
+        "angles",
+        "when",
+        "algorithms",
+        "observe",
+        "phase",
+        "needs",
+        "enhanced",
+        "isc",
+        "extraction"
+      ],
+      "workflows": [
+        "Explore"
+      ],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "media": {
+      "name": "Media",
+      "path": "Media/SKILL.md",
+      "category": null,
+      "fullDescription": "Media creation and processing skills. USE WHEN create visuals, generate images, video production, thumbnails, art, illustrations.",
+      "triggers": [
+        "create",
+        "visuals",
+        "generate",
+        "images",
+        "video",
+        "production",
+        "thumbnails",
+        "art",
+        "illustrations"
+      ],
+      "workflows": [],
+      "tier": "deferred",
+      "isHierarchical": false
+    },
+    "opencodesystem": {
+      "name": "OpenCodeSystem",
+      "path": "OpenCodeSystem/SKILL.md",
+      "category": null,
+      "fullDescription": "PAI-OpenCode system self-awareness. USE WHEN asking about tools, config, model routing, plugin handlers, MCP servers, troubleshooting, or operating environment.",
+      "triggers": [
+        "asking",
+        "tools",
+        "config",
+        "model",
+        "routing",
+        "plugin",
+        "handlers",
+        "mcp",
+        "servers",
+        "troubleshooting",
+        "operating",
+        "environment"
+      ],
+      "workflows": [
+        "PAI"
+      ],
+      "tier": "deferred",
+      "isHierarchical": false
+    },
+    "osint": {
+      "name": "OSINT",
+      "path": "Investigation/OSINT/SKILL.md",
+      "category": "Investigation",
+      "fullDescription": "\"Open source intelligence gathering. USE WHEN OSINT, due diligence, background check, research person, company intel, investigate. SkillSearch('osint') for docs.\"",
+      "triggers": [
+        "osint",
+        "due",
+        "diligence",
+        "background",
+        "check",
+        "research",
+        "person",
+        "company",
+        "intel",
+        "investigate"
+      ],
+      "workflows": [
+        "PeopleLookup",
+        "CompanyLookup",
+        "CompanyDueDiligence",
+        "EntityLookup"
+      ],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "pai": {
+      "name": "PAI",
+      "path": "PAI/SKILL.md",
+      "category": null,
+      "fullDescription": "Personal AI Infrastructure core. The authoritative reference for how PAI works.",
+      "triggers": [],
+      "workflows": [],
+      "tier": "deferred",
+      "isHierarchical": false
+    },
+    "paiupgrade": {
+      "name": "PAIUpgrade",
+      "path": "Utilities/PAIUpgrade/SKILL.md",
+      "category": "Utilities",
+      "fullDescription": "Extract system improvements and monitor Anthropic ecosystem. USE WHEN upgrade, check Anthropic, new Claude features.",
+      "triggers": [
+        "upgrade",
+        "check",
+        "anthropic",
+        "new",
+        "claude",
+        "features",
+        "extract"
+      ],
+      "workflows": [
+        "ASPIRATIONAL",
+        "CheckForUpgrades",
+        "ResearchUpgrade",
+        "ReleaseNotesDeepDive",
+        "FindSources"
+      ],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "parser": {
+      "name": "Parser",
+      "path": "Utilities/Parser/SKILL.md",
+      "category": "Utilities",
+      "fullDescription": "Parse URLs, files, videos to JSON. USE WHEN parse, extract, URL, transcript, entities, JSON, batch, content, YouTube, PDF, article. SkillSearch('parser') for docs.",
+      "triggers": [
+        "parse",
+        "extract",
+        "url",
+        "transcript",
+        "entities",
+        "json",
+        "batch",
+        "content",
+        "youtube",
+        "pdf",
+        "article"
+      ],
+      "workflows": [
+        "ParseContent",
+        "CollisionDetection",
+        "DetectContentType",
+        "ExtractNewsletter",
+        "ExtractTwitter",
+        "ExtractArticle",
+        "ExtractYoutube",
+        "ExtractPdf",
+        "ExtractBrowserExtension"
+      ],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "pdf": {
+      "name": "Pdf",
+      "path": "Utilities/Pdf/SKILL.md",
+      "category": "Utilities",
+      "fullDescription": "PDF processing. USE WHEN pdf, PDF file. SkillSearch('pdf') for docs.",
+      "triggers": [
+        "pdf",
+        "file"
+      ],
+      "workflows": [],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "pptx": {
+      "name": "Pptx",
+      "path": "Utilities/Pptx/SKILL.md",
+      "category": "Utilities",
+      "fullDescription": "PowerPoint processing. USE WHEN pptx, PowerPoint, slides. SkillSearch('pptx') for docs.",
+      "triggers": [
+        "pptx",
+        "powerpoint",
+        "slides"
+      ],
+      "workflows": [
+        "CRITICAL",
+        "LAYOUT",
+        "VALIDATION",
+        "IMPORTANT",
+        "WARNING"
+      ],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "privateinvestigator": {
+      "name": "PrivateInvestigator",
+      "path": "Investigation/PrivateInvestigator/SKILL.md",
+      "category": "Investigation",
+      "fullDescription": "\"Ethical people-finding. USE WHEN find person, locate, reconnect, people search, skip trace. SkillSearch('privateinvestigator') for docs.\"",
+      "triggers": [
+        "find",
+        "person",
+        "locate",
+        "reconnect",
+        "people",
+        "search",
+        "skip",
+        "trace"
+      ],
+      "workflows": [],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "prompting": {
+      "name": "Prompting",
+      "path": "Utilities/Prompting/SKILL.md",
+      "category": "Utilities",
+      "fullDescription": "Meta-prompting for prompt generation. USE WHEN meta-prompting, template generation, prompt optimization.",
+      "triggers": [
+        "meta-prompting",
+        "template",
+        "generation",
+        "prompt",
+        "optimization"
+      ],
+      "workflows": [],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "promptinjection": {
+      "name": "PromptInjection",
+      "path": "Security/PromptInjection/SKILL.md",
+      "category": "Security",
+      "fullDescription": "Prompt injection testing. USE WHEN prompt injection, jailbreak, LLM security, AI security assessment, pentest AI application, test chatbot vulnerabilities.",
+      "triggers": [
+        "prompt",
+        "injection",
+        "jailbreak",
+        "llm",
+        "security",
+        "assessment",
+        "pentest",
+        "application",
+        "test",
+        "chatbot",
+        "vulnerabilities"
+      ],
+      "workflows": [
+        "CompleteAssessment",
+        "Reconnaissance",
+        "DirectInjectionTesting",
+        "IndirectInjectionTesting",
+        "MultiStageAttacks"
+      ],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "recon": {
+      "name": "Recon",
+      "path": "Security/Recon/SKILL.md",
+      "category": "Security",
+      "fullDescription": "\"Security reconnaissance. USE WHEN recon, reconnaissance, bug bounty, attack surface. SkillSearch('recon') for docs.\"",
+      "triggers": [
+        "recon",
+        "reconnaissance",
+        "bug",
+        "bounty",
+        "attack",
+        "surface",
+        "security"
+      ],
+      "workflows": [],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "redteam": {
+      "name": "RedTeam",
+      "path": "Thinking/RedTeam/SKILL.md",
+      "category": "Thinking",
+      "fullDescription": "\"Adversarial analysis with 32 agents. USE WHEN red team, attack idea, counterarguments, critique, stress test. SkillSearch('redteam') for docs.\"",
+      "triggers": [
+        "red",
+        "team",
+        "attack",
+        "idea",
+        "counterarguments",
+        "critique",
+        "stress",
+        "test"
+      ],
+      "workflows": [
+        "ParallelAnalysis",
+        "AdversarialValidation"
+      ],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "remotion": {
+      "name": "Remotion",
+      "path": "Media/Remotion/SKILL.md",
+      "category": "Media",
+      "fullDescription": "Programmatic video creation with React. USE WHEN video, animation, motion graphics, video rendering, React video, intro video, YouTube video, TikTok video, video production, render video.",
+      "triggers": [
+        "video",
+        "animation",
+        "motion",
+        "graphics",
+        "rendering",
+        "react",
+        "intro",
+        "youtube",
+        "tiktok",
+        "production",
+        "render"
+      ],
+      "workflows": [
+        "ContentToAnimation"
+      ],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "research": {
+      "name": "Research",
+      "path": "Research/SKILL.md",
+      "category": null,
+      "fullDescription": "Comprehensive research and content extraction. USE WHEN research, investigate, extract wisdom, analyze content. For OSINT use OSINT skill.",
+      "triggers": [
+        "research",
+        "investigate",
+        "extract",
+        "wisdom",
+        "analyze",
+        "content",
+        "osint"
+      ],
+      "workflows": [
+        "DEFAULT",
+        "QuickResearch",
+        "StandardResearch",
+        "ExtensiveResearch",
+        "OSINT",
+        "ExtractAlpha",
+        "Retrieve",
+        "YoutubeExtraction",
+        "WebScraping",
+        "ClaudeResearch",
+        "InterviewResearch",
+        "AnalyzeAiTrends",
+        "Fabric",
+        "Enhance",
+        "ExtractKnowledge"
+      ],
+      "tier": "always",
+      "isHierarchical": false
+    },
+    "sales": {
+      "name": "Sales",
+      "path": "Sales/SKILL.md",
+      "category": null,
+      "fullDescription": "Sales workflows. USE WHEN sales, proposal, pricing. SkillSearch('sales') for docs.",
+      "triggers": [
+        "sales",
+        "proposal",
+        "pricing"
+      ],
+      "workflows": [
+        "Create-sales-package",
+        "Create-narrative",
+        "Create-visual"
+      ],
+      "tier": "deferred",
+      "isHierarchical": false
+    },
+    "science": {
+      "name": "Science",
+      "path": "Thinking/Science/SKILL.md",
+      "category": "Thinking",
+      "fullDescription": "Universal thinking and iteration engine based on the scientific method. USE WHEN user says \"think about\", \"figure out\", \"try approaches\", \"experiment with\", \"test this idea\", \"iterate on\", \"improve\", \"optimize\", OR any problem-solving that benefits from structured hypothesis-test-analyze cycles. THE meta-skill that other workflows implement.",
+      "triggers": [
+        "think",
+        "figure",
+        "out",
+        "try",
+        "approaches",
+        "experiment",
+        "test",
+        "this",
+        "idea",
+        "iterate",
+        "improve",
+        "optimize",
+        "any",
+        "problem-solving",
+        "that",
+        "benefits",
+        "structured",
+        "hypothesis-test-analyze",
+        "cycles"
+      ],
+      "workflows": [
+        "DefineGoal",
+        "GenerateHypotheses",
+        "DesignExperiment",
+        "MeasureResults",
+        "AnalyzeResults",
+        "Iterate",
+        "FullCycle",
+        "QuickDiagnosis",
+        "StructuredInvestigation"
+      ],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "scraping": {
+      "name": "Scraping",
+      "path": "Scraping/SKILL.md",
+      "category": null,
+      "fullDescription": "Web scraping and data extraction. USE WHEN scrape website, extract data, web scraping, Twitter, Instagram, LinkedIn, TikTok, YouTube, Google Maps, Amazon, social media scraping.",
+      "triggers": [
+        "scrape",
+        "website",
+        "extract",
+        "data",
+        "web",
+        "scraping",
+        "twitter",
+        "instagram",
+        "linkedin",
+        "tiktok",
+        "youtube",
+        "google",
+        "maps",
+        "amazon",
+        "social",
+        "media"
+      ],
+      "workflows": [],
+      "tier": "deferred",
+      "isHierarchical": false
+    },
+    "secupdates": {
+      "name": "SECUpdates",
+      "path": "Security/SECUpdates/SKILL.md",
+      "category": "Security",
+      "fullDescription": "Security news aggregation. USE WHEN security news, security updates, breaches.",
+      "triggers": [
+        "security",
+        "news",
+        "updates",
+        "breaches"
+      ],
+      "workflows": [
+        "Update"
+      ],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "security": {
+      "name": "Security",
+      "path": "Security/SKILL.md",
+      "category": null,
+      "fullDescription": "Security assessment and intelligence. USE WHEN recon, reconnaissance, port scan, subdomain, DNS, WHOIS, web assessment, pentest, vulnerability, security scan, prompt injection, jailbreak, LLM security, security news, breaches, annual reports, threat landscape.",
+      "triggers": [
+        "recon",
+        "reconnaissance",
+        "port",
+        "scan",
+        "subdomain",
+        "dns",
+        "whois",
+        "web",
+        "assessment",
+        "pentest",
+        "vulnerability",
+        "security",
+        "prompt",
+        "injection",
+        "jailbreak",
+        "llm",
+        "news",
+        "breaches",
+        "annual",
+        "reports",
+        "threat",
+        "landscape"
+      ],
+      "workflows": [],
+      "tier": "deferred",
+      "isHierarchical": false
+    },
+    "system": {
+      "name": "System",
+      "path": "System/SKILL.md",
+      "category": null,
+      "fullDescription": "System maintenance - integrity check, document session, secret scanning. USE WHEN integrity, audit, document session, secrets, security scan.",
+      "triggers": [
+        "integrity",
+        "audit",
+        "document",
+        "session",
+        "secrets",
+        "security",
+        "scan"
+      ],
+      "workflows": [
+        "PAI",
+        "IntegrityCheck",
+        "DocumentSession",
+        "DocumentRecent",
+        "GitPush",
+        "SecretScanning",
+        "CrossRepoValidation",
+        "PrivacyCheck",
+        "WorkContextRecall"
+      ],
+      "tier": "deferred",
+      "isHierarchical": false
+    },
+    "telos": {
+      "name": "Telos",
+      "path": "Telos/SKILL.md",
+      "category": null,
+      "fullDescription": "Life OS and project management. USE WHEN life goals, projects, dependencies, TELOS, books, movies, tracking.",
+      "triggers": [
+        "life",
+        "goals",
+        "projects",
+        "dependencies",
+        "telos",
+        "books",
+        "movies",
+        "tracking"
+      ],
+      "workflows": [],
+      "tier": "deferred",
+      "isHierarchical": false
+    },
+    "thinking": {
+      "name": "Thinking",
+      "path": "Thinking/SKILL.md",
+      "category": null,
+      "fullDescription": "Deep thinking and analysis skills. USE WHEN be creative, deep thinking, extended reasoning, first principles, decompose, red team, critique, stress test, council, debate, perspectives, science, research methodology, threat model, world analysis.",
+      "triggers": [
+        "creative",
+        "deep",
+        "thinking",
+        "extended",
+        "reasoning",
+        "first",
+        "principles",
+        "decompose",
+        "red",
+        "team",
+        "critique",
+        "stress",
+        "test",
+        "council",
+        "debate",
+        "perspectives",
+        "science",
+        "research",
+        "methodology",
+        "threat",
+        "model",
+        "world",
+        "analysis"
+      ],
+      "workflows": [],
+      "tier": "deferred",
+      "isHierarchical": false
+    },
+    "usmetrics": {
+      "name": "USMetrics",
+      "path": "USMetrics/SKILL.md",
+      "category": null,
+      "fullDescription": "US metrics, economic indicators and data tracking. USE WHEN US metrics, American data, statistics, demographics, GDP, inflation, unemployment, economic metrics, gas prices.",
+      "triggers": [
+        "metrics",
+        "american",
+        "data",
+        "statistics",
+        "demographics",
+        "gdp",
+        "inflation",
+        "unemployment",
+        "economic",
+        "gas",
+        "prices"
+      ],
+      "workflows": [
+        "UpdateData",
+        "GetCurrentState"
+      ],
+      "tier": "deferred",
+      "isHierarchical": false
+    },
+    "utilities": {
+      "name": "Utilities",
+      "path": "Utilities/SKILL.md",
+      "category": null,
+      "fullDescription": "Utility and helper skills. USE WHEN aphorisms, quotes, browser automation, Cloudflare, create CLI, build CLI, create skill, process documents, PDF, Word, Excel, evaluations, evals, fabric patterns, PAI upgrade, parser, prompting, templates.",
+      "triggers": [
+        "aphorisms",
+        "quotes",
+        "browser",
+        "automation",
+        "cloudflare",
+        "create",
+        "cli",
+        "build",
+        "skill",
+        "process",
+        "documents",
+        "pdf",
+        "word",
+        "excel",
+        "evaluations",
+        "evals",
+        "fabric",
+        "patterns",
+        "pai",
+        "upgrade",
+        "parser",
+        "prompting",
+        "templates"
+      ],
+      "workflows": [],
+      "tier": "deferred",
+      "isHierarchical": false
+    },
+    "voiceserver": {
+      "name": "VoiceServer",
+      "path": "VoiceServer/SKILL.md",
+      "category": null,
+      "fullDescription": "Voice server management. USE WHEN voice server, TTS server, voice notification, prosody.",
+      "triggers": [
+        "voice",
+        "server",
+        "tts",
+        "notification",
+        "prosody"
+      ],
+      "workflows": [
+        "Status"
+      ],
+      "tier": "deferred",
+      "isHierarchical": false
+    },
+    "webassessment": {
+      "name": "WebAssessment",
+      "path": "Security/WebAssessment/SKILL.md",
+      "category": "Security",
+      "fullDescription": "Web security assessment. USE WHEN web assessment, pentest, security testing, vulnerability scan. SkillSearch('webassessment') for docs.",
+      "triggers": [
+        "web",
+        "assessment",
+        "pentest",
+        "security",
+        "testing",
+        "vulnerability",
+        "scan"
+      ],
+      "workflows": [
+        "UnderstandApplication",
+        "CreateThreatModel"
+      ],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "worldthreatmodelharness": {
+      "name": "WorldThreatModelHarness",
+      "path": "Thinking/WorldThreatModelHarness/SKILL.md",
+      "category": "Thinking",
+      "fullDescription": "Persistent world model system across 11 time horizons (6mo→50yr) for adversarial analysis of ideas, strategies, and investments. USE WHEN threat model, world model, test idea, test strategy, future analysis, test investment, how will this hold up, test against future, update world models, view world models, time horizon analysis, adversarial future test, stress test idea.",
+      "triggers": [
+        "threat",
+        "model",
+        "world",
+        "test",
+        "idea",
+        "strategy",
+        "future",
+        "analysis",
+        "investment",
+        "how",
+        "will",
+        "this",
+        "hold",
+        "against",
+        "update",
+        "models",
+        "view",
+        "time",
+        "horizon",
+        "adversarial",
+        "stress"
+      ],
+      "workflows": [
+        "TestIdea",
+        "UpdateModels",
+        "ViewModels"
+      ],
+      "tier": "deferred",
+      "isHierarchical": true
+    },
+    "writestory": {
+      "name": "WriteStory",
+      "path": "WriteStory/SKILL.md",
+      "category": null,
+      "fullDescription": "Layered fiction writing system using Will Storr's storytelling science and rhetorical figures. USE WHEN write story, fiction, novel, short story, book, chapter, story bible, character arc, plot outline, creative writing, worldbuilding, narrative, mystery writing, dialogue, prose, series planning.",
+      "triggers": [
+        "write",
+        "story",
+        "fiction",
+        "novel",
+        "short",
+        "book",
+        "chapter",
+        "bible",
+        "character",
+        "arc",
+        "plot",
+        "outline",
+        "creative",
+        "writing",
+        "worldbuilding",
+        "narrative",
+        "mystery",
+        "dialogue",
+        "prose",
+        "series",
+        "planning"
+      ],
+      "workflows": [
+        "Interview",
+        "BuildBible",
+        "Explore",
+        "WriteChapter",
+        "Revise"
+      ],
+      "tier": "deferred",
+      "isHierarchical": false
+    },
+    "xlsx": {
+      "name": "Xlsx",
+      "path": "Utilities/Xlsx/SKILL.md",
+      "category": "Utilities",
+      "fullDescription": "Excel file processing. USE WHEN xlsx, Excel, spreadsheet. SkillSearch('xlsx') for docs.",
+      "triggers": [
+        "xlsx",
+        "excel",
+        "spreadsheet"
+      ],
+      "workflows": [],
+      "tier": "deferred",
+      "isHierarchical": true
+    }
+  },
+  "categoryMap": {
+    "ContentAnalysis": [
+      "ExtractWisdom"
+    ],
+    "Investigation": [
+      "OSINT",
+      "PrivateInvestigator"
+    ],
+    "Media": [
+      "Art",
+      "Remotion"
+    ],
+    "Scraping": [
+      "Apify",
+      "BrightData"
+    ],
+    "Security": [
+      "AnnualReports",
+      "PromptInjection",
+      "Recon",
+      "SECUpdates",
+      "WebAssessment"
+    ],
+    "Thinking": [
+      "BeCreative",
+      "Council",
+      "FirstPrinciples",
+      "IterativeDepth",
+      "RedTeam",
+      "Science",
+      "WorldThreatModelHarness"
+    ],
+    "Utilities": [
+      "Aphorisms",
+      "Browser",
+      "Cloudflare",
+      "CreateCLI",
+      "CreateSkill",
+      "Delegation",
+      "Documents",
+      "Docx",
+      "Evals",
+      "Fabric",
+      "PAIUpgrade",
+      "Parser",
+      "Pdf",
+      "Pptx",
+      "Prompting",
+      "Xlsx"
+    ]
+  }
+}

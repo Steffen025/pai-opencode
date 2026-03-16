@@ -11,27 +11,33 @@
  */
 
 import { readdir, readFile, writeFile, stat } from 'fs/promises';
-import { join } from 'path';
+import { join, relative, sep } from 'path';
 import { existsSync } from 'fs';
 
-const SKILLS_DIR = join(import.meta.dir, '..', 'Skills');
+const SKILLS_DIR = join(import.meta.dir, '..', '..', '..', 'skills');
 const OUTPUT_FILE = join(SKILLS_DIR, 'skill-index.json');
 
 interface SkillEntry {
   name: string;
   path: string;
+  category: string | null;  // null for flat skills, category name for hierarchical
   fullDescription: string;
   triggers: string[];
   workflows: string[];
   tier: 'always' | 'deferred';
+  isHierarchical: boolean;  // true if in skills/Category/Skill/ structure
 }
 
 interface SkillIndex {
   generated: string;
   totalSkills: number;
+  categories: number;
+  flatSkills: number;
+  hierarchicalSkills: number;
   alwaysLoadedCount: number;
   deferredCount: number;
   skills: Record<string, SkillEntry>;
+  categoryMap: Record<string, string[]>;  // category -> skill names
 }
 
 // Skills that should always be fully loaded (Tier 1)
@@ -98,16 +104,52 @@ function parseFrontmatter(content: string): { name: string; description: string 
   const nameMatch = frontmatter.match(/^name:\s*(.+)$/m);
   const name = nameMatch ? nameMatch[1].trim() : '';
 
-  // Extract description (can be multi-line with |)
+  // Extract description (handles both single-line and multi-line YAML with | or >)
   let description = '';
-  const descMatch = frontmatter.match(/^description:\s*\|?\s*([\s\S]*?)(?=\n[a-z]+:|$)/m);
-  if (descMatch) {
-    description = descMatch[1]
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line)
-      .join(' ')
-      .trim();
+  
+  // Find the description line
+  const descLineMatch = frontmatter.match(/^description:\s*(.*)$/m);
+  if (descLineMatch) {
+    const indicator = descLineMatch[1].trim(); // |, >, |-, >- or empty
+    
+    if (indicator === '|' || indicator === '>' || indicator === '|-' || indicator === '>-') {
+      // Multiline YAML - extract content until next field
+      const descStart = frontmatter.indexOf(descLineMatch[0]) + descLineMatch[0].length;
+      const restOfFrontmatter = frontmatter.slice(descStart);
+      
+      // Find where next field starts (line beginning with field name:)
+      const nextFieldMatch = restOfFrontmatter.match(/\n([0-9A-Za-z_-]+):/);
+      const rawDesc = nextFieldMatch 
+        ? restOfFrontmatter.slice(0, nextFieldMatch.index)
+        : restOfFrontmatter;
+      
+      if (indicator === '>' || indicator === '>-') {
+        // Folded style: newlines become spaces
+        description = rawDesc
+          .split('\n')
+          .map(line => line.trimStart())
+          .join(' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+      } else {
+        // Literal style (| or |-): preserve content but remove common indentation
+        const lines = rawDesc.split('\n').filter(l => l.trim().length > 0);
+        if (lines.length > 0) {
+          const minIndent = lines.reduce((min, line) => {
+            const match = line.match(/^(\s*)/);
+            const indent = match ? match[1].length : 0;
+            return Math.min(min, indent);
+          }, Infinity);
+          description = lines
+            .map(line => line.slice(minIndent))
+            .join('\n')
+            .trim();
+        }
+      }
+    } else {
+      // Single-line description
+      description = indicator;
+    }
   }
 
   return { name, description };
@@ -184,13 +226,30 @@ async function parseSkillFile(filePath: string): Promise<SkillEntry | null> {
     const workflows = extractWorkflows(content);
     const tier = ALWAYS_LOADED_SKILLS.includes(frontmatter.name) ? 'always' : 'deferred';
 
+    // Determine category from path (cross-platform using path.relative and path.sep)
+    const relPath = relative(SKILLS_DIR, filePath);
+    const pathParts = relPath.split(sep).filter(p => p !== '');
+    
+    // Hierarchical structure: Category/Skill/SKILL.md (3 parts)
+    // Flat structure: Skill/SKILL.md (2 parts)
+    // Deeper nesting (>3 parts) is warned but still treated as hierarchical
+    if (pathParts.length > 3) {
+      console.warn(`⚠️  Deep nesting detected at ${filePath} (${pathParts.length} levels). Only 2 levels (Category/Skill) are supported.`);
+    }
+    
+    const isHierarchical = pathParts.length >= 3;
+    const category = isHierarchical ? pathParts[0] : null;
+    const relativePath = relPath.replace(/\\/g, '/'); // Normalize to forward slashes for output
+
     return {
       name: frontmatter.name,
-      path: filePath.replace(SKILLS_DIR, '').replace(/^\//, ''),
+      path: relativePath,
+      category,
       fullDescription: frontmatter.description,
       triggers,
       workflows,
       tier,
+      isHierarchical,
     };
   } catch (error) {
     console.error(`Error parsing ${filePath}:`, error);
@@ -199,7 +258,7 @@ async function parseSkillFile(filePath: string): Promise<SkillEntry | null> {
 }
 
 async function main() {
-  console.log('Generating skill index...\n');
+  console.log('🔍 Generating skill index for hierarchical structure...\n');
 
   const skillFiles = await findSkillFiles(SKILLS_DIR);
   console.log(`Found ${skillFiles.length} SKILL.md files\n`);
@@ -207,15 +266,33 @@ async function main() {
   const index: SkillIndex = {
     generated: new Date().toISOString(),
     totalSkills: 0,
+    categories: 0,
+    flatSkills: 0,
+    hierarchicalSkills: 0,
     alwaysLoadedCount: 0,
     deferredCount: 0,
     skills: {},
+    categoryMap: {},
   };
+
+  // Track categories
+  const categories = new Set<string>();
+
+  // Sort skillFiles deterministically
+  skillFiles.sort((a, b) => a.localeCompare(b));
 
   for (const filePath of skillFiles) {
     const skill = await parseSkillFile(filePath);
     if (skill) {
       const key = skill.name.toLowerCase();
+      
+      // Check for duplicates - don't overwrite existing entries
+      if (index.skills[key]) {
+        console.warn(`⚠️  Duplicate skill name "${skill.name}" found at ${skill.path} (existing: ${index.skills[key].path})`);
+        // Skip adding duplicate
+        continue;
+      }
+      
       index.skills[key] = skill;
       index.totalSkills++;
 
@@ -225,16 +302,50 @@ async function main() {
         index.deferredCount++;
       }
 
-      console.log(`  ${skill.tier === 'always' ? '🔒' : '📦'} ${skill.name}: ${skill.triggers.length} triggers, ${skill.workflows.length} workflows`);
+      if (skill.isHierarchical) {
+        index.hierarchicalSkills++;
+        if (skill.category) {
+          categories.add(skill.category);
+          if (!index.categoryMap[skill.category]) {
+            index.categoryMap[skill.category] = [];
+          }
+          index.categoryMap[skill.category].push(skill.name);
+        }
+      } else {
+        index.flatSkills++;
+      }
+
+      const icon = skill.tier === 'always' ? '🔒' : '📦';
+      const structure = skill.isHierarchical ? `📁 ${skill.category}/` : '📄 flat';
+      console.log(`  ${icon} ${structure} ${skill.name}: ${skill.triggers.length} triggers, ${skill.workflows.length} workflows`);
     }
   }
+
+  index.categories = categories.size;
+
+  // Sort categoryMap entries deterministically
+  for (const category of Object.keys(index.categoryMap)) {
+    index.categoryMap[category].sort((a, b) => a.localeCompare(b));
+  }
+
+  // Create sorted skills object for deterministic output
+  const sortedSkills: Record<string, SkillEntry> = {};
+  for (const key of Object.keys(index.skills).sort((a, b) => a.localeCompare(b))) {
+    sortedSkills[key] = index.skills[key];
+  }
+  index.skills = sortedSkills;
 
   // Write the index
   await writeFile(OUTPUT_FILE, JSON.stringify(index, null, 2));
 
   console.log(`\n✅ Index generated: ${OUTPUT_FILE}`);
-  console.log(`   Total: ${index.totalSkills} skills`);
-  console.log(`   Always loaded: ${index.alwaysLoadedCount}`);
+  console.log(`\n📊 Structure Overview:`);
+  console.log(`   Total Skills: ${index.totalSkills}`);
+  console.log(`   📁 Categories: ${index.categories}`);
+  console.log(`   📄 Flat Skills: ${index.flatSkills}`);
+  console.log(`   📁 Hierarchical: ${index.hierarchicalSkills}`);
+  console.log(`\n⚡ Loading Strategy:`);
+  console.log(`   Always Loaded: ${index.alwaysLoadedCount}`);
   console.log(`   Deferred: ${index.deferredCount}`);
 
   // Calculate token estimates
@@ -244,10 +355,20 @@ async function main() {
   const newTokens = (index.alwaysLoadedCount * avgFullTokens) + (index.deferredCount * avgMinimalTokens);
   const savings = ((currentTokens - newTokens) / currentTokens * 100).toFixed(1);
 
-  console.log(`\n📊 Estimated token impact:`);
+  console.log(`\n💰 Estimated token impact:`);
   console.log(`   Current: ~${currentTokens.toLocaleString()} tokens`);
   console.log(`   After:   ~${newTokens.toLocaleString()} tokens`);
   console.log(`   Savings: ~${savings}%`);
+
+  // Show category breakdown (sorted)
+  if (index.categories > 0) {
+    console.log(`\n📂 Category Breakdown:`);
+    const sortedCategories = Object.keys(index.categoryMap).sort((a, b) => a.localeCompare(b));
+    for (const category of sortedCategories) {
+      const skills = index.categoryMap[category];
+      console.log(`   ${category}: ${skills.length} skills`);
+    }
+  }
 }
 
 main().catch(console.error);

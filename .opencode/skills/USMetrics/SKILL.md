@@ -1,15 +1,45 @@
 ---
 name: USMetrics
-description: US economic indicators. USE WHEN GDP, inflation, unemployment, economic metrics, gas prices. SkillSearch('usmetrics') for docs.
+description: US metrics, economic indicators and data tracking. USE WHEN US metrics, American data, statistics, demographics, GDP, inflation, unemployment, economic metrics, gas prices.
+triggers:
+  - "US metrics"
+  - "American data"
+  - "statistics"
+  - "demographics"
+  - "GDP"
+  - "inflation"
+  - "unemployment"
+  - "economic metrics"
+  - "gas prices"
 ---
+
+# USMetrics - US Metrics and Data Tracking
+
+**Category for skills that track and analyze US-specific metrics and data.**
+
+## Skills in This Category
+
+| Skill | Purpose | Trigger |
+|-------|---------|---------|
+| **USMetrics** | US-specific metrics, economic indicators and data tracking | "US metrics", "American data", "statistics", "GDP", "inflation", "unemployment", "economic metrics", "gas prices", "demographics" |
+
+## When to Use
+
+- Tracking US-specific metrics and statistics
+- Analyzing American demographic data
+- Monitoring US trends and indicators
+- Economic analysis (GDP, inflation, unemployment)
+
+## Category Philosophy
+
+USMetrics provides focused tracking for US-specific data points and trends.
 
 ## Customization
 
-**Before executing, check for user customizations at:**
+**MANDATORY:** Before executing, check for user customizations at:
 `~/.opencode/skills/PAI/USER/SKILLCUSTOMIZATIONS/USMetrics/`
 
 If this directory exists, load and apply any PREFERENCES.md, configurations, or resources found there. These override default behavior. If the directory does not exist, proceed with skill defaults.
-
 
 ## 🚨 MANDATORY: Voice Notification (REQUIRED BEFORE ANY ACTION)
 
@@ -24,30 +54,22 @@ If this directory exists, load and apply any PREFERENCES.md, configurations, or 
    ```
 
 2. **Output text notification**:
-   ```
+   ```text
    Running the **WorkflowName** workflow in the **USMetrics** skill to ACTION...
    ```
 
 **This is not optional. Execute this curl command immediately upon skill invocation.**
 
-# US Metrics - Economic & Social Indicator Analysis
+## OPTIONAL: Additional Setup
 
-**Purpose:** Analyze U.S. economic and social metrics using the Substrate US-Common-Metrics dataset. Provides trend analysis, cross-metric correlation, pattern detection, and research recommendations.
-
-## Data Source
-
-All metrics sourced from:
-- **Location:** Configure your data directory path (e.g., `${PAI_DIR}/data/US-Common-Metrics/`)
-- **Master Document:** `US-Common-Metrics.md` (68 metrics across 10 categories)
-- **Source Documentation:** `source.md` (full methodology)
-- **Underlying APIs:** FRED, EIA, Treasury FiscalData, BLS, Census, CDC, EPA
-
+- Configure data directory path in `Preferences.md`
+- Set API keys in environment variables
 
 ## Workflow Routing
 
 **When executing a workflow, output this notification directly:**
 
-```
+```text
 Running the **WorkflowName** workflow in the **USMetrics** skill to ACTION...
 ```
 
@@ -124,17 +146,17 @@ For live data fetching:
 
 | Tool | Purpose |
 |------|---------|
-| `tools/update-substrate-metrics.ts` | **Primary** - Fetch all metrics, update Substrate files |
-| `tools/fetch-fred-series.ts` | Fetch historical data from FRED API |
-| `tools/GenerateAnalysis.ts` | Generate analysis report from Substrate data |
+| `Tools/update-substrate-metrics.ts` | **Primary** - Fetch all metrics, update Substrate files |
+| `Tools/fetch-fred-series.ts` | Fetch historical data from FRED API |
+| `Tools/GenerateAnalysis.ts` | Generate analysis report from Substrate data |
 
 ## Example Usage
 
-```
+```text
 User: "How is the US economy doing? Give me a full analysis."
 
+→ Invoke UpdateData workflow (fetch latest data from APIs)
 → Invoke GetCurrentState workflow
-→ Fetch current + historical data for all metrics
 → Calculate 10y/5y/2y/1y trends
 → Analyze cross-metric correlations
 → Identify patterns and anomalies

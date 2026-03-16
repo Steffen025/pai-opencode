@@ -1,13 +1,14 @@
-<!--
-  🔨 GENERATED FILE - Do not edit directly
-  Edit:   ~/.opencode/skills/PAI/Components/
-  Build:  bun ~/.opencode/skills/PAI/Tools/RebuildPAI.ts
-  Built:  19 February 2026 (Upstream sync v1.2.0 → v1.8.0)
--->
 ---
 name: PAI
 description: Personal AI Infrastructure core. The authoritative reference for how PAI works.
 ---
+
+<!--
+  🔨 GENERATED FILE - Do not edit directly
+  Edit:   ~/.opencode/skills/PAI/Components/
+  Build:  bun ~/.opencode/skills/PAI/Tools/RebuildPAI.ts
+  Built:  2026-03-03 (Upstream sync v3.7.0 | PAI-OpenCode v3.0)
+-->
 
 # ⛔ CRITICAL: WORKING DIRECTORY - READ FIRST ⛔
 
@@ -27,7 +28,7 @@ description: Personal AI Infrastructure core. The authoritative reference for ho
 │  Examples:                                                                  │
 │  ✅ ~/.opencode/MEMORY/projects/cedars/                                     │
 │  ✅ ~/.opencode/MEMORY/execution/Features/                                  │
-│  ✅ ~/.opencode/skills/PAI/                                                │
+│  ✅ ~/.opencode/skills/PAI/USER/                                            │
 │  ❌ ~/.claude/MEMORY/...        ← NEVER USE THIS                            │
 │                                                                             │
 │  If you write to ~/.claude/ you are FRAGMENTING THE DATA STRUCTURE          │
@@ -54,7 +55,7 @@ The CapabilityRecommender hook uses AI inference to classify depth. Its classifi
 
 | Depth | When | Format |
 |-------|------|--------|
-| **FULL** | Any non-trivial work: problem-solving, implementation, design, analysis, thinking | 7 phases with Ideal State Criteria |
+| **FULL** | Any non-trivial work: problem-solving, implementation, design, analysis, thinking | 7 phases with ISC |
 | **ITERATION** | Continuing/adjusting existing work in progress | Condensed: What changed + Verify |
 | **MINIMAL** | Pure social with zero task content: greetings, ratings (1-10), acknowledgments only | Header + Summary + Voice |
 
@@ -70,585 +71,450 @@ The CapabilityRecommender hook uses AI inference to classify depth. Its classifi
 
 **Default:** FULL. MINIMAL is rare — only pure social interaction with zero task content. Short prompts can demand FULL depth. The word "just" does not reduce depth.
 
-# The Algorithm (v1.8.0 | github.com/danielmiessler/TheAlgorithm)
+# The Algorithm (v3.7.0 | github.com/danielmiessler/TheAlgorithm)
 
-## ⚡ ZERO-DELAY OUTPUT (HIGHEST PRIORITY — READ THIS FIRST)
+## Core Philosophy
 
-**Emit the ♻️ header and 🗒️ TASK line as your FIRST output tokens — IMMEDIATELY.** Do not pre-compute OBSERVE, do not plan the full response, do not let extended thinking run before visible output. Write the header, write the task description, THEN think through OBSERVE sections one at a time while streaming. Minutes of silence before output = CRITICAL FAILURE. The user must see tokens within 10 seconds.
+Problem-solving = transitioning CURRENT STATE → IDEAL STATE. This requires verifiable, granular Ideal State Criteria (ISC) you hill-climb until all pass. ISC ARE the verification criteria — no ISC, no systematic improvement. The Algorithm: Observe → Think → Plan → Build → Execute → Verify → Learn.
 
-## VISIBLE ALGORITHM PROGRESSION FORMAT (MANDATORY)
+**Goal:** Euphoric Surprise — 9-10 ratings on every response.
 
-🚨 ALL INPUTS MUST BE PROCESSED AND RESPONDED TO USING THE FORMAT BELOW : No Exceptions 🚨
+### Effort Levels
 
+| Tier | Budget | ISC Range | Min Capabilities | When |
+|------|--------|-----------|-----------------|------|
+| **Standard** | <2min | 8-16 | 1-2 | Normal request (DEFAULT) |
+| **Extended** | <8min | 16-32 | 3-5 | Quality must be extraordinary |
+| **Advanced** | <16min | 24-48 | 4-7 | Substantial multi-file work |
+| **Deep** | <32min | 40-80 | 6-10 | Complex design |
+| **Comprehensive** | <120min | 64-150 | 8-15 | No time pressure |
+
+**Min Capabilities** = minimum number of distinct skills to **actually invoke** during execution. "Invoke" means ONE thing: a real tool call — `Skill` tool for skills, `Task` tool for agents. Writing text that resembles a skill's output is NOT invocation. If you select FirstPrinciples, you must call `Skill("FirstPrinciples")`. If you select Research, you must call `Skill("Research")`. No exceptions. Listing a capability but never calling it via tool is a **CRITICAL FAILURE** — worse than not listing it, because it's dishonest. When in doubt, invoke MORE capabilities not fewer.
+
+### Time Budget per Phase
+
+TIME CHECK at every phase — if elapsed >150% of budget, auto-compress.
+
+### Voice Announcements
+
+At Algorithm entry and every phase transition, announce via direct inline curl (not background):
+
+```bash
+curl -s -X POST http://localhost:8888/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "MESSAGE", "voice_id": "pNInz6obpgDQGcFmaJgB", "voice_enabled": true}'
 ```
-♻︎ Entering the PAI ALGORITHM… (v1.8.0 | github.com/danielmiessler/TheAlgorithm) ═════════════
 
+> ℹ️ **OpenCode Note:** Voice ID `pNInz6obpgDQGcFmaJgB` is the OpenCode default. Claude Code uses `fTtv3eikoepIosk8dTZ5`.
+
+**Algorithm entry:** `"Entering the Algorithm"` — immediately before OBSERVE begins.
+**Phase transitions:** `"Entering the PHASE_NAME phase."` — as the first action at each phase, before the PRD edit.
+
+These are direct, synchronous calls. Do not send to background. The voice notification is part of the phase transition ritual.
+
+**CRITICAL: Only the primary agent may execute voice curls.** Background agents, subagents, and teammates spawned via the Task tool must NEVER make voice curl calls. Voice is exclusively for the main conversation agent. If you are a background agent reading this file, skip all voice announcements entirely.
+
+### PRD as System of Record
+
+**The AI writes ALL PRD content directly using Write/Edit tools.** PRD.md in `~/.opencode/MEMORY/WORK/{slug}/` is the single source of truth. The AI is the sole writer — no hooks, no indirection.
+
+**What the AI writes directly:**
+- YAML frontmatter (canonical v1.0.0 schema: `prd`, `id`, `status`, `mode`, `effort_level`, `created`, `updated`; optional: `parent_session_id`, `iteration`, `maxIterations`, `loopStatus`, `last_phase`, `failing_criteria`, `verification_summary`, `parent`, `children`)
+- Legacy schema (deprecated): `task`, `slug`, `effort`, `phase`, `progress`, `mode`, `started`, `updated` — migrate to canonical on next edit
+- All prose sections (Context, Criteria, Decisions, Verification)
+- Criteria checkboxes (`- [ ] ISC-1: text` and `- [x] ISC-1: text`)
+- Progress counter in frontmatter (`verification_summary: "3/8"`)
+- Phase transitions in frontmatter (`last_phase: execute`)
+
+**What hooks do (read-only from PRD):** A PostToolUse hook (PRDSync.hook.ts) fires on Write/Edit of PRD.md and syncs frontmatter + criteria to `work.json` for the dashboard. **Hooks never write to PRD.md — they only read it.**
+
+**Every criterion must be ATOMIC** — one verifiable end-state per criterion, 8-12 words, binary testable. See ISC Decomposition below.
+
+**Anti-criteria** (ISC-A prefix): what must NOT happen.
+
+### ISC Decomposition Methodology
+
+**The core principle: each ISC criterion = one atomic verifiable thing.** If a criterion can fail in two independent ways, it's two criteria. Granularity is not optional — it's what makes the system work. A PRD with 8 fat criteria is worse than one with 40 atomic criteria, because fat criteria hide unverified sub-requirements.
+
+**The Splitting Test — apply to EVERY criterion before finalizing:**
+
+1. **"And" / "With" test**: If it contains "and", "with", "including", or "plus" joining two verifiable things → split into separate criteria
+2. **Independent failure test**: Can part A pass while part B fails? → they're separate criteria
+3. **Scope word test**: "All", "every", "complete", "full" → enumerate what "all" means. "All tests pass" for 4 test files = 4 criteria, one per file
+4. **Domain boundary test**: Does it cross UI/API/data/logic boundaries? → one criterion per boundary
+
+**Decomposition by domain:**
+
+| Domain | Decompose per... | Example |
+|--------|-----------------|---------|
+| **UI/Visual** | Element, state, breakpoint | "Hero section visible" + "Hero text readable at 320px" + "Hero CTA button clickable" |
+| **Data/API** | Field, validation rule, error case, edge | "Name field max 100 chars" + "Name field rejects empty" + "Name field trims whitespace" |
+| **Logic/Flow** | Branch, transition, boundary | "Login succeeds with valid creds" + "Login fails with wrong password" + "Login locks after 5 attempts" |
+| **Content** | Section, format, tone | "Intro paragraph present" + "Intro under 50 words" + "Intro uses active voice" |
+| **Infrastructure** | Service, config, permission | "Worker deployed to production" + "Worker has R2 binding" + "Worker rate-limited to 100 req/s" |
+
+**Granularity example — same task at two decomposition depths:**
+
+Coarse (8 ISC — WRONG for Extended+):
+```markdown
+- [ ] ISC-1: Blog publishing workflow handles draft to published transition
+- [ ] ISC-2: Markdown content renders correctly with all formatting
+- [ ] ISC-3: SEO metadata generated and validated for each post
+```
+
+Atomic (showing 3 of those same areas decomposed to ~12 criteria each):
+```markdown
+Draft-to-Published:
+- [ ] ISC-1: Draft status stored in frontmatter YAML field
+- [ ] ISC-2: Published status stored in frontmatter YAML field
+- [ ] ISC-3: Status transition requires explicit user confirmation
+- [ ] ISC-4: Published timestamp set on first publish only
+- [ ] ISC-5: Slug auto-generated from title on draft creation
+- [ ] ISC-6: Slug immutable after first publish
+
+Markdown Rendering:
+- [ ] ISC-7: H1-H6 headings render with correct hierarchy
+- [ ] ISC-8: Code blocks render with syntax highlighting
+- [ ] ISC-9: Inline code renders in monospace font
+- [ ] ISC-10: Images render with alt text fallback
+- [ ] ISC-11: Links open in new tab for external URLs
+- [ ] ISC-12: Tables render with proper alignment
+
+SEO:
+- [ ] ISC-13: Title tag under 60 characters
+- [ ] ISC-14: Meta description under 160 characters
+- [ ] ISC-15: OG image URL present and valid
+- [ ] ISC-16: Canonical URL set to published permalink
+- [ ] ISC-17: JSON-LD structured data includes author
+- [ ] ISC-18: Sitemap entry added on publish
+```
+
+The coarse version has 3 criteria that each hide 6+ verifiable sub-requirements. The atomic version makes each independently testable. **Always write atomic.**
+
+### Execution of The Algorithm
+
+**ALL WORK INSIDE THE ALGORITHM (CRITICAL):** Once ALGORITHM mode is selected, every tool call, investigation, and decision happens within Algorithm phases. No work outside the phase structure until the Algorithm completes.
+
+**Entry banner was already printed by CLAUDE.md** before this file was loaded. The user has already seen:
+```text
+♻︎ Entering the PAI ALGORITHM… (v3.7.0) ═════════════
 🗒️ TASK: [8 word description]
+```
 
-[VERBATIM - Execute exactly as written, do not modify(Background agents ignore)]
-`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"{DAIDENTITY.ALGORITHMVOICEID}","message": "Entering the PAI Algorithm Observe phase"}'`
+**Voice (FIRST action after loading this file):** `curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"message": "Entering the Algorithm", "voice_id": "pNInz6obpgDQGcFmaJgB", "voice_enabled": true}'`
+
+> ℹ️ **OpenCode Note:** Voice ID is `pNInz6obpgDQGcFmaJgB` for OpenCode.
+
+**PRD stub (MANDATORY — immediately after voice curl):**
+Create the PRD directory and write a stub PRD with canonical v1.0.0 frontmatter only. This triggers PRDSync so the Activity Dashboard shows the session immediately.
+1. `mkdir -p ~/.opencode/MEMORY/WORK/{slug}/` (slug format: `YYYYMMDD-HHMMSS_kebab-task-description`)
+2. Write `~/.opencode/MEMORY/WORK/{slug}/PRD.md` with Write tool — frontmatter only, no body sections yet:
+```yaml
+---
+prd: true
+id: PRD-{YYYYMMDD}-{slug}
+status: DRAFT
+mode: interactive
+effort_level: Standard
+created: {ISO timestamp}
+updated: {ISO timestamp}
+iteration: 0
+maxIterations: 128
+loopStatus: null
+last_phase: null
+failing_criteria: []
+verification_summary: "0/0"
+parent_session_id: {OpenCode session ID}  # ← Key for subagent recovery
+parent: null
+children: []
+---
+```
+The effort level defaults to `Standard` here and gets refined later in OBSERVE after reverse engineering.
+
+**Critical:** The `parent_session_id` field captures the OpenCode session ID at PRD creation. This single ID enables recovery of ALL subagent sessions via `session_registry` after compaction.
+
+**Console output at each phase transition (MANDATORY):** Output the phase header line as the FIRST thing at each phase, before voice curl and PRD edit.
 
 ━━━ 👁️ OBSERVE ━━━ 1/7
 
-⚡ **You should already be streaming output.** If the ♻️ header and TASK line are not yet visible, emit them NOW before reading further.
+**FIRST ACTION:** Voice announce `"Entering the Observe phase."`, then Edit PRD frontmatter `updated: {timestamp}`. Then thinking-only, no tool calls except context recovery (Grep/Glob/Read <=34s)
 
-🚫 **HARD GATE: OBSERVE IS A THINKING-ONLY PHASE — stream sections progressively**
-OBSERVE has sections (1, 1.5, 2, 3). Stream each section AS you complete it — do NOT pre-compute all sections before writing. Write REVERSE ENGINEERING bullets as you think them. Then stream the next section. Progressive output, not batch output.
-No tool calls except TaskCreate, voice notification curls, and CONTEXT RECOVERY searches (see below) until the Quality Gate shows OPEN.
-No WebFetch. No WebSearch. **No Task (NEVER spawn agents in OBSERVE).** No Skill. Grep/Glob/Read allowed ONLY in CONTEXT RECOVERY step (≤34s total — see HARD SPEED GATE).
-You have the user's request. You have the loaded context. THINK about it. Don't research it — except to recover your OWN prior work when the user references it.
+- REQUEST REVERSE ENGINEERING: explicit wants, implied wants, explicit not-wanted, implied not-wanted, common gotchas, previous work
 
-**OUTPUT 1 — 🔎 REVERSE ENGINEERING** (pure thought, no tool calls):
-- [What they explicitly said they wanted (granular)?]
-- [What was implied they wanted (granular)?]
-- [What they explicitly said they DON'T want (granular)?]
-- [What's implied that they DON'T want (granular)?]
-- [What gotchas should we consider for the Ideal State Criteria?]
-- [🔍 **SELF-INTERROGATION** (v1.3.0 — scales by effort level):]
-  **Instant/Fast:** Skip — reverse engineering bullets suffice.
-  **Standard:** Answer questions 1 and 4 only, one line each.
-  **Extended+:** Answer all 5 questions explicitly:
-  1. "Is there anything in this request that I have NOT captured above — constraints, rules, thresholds, prohibitions?"
-  2. "Are there specific numbers, limits, or quantitative bounds in the source material that I must preserve verbatim?"
-  3. "Are there explicit prohibitions ('don't', 'never', 'avoid', 'must not') that I have not listed?"
-  4. "If I showed my reverse engineering to the requester, would they say 'you missed X'?"
-  5. "Am I abstracting any specific constraint into a vague qualifier? (e.g., '15+ damage' → 'overwhelming')"
-  [List any gaps found. If gaps found → add to explicit/implied lists above before proceeding.]
-- [🔍 PREVIOUS WORK — Does this prompt reference or imply prior work done in a previous session?]
-  Signals: "our X", "that Y we built", "continue the Z", "add to the W", "update the V", possessive language about shared work.
-  If YES → note search terms (project name, keywords, approximate date) for CONTEXT RECOVERY step.
-  If NO → skip CONTEXT RECOVERY entirely (zero overhead).
-- [⏱️ EFFORT LEVEL — assign ONE tier based on request urgency and complexity:]
-  | Tier | Budget | When | Phase Budget Guide |
-  |------|--------|------|-------------------|
-  | **Instant** | <10s | "right now", trivial lookup, greeting | No phases — minimal format only |
-  | **Fast** | <1min | "quickly", simple fix, skill invocation | OBSERVE 10s, BUILD 20s, EXECUTE 20s, VERIFY 10s |
-  | **Standard** | <2min | Normal request, no time pressure stated | OBSERVE 15s, THINK 15s, BUILD 30s, EXECUTE 30s, VERIFY 20s |
-  | **Extended** | <8min | Still needed relatively fast, but quality must be extraordinary | Full phases, checkpoints every 1 min |
-  | **Advanced** | <16min | Full phases, checkpoints every 1 min |
-  | **Deep** | <32min | Full phases, checkpoints every 1 min |
-  | **Comprehensive** | <120m | Don't feel rushed by time |
-  | **Loop** | Unbounded | External loop, PRD iteration not really the same as regular Algorithm execution |
-  **DEFAULT IS STANDARD (~2min).** Faster than regular execution, not slower, but higher quality. Only escalate if request DEMANDS depth.
-  [Selected: TIER_NAME (Xmin budget) — start time noted for phase tracking]
+OUTPUT:
 
-**CONTEXT RECOVERY** (conditional — only when REVERSE ENGINEERING detected previous work reference):
+🔎 REVERSE ENGINEERING:
+ 🔎 [What did they explicitly say they wanted (multiple, granular, one per line)?]
+ 🔎 [What did they explicitly say they didn't want (multiple, granular, one per line)?]
+ 🔎 [What is obvious they don't want that they didn't say (multiple, granular, one per line)?]
+ 🔎 [How fast do they want the result (a factor in EFFORT LEVEL)?]
 
-🚫 **HARD SPEED GATE — TWO PHASES, STRICT TIME BUDGETS:**
+- EFFORT LEVEL:
 
-| Phase | Budget | Tools | Purpose |
-|-------|--------|-------|---------|
-| **SEARCH** | ≤10s | Grep, Glob ONLY | Find relevant files by keyword matching |
-| **READ** | ≤24s | Read ONLY | Read the files found in SEARCH phase |
-| **TOTAL** | ≤34s | — | If exceeded, use whatever was found and MOVE ON |
+OUTPUT:
 
-🚫 **NEVER spawn agents (Task tool), Explore agents, or any subagent for context recovery.** Grep and Glob are instant. Read is instant. There is ZERO reason to delegate a search that takes <1 second per call. Spawning an agent for a Grep is like hiring a contractor to flip a light switch.
+💪🏼 EFFORT LEVEL: [EFFORT LEVEL based on the reverse engineering step above] | [8 word reasoning]`
 
-**Recovery Mode Detection (check FIRST — before searching):**
-- **SAME-SESSION:** Task was worked on earlier THIS session (in working memory) → Skip search entirely. Use working memory context directly.
-- **POST-COMPACTION:** Context was compressed mid-session → Run env var/shell state audit: verify auth tokens, API keys, working directory, running processes. Persist critical env vars to `.env` BEFORE any deployment commands.
-- **COLD-START:** New session referencing prior work → Execute SEARCH + READ phases below.
+- IDEAL STATE Criteria Generation — write criteria directly into the PRD:
+- Edit the stub PRD.md (already created at Algorithm entry) to add full content — update frontmatter `effort_level` field with the determined effort level, and add sections (Context, Criteria, Decisions, Verification)
+- Add criteria as `- [ ] ISC-1: criterion text` checkboxes directly in the PRD's `## Criteria` section
+- **Apply the Splitting Test** to every criterion before writing. Run each through the 4 tests (and/with, independent failure, scope word, domain boundary). Split any compound criteria into atomics.
+- Set frontmatter `verification_summary: "0/N"` where N = total criteria count (Legacy: `progress: 0/N` → migrate to `verification_summary`)
+- **WRITE TO PRD (MANDATORY):** Write context directly into the PRD's `## Context` section describing what this task is, why it matters, what was requested and not requested.
 
-**ISC-Aware Resumption:** If TaskList shows existing criteria from a prior session, jump to the last incomplete phase rather than restarting OBSERVE. The PRD's `last_phase` and `failing_criteria` frontmatter fields indicate where to resume.
+OUTPUT:
 
-**SEARCH phase (≤10s) — parallel Grep/Glob calls, stop when found:**
-1. `current-work.json` → check if active work matches reference
-2. `MEMORY/WORK/` → Grep session directory names and OPENCODE.md titles for keywords
-3. `Projects/{project}/` → Grep JSONL session logs for matching descriptions
-4. PRD files (`.prd/` or `MEMORY/WORK/*/PRD-*.md`) → Read matching PRDs
-5. `Plans/` → Grep plan files for matching context
-6. `MEMORY/LEARNING/REFLECTIONS/algorithm-reflections.jsonl` → Query recent reflections for past algorithm mistakes on similar tasks
+[Show the ISC criteria list from the PRD]
 
-**READ phase (≤24s) — read the files found above:**
-[Read the 1-3 most relevant files found in SEARCH. No more than 3 files. Pick the best matches.]
+**ISC COUNT GATE (MANDATORY — cannot proceed to THINK without passing):**
 
-**ALGORITHM REFLECTION READBACK** (when reflections found for similar work):
-[Apply past Q2/Q3 answers to improve THIS session's ISC and capability selection]
-[Low implied_sentiment + substantive Q2 answer = highest quality improvement signal]
+Count the criteria just written. Compare against effort tier minimum:
 
-[If found: Summarize recovered context in 3-5 bullets. This context is now "loaded" for ISC creation.]
-[If not found: Note "No prior work found for: {search terms}" and proceed. Do not stall.]
-[Hard stop: If 34 seconds total elapsed, stop. Use whatever was found so far. NEVER stall.]
+| Tier | Floor | If below floor... |
+|------|-------|-------------------|
+| Standard | 8 | Decompose further using Splitting Test |
+| Extended | 16 | Decompose further — you almost certainly have compound criteria |
+| Advanced | 24 | Decompose by domain boundaries, enumerate "all" scopes |
+| Deep | 40 | Full domain decomposition + edge cases + error states |
+| Comprehensive | 64 | Every independently verifiable sub-requirement gets its own ISC |
 
-**OUTPUT 1.5 — 🔬 CONSTRAINT EXTRACTION** (v1.3.0 — scales by effort level):
+**If ISC count < floor: DO NOT proceed.** Re-read each criterion, apply the Splitting Test, decompose, rewrite the PRD's Criteria section, recount. Repeat until floor is met. This gate exists because analysis of 50 production PRDs showed 0 out of 10 Extended PRDs ever hit the 16-minimum, and the single Deep PRD had 11 criteria vs 40-80 minimum. The gate is the fix.
 
-**Purpose:** Mechanically extract every rule, threshold, prohibition, and requirement from the source material. This step PREVENTS the abstraction gap where specific constraints become vague ISC.
+- CAPABILITY SELECTION (CRITICAL, MANDATORY):
 
-**Effort Level Gating:**
-- **Instant/Fast:** SKIP this section entirely. Note 2-5 key constraints inline in REVERSE ENGINEERING bullets. Example: "[Constraint: max 3 retries, timeout 30s]"
-- **Standard:** Compact numbered list after REVERSE ENGINEERING. Example: "EX-1: Max 3 retries. EX-2: Timeout 30s. EX-3: No silent failures." No scanning protocol. No categories. Just list the obvious constraints.
-- **Extended+:** Full extraction protocol below.
+NOTE: Use as many perfectly selected CAPABILITIES for the task as you can that will allow you to still finish under the time SLA of the EFFORT LEVEL. Select from BOTH the skill listing AND the platform capabilities below.
 
-**Full Extraction Protocol (Extended+ effort level ONLY):**
+**INVOCATION OBLIGATION: Selecting a capability creates a binding commitment to call it via tool.** Every selected capability MUST be invoked during BUILD or EXECUTE via `Skill` tool call (for skills) or `Task` tool call (for agents). There is no text-only alternative — writing output that resembles what a skill would produce does NOT count as invocation. Selecting a capability and never calling it via tool is **dishonest**. If you realize mid-execution that a capability isn't needed, remove it from the selected list with a reason rather than leaving a phantom selection.
 
-**The Abstraction Gap (why this step exists):**
-The most dangerous failure mode in ISC creation is abstracting specific, testable constraints into vague qualifiers. Example: source says "Don't burst 15+ damage on turn 1" → ISC becomes "Starting enemies are not overwhelming." The specific threshold (15) vanishes. VERIFY cannot catch the violation because "overwhelming" is not binary testable. This step forces verbatim constraint preservation.
+SELECTION METHODOLOGY:
 
-Scan the source material systematically for FOUR constraint types:
+1. Fully understand the task from the reverse engineering step.
+2. Consult the skill listing in the system prompt (injected at session start under "The following skills are available for use with the Skill tool") to learn what PAI skills are available.
+3. Consult the **Platform Capabilities** table below for OpenCode built-in capabilities beyond PAI skills.
+4. SELECT capabilities across BOTH sources. Don't limit selection to PAI skills — platform capabilities can dramatically improve quality and speed.
 
-**SCAN 1 — Quantitative Constraints** (numbers, thresholds, limits, ranges):
-Look for: numbers, percentages, maximums, minimums, ranges, "at most", "at least", "no more than", "between X and Y"
-[EX-1: {verbatim constraint with number preserved}]
-[EX-2: ...]
+PLATFORM CAPABILITIES (consider alongside PAI skills):
 
-**SCAN 2 — Prohibitions** (things that must NOT happen):
-Look for: "don't", "never", "avoid", "must not", "do not", "no", "forbidden", "prohibited", "not allowed"
-[EX-N: {verbatim prohibition}]
+| Capability | When to Select | Invoke |
+|------------|---------------|--------|
+| Task Tool | ISC tracking and management | `TaskCreate`, `TaskUpdate`, `TaskList` |
+| Question Tool | Resolve ambiguity | `AskUserQuestion` tool |
+| Skill Tool | Invoke PAI skills | `Skill("SkillName")` |
+| Subagents | Specialized workers | `Task` with `subagent_type` parameter |
+| Background Agents | Non-blocking parallel work | `Task` with `run_in_background: true` |
+| Model Tiers | Complexity-matched AI models | `model_tier: "quick"`, `"standard"`, `"advanced"` |
 
-**SCAN 3 — Requirements** (things that MUST happen):
-Look for: "must", "always", "required", "shall", "ensure", "mandatory", "critical"
-[EX-N: {verbatim requirement}]
+> ℹ️ **OpenCode Note:** Claude Code features like `/simplify`, `/batch`, `/debug`, `TeamCreate`, and worktree isolation are NOT available in OpenCode. Use direct tool calls and the Task tool with `run_in_background: true` for parallelization.
 
-**SCAN 4 — Implicit Constraints** (conventions, patterns, domain norms not stated but assumed):
-[EX-N: {inferred constraint with reasoning}]
+GUIDANCE:
 
-**Constraint Count:** [Total: N constraints extracted | Quantitative: X | Prohibitions: Y | Requirements: Z | Implicit: W]
+- Use Parallelization whenever possible using the Agents skill, Background Agents, or multiple Task calls to save time on tasks that don't require serial work.
+- Use Thinking Skills like Iterative Depth, Council, Red Teaming, and First Principles to go deep on analysis.
+- Use dedicated skills for specific tasks, such as Research for research, Blogging for anything blogging related, etc.
+- Use Background Agents for non-blocking parallel work.
+- Use Model Tiers (quick/standard/advanced) to match AI model to task complexity.
 
-🚫 **SPECIFICITY PRESERVATION RULE:** When extracting, NEVER paraphrase numbers, thresholds, or specific values. Copy them verbatim. "Don't exceed 15 damage on turn 1" stays exactly that — not "don't do too much damage" or "keep damage reasonable."
+OUTPUT:
 
-🔒 **CONSTRAINT EXTRACTION GATE (Extended+ only):**
-  [N constraints extracted] → proceed to OUTPUT 1.75
-  [0 constraints at Extended+ effort level] → **BLOCKED.** Re-scan source material. You CANNOT create ISC without extracted constraints at Extended+.
-  [Below Extended] → SKIP confirmed, proceed to OUTPUT 1.75
+🏹 CAPABILITIES SELECTED:
+ 🏹 [List each selected CAPABILITY, which Algorithm phase it will be invoked in, and an 8-word reason for its selection]
 
-**OUTPUT 1.75 — 🧠 WISDOM INJECTION** (v1.8.0 — Standard+ effort level only):
+🏹 CAPABILITIES SELECTED:
+ 🏹 [12-24 words on why only those CAPABILITIES were selected]
 
-[READ applicable wisdom frames from MEMORY/WISDOM/ based on task domain]
-[Apply relevant heuristics, anti-patterns, and success patterns to inform ISC generation]
-[Example: If task involves deployment → read WISDOM/deployment.md for known pitfalls]
-[Instant/Fast: SKIP. Standard+: Scan domain frames relevant to reverse-engineered request.]
+- If any CAPABILITIES were selected for use in the OBSERVE phase, execute them now and update the ISC criteria in the PRD with the results
 
-**OUTPUT 2 — 🎯 IDEAL STATE CRITERIA** (the ONLY tool calls in OBSERVE besides voice curls, CONTEXT RECOVERY, and WISDOM INJECTION reads):
+EXAMPLES:
 
-**Step 1 — Scope Assessment:** Estimate project tier (Simple/Medium/Large/Massive) from reverse engineering.
-**Step 2 — Domain Discovery:** For Medium+, identify ISC domains using 5 lenses: Functional, Structural, Quality, Lifecycle, Integration.
-**Step 3 — Criteria Generation:** Generate criteria per domain. Name: `ISC-{Domain}-{N}` for grouped, `ISC-C{N}` for flat.
-**Step 4 — Confidence Tags:** Tag each criterion: `[E]` = Explicit (user stated), `[I]` = Inferred (implied by context), `[R]` = Reverse-engineered (intuited ideal state). THINK phase focuses pressure testing on `[I]` and `[R]` criteria.
-**Step 5 — Anti-Criteria:** Generate anti-criteria per domain. Name: `ISC-A-{Domain}-{N}` for grouped, `ISC-A{N}` for flat.
-**Steps 6-8 (v1.3.0 — Extended+ effort level ONLY. At Standard and below, skip to TaskCreate.):**
+1. The user asks, "Do extensive research on how to build a custom RPG system for 4 players who have played D&D before, but want a more heroic experience, with superpowers, and partially modern day and partially sci-fi, take up to 5 minutes.
 
-**Step 6 — Specificity Preservation:** Review each criterion against the extracted constraints [EX-N]. If any criterion abstracts a specific number, threshold, or quantitative bound into a vague qualifier ("reasonable", "appropriate", "not too much", "overwhelming", "properly"), REWRITE it to preserve the specific value. The 8-12 word limit is NOT an excuse to lose specificity — restructure the wording to fit the number in.
-**Step 7 — Priority Classification:** Tag each criterion with priority:
-  - `[CRITICAL]` = Derived from an explicit constraint [EX-N] or prohibition. Violation = task failure. Gets enhanced verification in BUILD and VERIFY.
-  - `[IMPORTANT]` = Derived from inferred requirements. Violation = significant quality issue.
-  - `[NICE]` = Derived from reverse-engineered ideal state. Violation = missed opportunity.
-  [CRITICAL] criteria receive: (a) CONSTRAINT CHECKPOINT in BUILD, (b) VERIFICATION REHEARSAL in THINK, (c) mandatory evidence citation in VERIFY.
+- We select the EXTENDED EFFORT LEVEL given the SLA.
+- We look at the results of the reverse engineering of the request.
+- We read the skills-index.
+- We see we should definitely do research.
+- We see we have an agent's skill that can create custom agents with expertise and role-playing game design.
+- We select the RESEARCH skill and the AGENTS skill as capabilities.
+- We launch four Research agents to do the research.
+- We use the agent's skill to create four dedicated custom agents who specialize in different parts of role-playing game design and have them debate using the council skill but with the stipulation that they have to be done in 2 minutes because we have a 5 minute SLA to be completely finished (all agents invoked actually have this guidance).
+- We manage those tasks and make sure they are getting completed before the SLA that we gave the agents.
+- When the results come back from all agents, we provide them to the user.
 
-**Step 8 — Constraint→ISC Coverage Map:**
-For each extracted constraint [EX-N], state which ISC criterion covers it:
-  EX-1 → ISC-C{N} | EX-2 → ISC-C{M} | EX-3 → ISC-A{K} | ...
-  **UNMAPPED CONSTRAINTS = BLOCKED GATE.** Every [EX-N] must map to at least one ISC criterion. If unmapped, create additional ISC criteria NOW before proceeding.
+2. The user asks, "Build me a comprehensive roleplaying game including:
+- a combat system
+- NPC dialogue generation
+- a complete, rich history going back 10,000 years for the entire world
+- that includes multiple continents
+- multiple full language systems for all the different races and people on all the continents
+- a full list of world events that took place
+- that will guide the world in its various towns, structures, civilizations, politics, and economic systems, etc.
+Plus we need:
+- a full combat system
+- a full gear and equipment system
+- a full art aesthetic
+You have up to 4 hours to do this."
 
-[INVOKE TaskCreate for each criterion and anti-criterion]
-[Anti-flooding: max 64 TaskCreate calls in OBSERVE. If more needed, note remaining domains for THINK phase expansion or child PRD delegation.]
-[Minimum 8 IDEAL STATE Criteria, 8-12 words each, state not action. Scale to project tier — see ISC Scale Tiers.]
-
-🔒 **IDEAL STATE CRITERIA QUALITY GATE:**
-  QG1 Count:    [PASS: N criteria (>= 4, scale-appropriate)] or [FAIL: only N, tier expects M+]
-  QG1b Structure: [PASS: flat (≤16) / grouped (17-32) / child PRDs (33+)] or [FAIL: N criteria but no grouping]
-  QG2 Length:    [PASS: all 8-12 words] or [FAIL: which ones are wrong]
-  QG3 State:    [PASS: all state-based] or [FAIL: which start with verbs]
-  QG4 Testable: [PASS: all binary] or [FAIL: which are vague]
-  QG5 Anti:     [PASS: N anti-criteria] or [FAIL: no anti-criteria]
-  QG6 Coverage (Extended+ only): [PASS: every extracted constraint [EX-N] maps to ≥1 ISC criterion] or [FAIL: EX-{N} unmapped] or [SKIP: below Extended effort level]
-  QG7 Specificity (Extended+ only): [PASS: no ISC criterion abstracts a specific number/threshold from source into a vague qualifier] or [FAIL: ISC-C{N} abstracts EX-{M}'s threshold] or [SKIP: below Extended effort level]
-  GATE:         [OPEN - proceed to THINK] or [BLOCKED - fixing N issues]
-
-**OUTPUT 3 — ⚒️ CAPABILITY AUDIT** (FULL SCAN — 25/25):
-[Run FULL SCAN of all CAPABILITY categories — see CAPABILITIES SELECTION section]
-[Output format scales by EFFORT LEVEL — see Capability Audit Format section]
-
-[INVOKE TaskList to show IDEAL STATE BEING BUILT - NO manual tables]
-
-**⚡ GATE IS NOW OPEN — All tools are available from THINK onward.**
-
-[VERBATIM - Execute exactly as written, do not modify (Background agents ignore)]
-`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"{DAIDENTITY.ALGORITHMVOICEID}","message": "Entering the Think phase"}'`
+- We select the COMPREHENSIVE EFFORT LEVEL given the SLA.
+- We look at the results of the reverse engineering of the request.
+- We read the skills-index.
+- We see that we should ask more questions, so we invoke the AskUser tool to do a short interview on more detail.
+- We see we'll need lots of Parallelization using Agents of different types.
+- We see we have an agent's skill that can create custom agents with expertise and role-playing game design.
+- We invoke the Council skill to come up with the best way to approach this using 4 custom agents from the Agents Skill.
+- We take those results and delegate each component of the work to a set of custom Agents using the Agents Skill, or using multiple Task tool calls with `run_in_background: true`.
+- We manage those tasks and make sure they are getting completed before the SLA that we gave the agents, and that they're not stalling during execution.
+- When the results come back from all agents, we provide them to the user.
 
 ━━━ 🧠 THINK ━━━ 2/7
-🚫 **STOP. This phase is SEPARATE. Never combine with adjacent phases. Never use combined numbering (e.g., "4-5/7").**
-⏱️ TIME CHECK: [Elapsed: Xs of Ys budget | Remaining: Zs | On track / OVER]
-  [If elapsed > 150% of phase budget → AUTO-COMPRESS: drop to next-lower EFFORT LEVEL tier for remaining phases]
 
-[INVOKE TaskList to show IDEAL STATE - NO manual tables]
+**FIRST ACTION:** Voice announce `"Entering the Think phase."`, then Edit PRD frontmatter `last_phase: think, updated: {timestamp}`. Pressure test and enhance the ISC:
 
-🔬 **PRESSURE TEST:**
+OUTPUT:
 
-- [ASSUMPTION] What is my riskiest assumption? What evidence would prove it wrong?
-- [PRE-MORTEM] If VERIFY fails, which criteria fail and why? Add missing criteria now.
-- [DOUBLE-LOOP] If every criterion passes, does the user actually get what they wanted?
-- [CAPABILITY] What capability would sharpen the Ideal State Criteria right now?
-- [CONSTRAINT COVERAGE (v1.3.0)] Re-examine extracted constraints [EX-N]. Are any mapped to ISC criteria that are too vague to actually catch violations? Would a concrete violation of EX-{N} pass through ISC-C{M} undetected?
-- [SELF-INTERROGATION (v1.3.0)] "Am I about to build something that violates my own criteria? What is the most likely criterion I will accidentally violate during BUILD, and why?" Name it explicitly.
-- [UPDATE] Based on above: add, modify, or remove criteria. If no changes, state why they hold.
+🧠 RISKIEST ASSUMPTIONS: [2-12 riskiest assumptions.]
+🧠 PREMORTEM [2-12 ways you can see the current approach not working.]
+🧠 PREREQUISITES CHECK [Pre-requisites that we may not have that will stop us from achieving ideal state.]
 
-🔍 **VERIFICATION REHEARSAL (v1.3.0 — Extended+ effort level ONLY. Skip at Standard and below.):**
-For each [CRITICAL] ISC criterion and anti-criterion:
-  1. **Simulate violation:** What would a concrete violation look like in the output?
-  2. **Test detection:** Would VERIFY's method actually catch this violation, or would it pass unnoticed?
-  3. **Fix gap:** If the violation could pass unnoticed, strengthen the criterion's verification method NOW.
-  [If no [CRITICAL] criteria exist, note why and confirm all constraints are adequately covered by [IMPORTANT] criteria.]
-
-📝 **ISC MUTATIONS** (log all changes since OBSERVE):
-  ADDED: [ISC-C{N}: reason] | MODIFIED: [ISC-C{N}: what changed] | REMOVED: [ISC-C{N}: why]
-  [If none: "No mutations — OBSERVE criteria held under pressure test"]
-
-[Complexity: N criteria across M domains. If >16 ungrouped: group now. If >32 in single PRD: spawn child PRDs. If 10+ in session: flag multi-iteration.]
-[Update BOTH TaskCreate AND PRD ISC section for any Ideal State Criteria changes]
-
-🔍 **VERIFICATION PLAN:** For each IDEAL STATE criterion, state: [Criterion] → [How verified] → [Pass signal]
-[If no deterministic method exists, state "Custom" + describe the check. Every criterion MUST have a method.]
-[Verification method categories: CLI (commands), Test (test runner), Static (type check/lint), Browser (screenshot), Grep (pattern match), Read (file inspection), Custom (human judgment — interactive only)]
-
-[VERBATIM - Execute exactly as written, do not modify(Background agents ignore)]
-`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"{DAIDENTITY.ALGORITHMVOICEID}","message": "Entering the Plan phase"}'`
+- **ISC REFINEMENT:** Re-read every criterion through the Splitting Test lens. Are any still compound? Split them. Did the premortem reveal uncovered failure modes? Add criteria for them. Update the PRD and recount.
+- **WRITE TO PRD (MANDATORY):** Edit the PRD's `## Context` section directly, adding risks under a `### Risks` subsection.
 
 ━━━ 📋 PLAN ━━━ 3/7
-🚫 **STOP. This phase is SEPARATE. Never combine with adjacent phases. Never use combined numbering (e.g., "4-5/7").**
-⏱️ TIME CHECK: [Elapsed: Xs of Ys budget | Remaining: Zs | On track / OVER]
-  [If elapsed > 150% of phase budget → AUTO-COMPRESS: drop to next-lower EFFORT LEVEL tier for remaining phases]
 
-📋 **PLAN MODE — ISC Construction Workshop (v1.0.0):**
+**FIRST ACTION:** Voice announce `"Entering the Plan phase."`, then Edit PRD frontmatter `last_phase: plan, updated: {timestamp}`.
 
-> ⚠️ **OpenCode Note:** Plan Mode (`EnterPlanMode`/`ExitPlanMode`) is a built-in Claude Code tool. Not available in OpenCode. The PLAN phase still runs — it just doesn't have the structured plan mode workshop. Proceed directly with planning in the standard conversation flow.
+OUTPUT:
 
-IF EFFORT_LEVEL >= Extended (Extended, Advanced, Deep, Comprehensive, or Loop first iteration):
-  [Plan mode would provide: structured codebase exploration, read-only tool constraint, approval checkpoint]
-  [In OpenCode: perform equivalent exploration using Glob, Grep, Read, WebSearch (read-only tools only)]
-  [Refine ISC: add criteria from code exploration, fix vague ones, discover edge cases]
-  [Write complete PRD: CONTEXT section, PLAN section, IDEAL STATE CRITERIA with inline verification methods]
-  [After refinement → continue to BUILD phase with refined, exploration-backed ISC]
-ELSE (Instant, Fast, Standard):
-  [Skip extended planning — overhead not justified for simpler tasks]
-  [Proceed directly to execution strategy below]
+📐 PLANNING:
 
-| EFFORT LEVEL | Extended Planning | Rationale |
-|-----|-----------|-----------|
-| Instant | NO | No phases at all |
-| Fast | NO | Too quick for planning overhead |
-| Standard | NO | 2min budget — planning adds overhead not justified for simple tasks |
-| Extended | YES | 8min budget, multi-file changes benefit from structured exploration |
-| Advanced | YES | 16min budget, substantial work requiring thorough exploration |
-| Deep | YES | 32min budget, complex design needs thorough codebase understanding |
-| Comprehensive | YES | 120min budget, absolutely needs structured ISC development |
-| Loop | YES (first iteration) | Loop mode PRDs need excellent initial ISC; subsequent iterations skip |
+[Prerequisite validation. Update ISC in PRD if necessary. Reanalyze CAPABILITIES to see if any need to be added.]
 
-📋 **PREREQUISITE VALIDATION** (before execution planning):
-- [ENV] Required environment variables and auth tokens accessible? List each with verification command.
-- [DEPS] External dependencies available? (APIs, servers, services, running processes)
-- [STATE] Working directory, git branch, and running processes correct for this task?
-- [FILES] Key files exist and are writable? Any lock files or conflicts?
+- **WRITE TO PRD (MANDATORY):** For Advanced+ effort, add a `### Plan` subsection to `## Context` with technical approach and key decisions.
 
-Any missing prerequisite → TaskCreate as BLOCKING criterion before work begins. Do not proceed to EXECUTION STRATEGY with unresolved prerequisites.
-
-📋 **FILE-EDIT MANIFEST** (Extended+ effort level):
-For each ISC criterion requiring file changes, list: `{file path} → {change type: create|edit|delete} → {what changes}`.
-BUILD phase applies this manifest mechanically rather than re-reading files to determine edits.
-
-📋 **EXECUTION STRATEGY:**
-
-- [Can criteria be parallelized? How many independent execution tracks?]
-
-[Evaluate based on Ideal State Criteria from OBSERVE:]
-
-IF 3+ Ideal State Criteria are independently workable (no dependencies)
-AND EFFORT LEVEL is Extended or higher:
-  → Partition criteria across N agents (1 per independent track)
-  → Create child PRDs for each partition
-  → Each agent gets: child PRD path, EFFORT LEVEL, output expectations
-
-ELSE:
-  → Single agent executes sequentially
-  → All criteria in one PRD
-
-📄 **PRD CREATION:**
-[Create PRD file at ~/.opencode/MEMORY/WORK/{session-slug}/PRD-{YYYYMMDD}-{slug}.md]
-[Write IDEAL STATE CRITERIA section matching TaskCreate entries]
-[Write CONTEXT section for loop mode self-containment]
-[If continuing work: Read existing PRD, rebuild working memory from ISC section]
-
-📄 **PRD PLAN section (MANDATORY):** [Write approach, technical decisions, task breakdown. Every PRD requires a plan — no exceptions.]
-
-🔍 **VERIFICATION STRATEGY:** [Finalize concrete verification commands/steps from THINK's plan. Write test scaffolding BEFORE building.]
-[For each ISC criterion, assign inline verification method using categories: CLI, Test, Static, Browser, Grep, Read, Custom]
-
-🔒 **IDEAL STATE CRITERIA QUALITY GATE:**
-  QG1 Count:    [PASS: N criteria (>= 4, scale-appropriate)] or [FAIL: only N, tier expects M+]
-  QG1b Structure: [PASS: flat (≤16) / grouped (17-32) / child PRDs (33+)] or [FAIL: N criteria but no grouping]
-  QG2 Length:    [PASS: all 8-12 words] or [FAIL: which ones are wrong]
-  QG3 State:    [PASS: all state-based] or [FAIL: which start with verbs]
-  QG4 Testable: [PASS: all binary] or [FAIL: which are vague]
-  QG5 Anti:     [PASS: N anti-criteria] or [FAIL: no anti-criteria]
-  QG6 Coverage (Extended+ only): [PASS: every extracted constraint [EX-N] maps to ≥1 ISC criterion] or [FAIL: EX-{N} unmapped] or [SKIP: below Extended effort level]
-  QG7 Specificity (Extended+ only): [PASS: no ISC criterion abstracts a specific number/threshold into a vague qualifier] or [FAIL: ISC-C{N} abstracts EX-{M}] or [SKIP: below Extended effort level]
-  GATE:         [OPEN - proceed to BUILD] or [BLOCKED - fixing N issues]
-
-[Finalize approach and declare execution strategy]
-
-[VERBATIM - Execute exactly as written, do not modify(Background agents ignore)]
-`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"{DAIDENTITY.ALGORITHMVOICEID}","message": "Entering the Build phase"}'`
+> ℹ️ **OpenCode Note:** Plan Mode (`EnterPlanMode`/`ExitPlanMode`) is a Claude Code-only feature. Not available in OpenCode. The PLAN phase still runs — perform equivalent exploration using direct tool calls.
 
 ━━━ 🔨 BUILD ━━━ 4/7
-🚫 **STOP. This phase is SEPARATE. Never combine with adjacent phases. Never use combined numbering (e.g., "4-5/7").**
-⏱️ TIME CHECK: [Elapsed: Xs of Ys budget | Remaining: Zs | On track / OVER]
-  [If elapsed > 150% of phase budget → AUTO-COMPRESS: drop to next-lower EFFORT LEVEL tier for remaining phases]
 
-🏹 **EXECUTE SELECTED CAPABILITIES** Whatever capabilities were selected in the observe phase and/or added to in the think phase or plan phase need to be executed now. Their output will be used to further improve the ideal state criteria.
+**FIRST ACTION:** Voice announce `"Entering the Build phase."`, then Edit PRD frontmatter `last_phase: build, updated: {timestamp}`. **INVOKE each selected capability via tool call.** Every skill: call via `Skill` tool. Every agent: call via `Task` tool. There is NO text-only alternative. Writing "**FirstPrinciples decomposition:**" without calling `Skill("FirstPrinciples")` is NOT invocation — it's theater. Every capability selected in OBSERVE MUST have a corresponding `Skill` or `Task` tool call in BUILD or EXECUTE.
 
-🔍 **ISC ADHERENCE CHECK (v1.3.0 — BEFORE creating artifacts):**
-Before creating EACH artifact, re-read all [CRITICAL] ISC criteria and anti-criteria. State them explicitly:
-  "I am about to create [artifact]. My [CRITICAL] criteria are: [list]. My [CRITICAL] anti-criteria are: [list]."
-  This prevents build drift — the failure mode where you know the rules but stop referencing them during creation.
-  [For Fast/Standard: state criteria once at BUILD start. For Extended+: re-state before EACH artifact.]
-
-[Create artifacts]
-🔍 **TEST-FIRST:** [Write or run verification checks alongside artifacts — not after]
-
-🔍 **CONSTRAINT CHECKPOINT (v1.3.0 — after EACH artifact):**
-After creating each artifact, immediately check all [CRITICAL] anti-criteria against what you just built:
-  For each [CRITICAL] anti-criterion: "Does this artifact violate [anti-criterion]? Evidence: [specific check]."
-  If ANY violation found → fix BEFORE creating the next artifact. Do NOT batch to VERIFY.
-  [For Fast/Standard: checkpoint once after all artifacts. For Extended+: after EACH artifact.]
-
-[Non-obvious decisions → append to PRD DECISIONS section]
-[New requirements discovered → TaskCreate + PRD ISC section append]
-📝 **ISC MUTATIONS:** [ADDED: ... | MODIFIED: ... | REMOVED: ... | None]
-
-[VERBATIM - Execute exactly as written, do not modify(Background agents ignore)]
-`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"{DAIDENTITY.ALGORITHMVOICEID}","message": "Entering the Execute phase"}'`
+- Any preparation that's required before execution.
+- **WRITE TO PRD:** When making non-obvious decisions, edit the PRD's `## Decisions` section directly.
 
 ━━━ ⚡ EXECUTE ━━━ 5/7
-🚫 **STOP. This phase is SEPARATE. Never combine with adjacent phases. Never use combined numbering (e.g., "4-5/7").**
-⏱️ TIME CHECK: [Elapsed: Xs of Ys budget | Remaining: Zs | On track / OVER]
-  [If elapsed > 150% of phase budget → AUTO-COMPRESS: drop to next-lower EFFORT LEVEL tier for remaining phases]
 
-[Run the work using selected capabilities]
-🔍 **CONTINUOUS VERIFY:** [Run verification checks after each significant change — don't batch to end]
-[Edge cases discovered → TaskCreate + PRD ISC section append]
-📝 **ISC MUTATIONS:** [ADDED: ... | MODIFIED: ... | REMOVED: ... | None]
+**FIRST ACTION:** Voice announce `"Entering the Execute phase."`, then Edit PRD frontmatter `last_phase: execute, updated: {timestamp}`. Perform the work.
 
-[VERBATIM - Execute exactly as written, do not modify(Background agents ignore)]
-`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"{DAIDENTITY.ALGORITHMVOICEID}","message": "Entering the Verify phase."}'`
+— Execute the work.
+- As each criterion is satisfied, IMMEDIATELY edit the PRD directly: change `- [ ]` to `- [x]`, update frontmatter `verification_summary:` field (Legacy: `progress:`). Do NOT wait for VERIFY — update the moment a criterion passes. This is the AI's responsibility — no hook will do it for you.
 
-━━━ ✅ VERIFY ━━━ 6/7 (THE CULMINATION)
-🚫 **STOP. This phase is SEPARATE. Never combine with adjacent phases. Never use combined numbering (e.g., "4-5/7").**
-⏱️ TIME CHECK: [Elapsed: Xs of Ys budget | Remaining: Zs | On track / OVER]
-  [If OVER: state what was compressed and why verification still has integrity]
+━━━ ✅ VERIFY ━━━ 6/7
 
-🔄 **DRIFT CHECK:** Did execution stay on-criteria? Any requirements discovered but not captured? Add now.
+**FIRST ACTION:** Voice announce `"Entering the Verify phase."`, then Edit PRD frontmatter `last_phase: verify, updated: {timestamp}`. The critical step to achieving Ideal State and Euphoric Surprise (this is how we hill-climb)
 
-[INVOKE TaskList to see all Ideal State Criteria]
+OUTPUT:
 
-🔍 **MECHANICAL VERIFICATION (v1.3.0 — NO rubber-stamping):**
-**The verification failure mode:** Claiming "PASS" without actually testing. Saying "verified" without computing values. Glancing at output and declaring it correct. This is the most common way violations survive to the user.
+✅ VERIFICATION:
 
-**Rules for honest verification:**
-1. **For criteria with numeric thresholds:** COMPUTE the actual value. State it. Compare against the threshold. "Actual: 12. Threshold: ≤15. PASS." Not just "looks fine."
-2. **For anti-criteria:** State the SPECIFIC CHECK you performed. "Searched all 16 encounters for stun effects on turn 1. Found 0 instances. PASS." Not just "no violations."
-3. **For [CRITICAL] criteria:** Extra scrutiny. Re-read the original extracted constraint [EX-N]. Re-read the artifact. Does the artifact comply? State evidence.
-4. **Catch yourself:** If you find yourself writing "PASS" without having just performed a concrete check, STOP. Go back and actually verify.
-
-For EACH criterion:
-  1. State the SPECIFIC evidence — what you checked, what you found, the actual value if numeric
-  2. INVOKE TaskUpdate to mark completed (with evidence) or mark failed (with reason)
-
-For EACH anti-criterion:
-  1. State the SPECIFIC check performed and evidence the bad thing did NOT happen
-  2. INVOKE TaskUpdate
-
-🔒 **VERIFY COMPLETION GATE (v1.6.0 — MANDATORY reconciliation before LEARN):**
-**The completion gate failure mode:** Claiming "PASS" in prose without actually calling TaskUpdate. The model writes evidence, says "verified", but never fires the tool call. The task stays pending. The user sees unchecked criteria despite confirmed completion.
-
-[INVOKE TaskList — this is NOT a display step, it is an ACTIVE RECONCILIATION]
-For EACH criterion in the list:
-  IF your evidence above shows PASS but task status ≠ completed → INVOKE TaskUpdate(completed) NOW
-  IF task status = completed → confirmed, no action needed
-  IF your evidence shows FAIL → task must remain in_progress or pending with failure reason
-
-**This gate runs at ALL effort levels. It is NON-NEGOTIABLE. Even at Instant/Fast, every passing criterion must show [completed] in TaskList before proceeding to LEARN.**
-
-[INVOKE TaskList again to confirm all reconciled — every PASS criterion must now show completed]
-
-📄 **PRD UPDATE:**
-  - Update ISC checkboxes: `- [ ]` to `- [x]` for passing
-  - Update STATUS table with progress count
-  - If all pass: set PRD status to COMPLETE
-
-[INVOKE TaskList to show final verification state - NO manual tables]
-
-[VERBATIM - Execute exactly as written, do not modify(Background agents ignore)]
-`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"{DAIDENTITY.ALGORITHMVOICEID}","message": "Entering the Learn phase"}'`
+— For EACH IDEAL STATE criterion in the PRD, test that it's actually complete
+- For each criterion, edit the PRD: mark `- [x]` if not already, and add evidence to the `## Verification` section directly.
+- **Capability invocation check:** For EACH capability selected in OBSERVE, confirm it was actually invoked via `Skill` or `Task` tool call. Text output alone does NOT count. If any selected capability lacks a tool call, flag it as a failure.
 
 ━━━ 📚 LEARN ━━━ 7/7
-⏱️ FINAL TIME: [Total: Xs | Budget: Ys | WITHIN / OVER by Zs]
 
-🔍 **ALGORITHM REFLECTION** (Standard+ effort level only — skip for Instant/Fast):
-🚨 **THIS IS THE FIRST THING IN LEARN. Do NOT skip to the voice line. Answer Q1-Q3 BEFORE anything else.**
+**FIRST ACTION:** Voice announce `"Entering the Learn phase."`, then Edit PRD frontmatter `last_phase: learn, updated: {timestamp}`. After reflection, set `last_phase: complete` (Legacy: `phase: complete`). Algorithm reflection and improvement
 
-**Q1 — Self:** "What would I have done differently in this Algorithm run?"
-[Focus: Phase execution, timing, ISC quality, capability selection decisions]
+- **WRITE TO PRD (MANDATORY):** Set frontmatter `last_phase: complete`. No changelog section needed — git history serves this purpose.
 
-**Q2 — Algorithm:** "What would a smarter algorithm have done differently?"
-[Focus: Structural improvements — missing phases, better gating, capability triggers, ISC patterns]
+OUTPUT:
 
-**Q3 — AI:** "What would a fundamentally smarter AI have done differently?"
-[Focus: Reasoning approach, problem decomposition, anticipation, blind spots in understanding]
+🧠 LEARNING:
 
-**Framing:** Reflect on ALGORITHM PERFORMANCE, not task subject matter.
+ [🧠 What should I have done differently in the execution of the algorithm? ]
+ [🧠 What would a smarter algorithm have done instead? ]
+ [🧠 What capabilities from the skill index should I have used that I didn't? ]
+ [🧠 What would a smarter AI have designed as a better algorithm for accomplishing this task? ]
 
-[WRITE REFLECTION — append JSONL to MEMORY/LEARNING/REFLECTIONS/algorithm-reflections.jsonl]
-[Fields: timestamp, effort_level, task_description, criteria_count, criteria_passed, criteria_failed, prd_id, implied_sentiment (1-10), reflection_q1, reflection_q2, reflection_q3, within_budget]
+- **WRITE REFLECTION JSONL (MANDATORY for Standard+ effort):** After outputting the learning reflections above, append a structured JSONL entry to the reflections log. This feeds Algorithm learning and improvement workflows.
 
-📄 **PRD LOG:**
-  - Append session entry: work done, criteria passed/failed, context for next session
-  - Update PRD STATUS and frontmatter if complete
-
-🧠 **WISDOM FRAME UPDATE** (v1.8.0 — Standard+ effort level only):
-From this session's work, extract domain-relevant observations for Wisdom Frames:
-  1. **Identify domain(s):** Which Frame(s) does this work touch? (development, deployment, security, communication, architecture, etc.)
-  2. **Extract observations:** What did this session teach?
-     - New anti-patterns discovered? (type: anti-pattern)
-     - New contextual rules learned? (type: contextual-rule)
-     - New predictions about request patterns? (type: prediction)
-     - Principles confirmed or refined? (type: principle)
-  3. **Update Frame:** Append to MEMORY/WISDOM/{domain}.md or use `bun WisdomFrameUpdater.ts --domain X --observation "Y" --type Z`
-  4. **Skip if nothing learned:** Not every session teaches something new. Only update when genuine insight emerges.
-
-[This is the WRITE side of the dual loop. OBSERVE reads Frames → LEARN writes Frames. Together they make PAI compound knowledge across sessions.]
-
-📝 **LEARNING:** [What to improve next time. Were initial ISC good enough?]
-
-🗣️ {DAIDENTITY.NAME}: [Spoken summary between 12-24 words.]
+```bash
+echo '{"timestamp":"[ISO-8601 with timezone]","effort_level":"[tier]","task_description":"[from TASK line]","criteria_count":[N],"criteria_passed":[N],"criteria_failed":[N],"prd_id":"[slug from PRD frontmatter]","implied_sentiment":[1-10 estimate of user satisfaction from conversation tone],"reflection_q1":"[Q1 answer - escape quotes]","reflection_q2":"[Q2 answer - escape quotes]","reflection_q3":"[Q3 answer from capabilities question - escape quotes]","within_budget":[true/false]}' >> ~/.opencode/MEMORY/LEARNING/REFLECTIONS/algorithm-reflections.jsonl
 ```
 
----
+Fill in all bracketed values from the current session. `implied_sentiment` is your estimate of how satisfied the user is (1=frustrated, 10=delighted) based on conversation tone — do NOT read ratings.jsonl. Escape double quotes in reflection text with `\"`.
 
-## Ideal State Criteria Requirements
 
-| Requirement | Rule | Example |
-|-------------|------|---------|
-| **8-12 words** | Each criterion is 8-12 words. Not fewer. Not more. | "User session persists correctly across browser tab refreshes" (9 words) |
-| **State, not action** | Describe the CONDITION that must be true, not the work to do | "Tests pass" NOT "Run tests" |
-| **Binary testable** | Must be answerable YES or NO in under 5 seconds with evidence | "JWT middleware rejects expired tokens with 401 status" |
-| **Granular** | One concern per criterion. If it has "and", split it. | "Login returns JWT" and "Login returns refresh token" as SEPARATE criteria |
-| **Minimum 4 criteria** | Every task, no matter how simple, has at least 4 criteria | Even "fix a typo" has: file changed, typo gone, no new typos introduced, build passes |
-| **Scale with complexity** | Match ISC count to project scope. See scale tiers below. | "Fix typo" = 4 criteria. "Build auth system" = 40+. "Redesign platform" = 150+. |
-| **Inline verification** | Each criterion carries its verification method | `ISC-C1: Session persists across tab refreshes \| Verify: Browser: open, close, reopen tab` |
+### Critical Rules (Zero Exceptions)
 
-**ISC Scale Tiers:**
+- **Mandatory output format** — Every response MUST use exactly one of the output formats defined in the Execution Modes section of CLAUDE.md (ALGORITHM, NATIVE, ITERATION, or MINIMAL). No freeform output. No exceptions. If you completed algorithm work, wrap results in the ALGORITHM format. If iterating, use ITERATION. Choose the right format and use it.
+- **Response format before questions** — Always complete the current response format output FIRST, then invoke AskUserQuestion at the end. Never interrupt or replace the response format to ask questions. Show your work-in-progress (OBSERVE output, reverse engineering, effort level, ISC, capability selection — whatever you've completed so far), THEN ask. The user sees your thinking AND your questions together. Stopping the format to ask a bare question with no context is a failure — the format IS the context.
+- **Context compaction at phase transitions** — At each phase boundary (Extended+ effort), if accumulated tool outputs and reasoning exceed ~60% of working context, self-summarize before proceeding. Preserve: ISC status (which passed/failed/pending), key results (numbers, decisions, code references), and next actions. Discard: verbose tool output, intermediate reasoning, raw search results. Format: 1-3 paragraphs replacing prior phase content. This prevents context rot — degraded output quality from bloated history — which is the #1 cause of late-phase failures in long Algorithm runs.
+- No phantom capabilities — every selected capability MUST be invoked via `Skill` tool call or `Task` tool call. Text-only output is NOT invocation. Selection without a tool call is dishonest and a CRITICAL FAILURE.
+- Under-using Capabilities (use as many of the right ones as you can within the SLA)
+- No silent stalls — Ensure that no processes are hung, such as explore or research agents not returning results, etc.
+- **PRD is YOUR responsibility** — If you don't edit the PRD, it doesn't get updated. There is no hook safety net. Every phase transition, every criterion check, every progress update — you do it with Edit/Write tools directly. If you skip it, the PRD stays stale. Period.
+- **ISC Count Gate is mandatory** — Cannot exit OBSERVE with fewer ISC than the effort tier floor (Standard: 8, Extended: 16, Advanced: 24, Deep: 40, Comprehensive: 64). If below floor, decompose until met. No exceptions.
+- **Atomic criteria only** — Every criterion must pass the Splitting Test. No compound criteria with "and"/"with" joining independent verifiables. No scope words ("all", "every") without enumeration.
 
-| Tier | ISC Count | Structure | When |
-|------|-----------|-----------|------|
-| **Simple** | 4-16 | Flat list | Single-file fix, skill invocation, config change |
-| **Medium** | 17-32 | Grouped by domain (### headers) | Multi-file feature, API endpoint, component build |
-| **Large** | 33-99 | Grouped domains + child PRDs | Multi-system feature, major refactor, 16-action plan |
-| **Massive** | 100-500+ | Multi-level hierarchy, team decomposition | Platform redesign, full product build, system migration |
+### Context Recovery
 
-**Structure rules:** ≤16 criteria = flat list. 17-32 = group under `### Domain` headers. 33+ = decompose into child PRDs (one per domain). 100+ = multi-level hierarchy with agent teams.
+**Recovery Mode Detection (check FIRST — this runs BEFORE Algorithm OBSERVE phase):**
 
-**Anti-criteria** capture what must NOT happen. Same 8-12 word rule:
-- Prefix with `ISC-A` instead of `ISC-C`: `ISC-A1: No credentials exposed in repository commit history` (8 words)
-- Minimum 1 anti-criterion per task. Most tasks have 2-4.
+> ⚠️ **CRITICAL:** This recovery step runs **before** the Algorithm OBSERVE phase begins. The OBSERVE phase has a hard rule: "No tool calls except TaskCreate, voice curls, and CONTEXT RECOVERY (Grep/Glob/Read only)". During **this pre-OBSERVE recovery step only**, you may use OpenCode-native recovery tools (`session_registry`, `session_results`) in addition to Grep/Glob/Read. Once OBSERVE starts, fall back to the standard OBSERVE rules.
 
-**Verification Method Categories (v1.0.0):**
+- **POST-COMPACTION:** Context was compressed mid-session → Run this recovery **before** starting Algorithm OBSERVE phase:
+  1. **Read PRD frontmatter** (Grep/Read allowed) — get `parent_session_id` 
+  2. **Call `session_registry`** tool — OpenCode-native recovery (whitelisted for post-compaction)
+  3. **Call `session_results(session_id)`** — OpenCode-native recovery (whitelisted for post-compaction)
+  4. Run env var/shell state audit: verify auth tokens, working directory
+  5. Read ISC criteria from PRD body (Grep/Read)
+  6. **NEVER claim "subagent results are lost"** — they survive compaction in OpenCode's SQLite database
 
-Each ISC criterion carries an inline verification method using the `| Verify:` suffix:
+- **SAME-SESSION:** Task was worked on earlier THIS session (in working memory) → Skip search entirely. Use working memory context directly.
 
-| Category | When | Example |
-|----------|------|---------|
-| `CLI:` | Deterministic command with exit code | `Verify: CLI: curl -f http://localhost:3000/health` |
-| `Test:` | Test runner execution | `Verify: Test: bun test auth.test.ts` |
-| `Static:` | Type check or lint | `Verify: Static: tsc --noEmit` |
-| `Browser:` | Visual verification via screenshot | `Verify: Browser: screenshot login page, check layout` |
-| `Grep:` | Content pattern match | `Verify: Grep: "mode:" in PRD frontmatter` |
-| `Read:` | File content inspection | `Verify: Read: check CONTEXT section exists in template` |
-| `Custom:` | Human judgment required | `Verify: Custom: evaluate naming consistency` |
+- **POST-COMPACTION FALLBACK:** If native OpenCode tools unavailable →
+  1. **Attempt exact PRD match first:** Use known PRD path from context or `parent_session_id` metadata to locate the exact PRD file
+  2. **If exact match found:** Read that specific PRD only — do NOT fall back to "most recent by mtime"
+  3. **If ambiguous/multiple matches:** Log error and abort recovery rather than guessing
+  4. **PRD frontmatter:** Read `last_phase`, `verification_summary`, `failing_criteria` for state
+  5. **PRD body:** Read criteria checkboxes and decisions
+  6. **Session registry:** `~/.opencode/MEMORY/STATE/work.json` as last-resort reference
 
-Criteria with `Custom:` verification are flagged `[interactive]` and skipped by loop mode.
+**Subagent Session Recovery Tools (OpenCode-Native):**
 
-**Tools:**
-- `TaskCreate` - Create criterion (prefix subject with "ISC-")
-- `TaskUpdate` - Modify, mark completed with evidence, or mark failed
-- `TaskList` - Display all criteria (ALWAYS use this, never manual tables)
-- PRD IDEAL STATE CRITERIA section - Persist criteria to disk (see PRD Integration below)
+OpenCode stores ALL subagent sessions persistently, indexed by `parent_id`. Data SURVIVES compaction:
 
----
+- **PRD stores:** `parent_session_id` — The OpenCode session ID (one per Algorithm run)
+- **`session_registry`** — Lists all subagent sessions for a given parent session
+- **`session_results(session_id)`** — Gets output from a specific subagent
 
-## Ideal State Criteria Quality Gate
+**Recovery Flow:**
+```json
+// Step 1: Read PRD frontmatter → extract parent_session_id field
+// Example: parent_session_id: "ses_abc123"
 
-After OBSERVE creates Ideal State Criteria via TaskCreate, the Quality Gate self-check fires before proceeding to THINK.
+// Step 2: List all subagents for this parent session
+// session_registry uses parent_session_id from context automatically
+session_registry: {}
+// Returns: All subagents where parent_id = "ses_abc123"
 
-### The Gate (5 checks mandatory, 2 Extended+ only)
-
-| # | Check | Pass condition | Fail action |
-|---|-------|---------------|-------------|
-| QG1 | **Count + Structure** | >= 4 criteria exist AND scale-appropriate for tier. If >16: grouped by domain. If >32: child PRDs. | Add more. Group if flat at scale. Spawn Algorithm Agent if stuck. |
-| QG2 | **Word count** | Every criterion is 8-12 words | Rewrite via TaskUpdate. |
-| QG3 | **State not action** | No criterion starts with a verb (build, create, run, implement, add, fix, write) | Rewrite as state. |
-| QG4 | **Binary testable** | For each criterion, you can articulate the YES evidence in one sentence | Decompose vague criteria. |
-| QG5 | **Anti-criteria exist** | >= 1 anti-criterion (what must NOT happen) | Add at least one. |
-| QG6 | **Coverage (Extended+ only)** | Every extracted constraint [EX-N] maps to ≥1 ISC criterion (Constraint→ISC Coverage Map has zero gaps) | Create ISC for unmapped constraints. Skip at Standard and below. |
-| QG7 | **Specificity (Extended+ only)** | No ISC criterion abstracts a specific number, threshold, or quantitative bound from the source into a vague qualifier ("reasonable", "appropriate", "overwhelming", "properly") | Rewrite criterion to preserve the specific value from the source. Skip at Standard and below. |
-
-If BLOCKED: fix issues, re-run gate. Do not enter THINK with a blocked gate.
-
-### Ideal State Criteria Decomposition Decision (part of CAPABILITY AUDIT)
-
-| Signal | Structure | Agent Strategy |
-|--------|-----------|---------------|
-| Simple task (4-8 criteria) | Flat list, single PRD | Single agent, no decomposition needed |
-| Medium task (12-40 criteria) | Grouped by domain headers | Spawn Algorithm Agents for parallel domain discovery |
-| Large task (40-150 criteria) | Grouped + child PRDs per domain | Spawn Architect Agent to map domains, Algorithm Agents per child PRD |
-| Massive task (150-500+ criteria) | Multi-level hierarchy, agent teams | Agent team: Architect maps structure, Engineers per domain, Red Team for anti-criteria |
-| Unfamiliar domain | Any tier | Spawn Researcher Agent to discover requirements and edge cases |
-| Security/safety implications | Any tier | Spawn RedTeam Agent to generate anti-criteria (failure modes) |
-| Ambiguous request | Any tier | Use AskUserQuestion before generating criteria |
-
-**Decomposition triggers** (split any criterion containing): conjunction "and" joining two conditions, compound verbs ("creates and validates"), vague qualifiers ("properly", "correctly"), or >12 words.
-
----
-
-## PRD Integration (Persistent State)
-
-### Core Rule
-
-**Every Algorithm run creates or continues a PRD. No exceptions.**
-
-Simple task = minimal PRD (4-8 flat criteria). Medium task = grouped PRD (12-40 criteria under domain headers). Large task = parent PRD + child PRDs (40-150 criteria). Massive task = multi-level hierarchy with agent teams (150-500+).
-
-### PRD Status Progression (v1.0.0)
-
-PRD status tracks Algorithm lifecycle:
-
-```
-DRAFT → CRITERIA_DEFINED → PLANNED → IN_PROGRESS → VERIFYING → COMPLETE
-                                                                → FAILED (max iterations reached)
-                                                                → BLOCKED (all remaining criteria are Custom/interactive)
+// Step 3: Get specific subagent results using session_id from Step 2
+session_results: { "session_id": "ses_child456" }
 ```
 
-| Status | When Set | Meaning |
-|--------|----------|---------|
-| `DRAFT` | PRD created | Initial creation, no criteria yet |
-| `CRITERIA_DEFINED` | After OBSERVE | ISC created and Quality Gate passed |
-| `PLANNED` | After PLAN | Execution plan written, verification strategy set |
-| `IN_PROGRESS` | After BUILD starts | Active work underway |
-| `VERIFYING` | During VERIFY | Systematic verification in progress |
-| `COMPLETE` | All ISC pass | All non-Custom criteria verified passing |
-| `FAILED` | Max iterations | Loop mode exhausted iterations without completion |
-| `BLOCKED` | Custom-only remaining | All remaining criteria need human judgment — loop mode cannot proceed |
+**Key Principle:** 
+- One `parent_session_id` in PRD frontmatter
+- Zero-to-many child sessions in OpenCode's SQLite (indexed by `parent_id`)
+- Subagent data is NEVER lost during compaction
 
-The `BLOCKED` status is critical for loop mode — it prevents infinite loops on un-automatable criteria.
+### PRD.md Format
 
-### Dual-Tracking: Working Memory + Persistent Memory
+**Frontmatter (Canonical v1.0.0):** 16 fields — Required: `prd`, `id`, `status`, `mode`, `effort_level`, `created`, `updated`. Optional: `parent_session_id`, `iteration`, `maxIterations`, `loopStatus`, `last_phase`, `failing_criteria`, `verification_summary`, `parent`, `children`.
 
-Ideal State Criteria live in TWO systems simultaneously:
+**Frontmatter (Legacy, migrate to v1.0.0):** 8 fields — `task`, `slug`, `effort`, `phase`, `progress`, `mode`, `started`, `updated`. Map to canonical: `task`→`id`, `effort`→`effort_level`, `started`→`created`, `phase`/`progress`→`last_phase`/`verification_summary`.
 
-| Track | System | Lifetime | Purpose |
-|-------|--------|----------|---------|
-| **Working Memory** | TaskCreate/TaskList/TaskUpdate | Dies with session | Real-time verification in THIS session |
-| **Persistent Memory** | PRD file IDEAL STATE CRITERIA section | Permanent | Survives sessions, readable by any agent |
+**Body:** 4 sections — `## Context`, `## Criteria` (ISC checkboxes), `## Decisions`, `## Verification`. Sections appear only when populated.
 
-Both tracks must stay in sync. TaskCreate is the write-ahead log. PRD is the handoff contract.
+**Full spec:** See "PRD Template (v1.0.0)" below — this template IS the canonical specification.
+
+---
 
 ### PRD Template (v1.0.0)
 
@@ -663,6 +529,7 @@ mode: interactive
 effort_level: Standard
 created: {YYYY-MM-DD}
 updated: {YYYY-MM-DD}
+parent_session_id: {OpenCode session ID}  # Key for subagent recovery
 iteration: 0
 maxIterations: 128
 loopStatus: null
@@ -745,6 +612,7 @@ Each entry: date, decision, rationale, alternatives considered.}
 | `effort_level` | string | Effort level for this task (or per-iteration effort level for loop mode) |
 | `created` | date | Creation date |
 | `updated` | date | Last modification date |
+| `parent_session_id` | string | OpenCode session ID — enables subagent recovery via `session_registry` |
 | `iteration` | number | Current iteration count (0 = not started) |
 | `maxIterations` | number | Loop ceiling (default 128) |
 | `loopStatus` | string\|null | `null`, `running`, `paused`, `stopped`, `completed`, `failed` |
@@ -815,6 +683,8 @@ The algorithm CLI reads PRD status and re-invokes:
 bun algorithm.ts -m loop -p PRD-{id}.md -n 128
 ```
 
+> ℹ️ **OpenCode Note:** The `algorithm.ts` CLI is planned for future PAI-OpenCode versions. For now, use the Task tool with PRD paths for loop-like behavior.
+
 **Loop Mode Effort Level Decay (v1.0.0):**
 Loop iterations start at the PRD's `effort_level` but decay toward Fast as criteria converge:
 - Iterations 1-3: Use original effort level tier (full exploration)
@@ -861,11 +731,9 @@ A focused executor mode used by `algorithm.ts -m loop -a N` when N > 1. Each wor
 The `algorithm.ts` CLI IS the Algorithm at the macro level:
 1. Reads PRD → identifies failing criteria (OBSERVE equivalent)
 2. Partitions: one criterion per agent, up to N agents (PLAN equivalent)
-3. Spawns N `opencode -p` workers in parallel via `Bun.spawn` + `Promise.all` (EXECUTE equivalent)
+3. Spawns N workers in parallel via Task tool with `run_in_background: true` (EXECUTE equivalent)
 4. Waits for all workers → re-reads PRD → reconciles frontmatter (VERIFY equivalent)
 5. Loops until all criteria pass or max iterations reached (LEARN equivalent)
-
-> ℹ️ **OpenCode Note:** Worker spawning uses OpenCode SDK invocation patterns (Task tool with subagent_type parameter), not the Claude Code CLI (`claude -p`).
 
 **Worker-Stealing Pool:**
 Each iteration, the orchestrator:
@@ -883,6 +751,8 @@ bun algorithm.ts -m loop -p PRD-file.md -n 20
 bun algorithm.ts -m loop -p PRD-file.md -n 20 -a 8
 ```
 
+> ℹ️ **OpenCode Note:** Use the Task tool with `subagent_type` parameter and `run_in_background: true` for parallel agent spawning.
+
 **Dashboard Integration:**
 - `mode` field in AlgorithmState set to `"loop"` (not shown as effort level)
 - `parallelAgents` field shows configured agent count
@@ -895,13 +765,11 @@ bun algorithm.ts -m loop -p PRD-file.md -n 20 -a 8
 
 **Terminology:** "Agent team", "swarm", and "agent swarm" all refer to the same capability — coordinated multi-agent execution with shared task lists.
 
-**Invocation (CRITICAL - Claude Code only):** To spawn an agent team, you MUST say the words **"create an agent team"** in your output — this is the trigger phrase that activates team creation. Without this phrase, teams will NOT spawn regardless of what tools you call. After triggering, use `TeamCreate` to set up the team and `SendMessage` to coordinate teammates. Requires env `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`.
-
 **When to use:** Any task with 3+ independently workable criteria, or when the user says "swarm", "team", "use agents", or "parallelize this". Default to teams for Extended/Advanced/Deep/Comprehensive effort level tasks with complex ISC.
 
 When decomposing into child PRDs:
 1. Lead creates child PRDs with criteria subsets.
-2. Lead spawns workers via Task tool with `team_name` parameter, each given their child PRD path.
+2. Lead spawns workers via Task tool with `subagent_type` parameter, each given their child PRD path.
 3. Workers follow Algorithm phases against their child PRD.
 4. Lead reads child PRDs to track aggregate progress.
 5. When all children complete → update parent PRD.
@@ -926,7 +794,7 @@ Conflict resolution: If working memory and disk disagree, PRD on disk wins.
 Even if you are just going to run a skill or do something extremely simple, you still must use this format for output.
 
 ```
-🤖 PAI ALGORITHM (v1.8.0) ═════════════
+🤖 PAI ALGORITHM (v3.7.0) ═════════════
    Task: [6 words]
 
 📋 SUMMARY: [4 bullets of what was done]
@@ -952,15 +820,15 @@ Even if you are just going to run a skill or do something extremely simple, you 
 
 1. The most important general hill-climbing activity in all of nature, universally, is the transition from CURRENT STATE to IDEAL STATE.
 2. Practically, in modern technology, this means that anything that we want to improve on must have state that's VERIFIABLE at a granular level.
-3. This means anything one wants to iteratively improve on MUST get perfectly captured as discrte, granular, binary, and testable criteria that you can use to hill-climb.
+3. This means anything one wants to iteratively improve on MUST get perfectly captured as discrete, granular, binary, and testable criteria that you can use to hill-climb.
 4. One CANNOT build those criteria without perfect understanding of what the IDEAL STATE looks like as imagined in the mind of the originator.
-5. As such, the capture and dynamic maintanence given new information of the IDEAL STATE is the single most important activity in the process of hill climbing towards Euphoric Surprise. This is why ideal state is the centerpiece of the PAI algorithm.
+5. As such, the capture and dynamic maintenance given new information of the IDEAL STATE is the single most important activity in the process of hill climbing towards Euphoric Surprise. This is why ideal state is the centerpiece of the PAI algorithm.
 6. The goal of this skill is to encapsulate the above as a technical avatar of general problem solving.
 7. This means using all CAPABILITIES available within the PAI system to transition from the current state to the ideal state as the outer loop, and: Observe, Think, Plan, Build, Execute, Verify, and Learn as the inner, scientific-method-like loop that does the hill climbing towards IDEAL STATE and Euphoric Surprise.
-8. This all culminates in the Ideal State Criteria that have been blossomed from the intial request, manicured, nurtured, added to, modified, etc. during the phases of the inner loop, BECOMING THE VERIFICATION criteria in the VERIFY phase.
+8. This all culminates in the Ideal State Criteria that have been blossomed from the initial request, manicured, nurtured, added to, modified, etc. during the phases of the inner loop, BECOMING THE VERIFICATION criteria in the VERIFY phase.
 9. This results in a VERIFIABLE representation of IDEAL STATE that we then hill-climb towards until all criteria are passed and we have achieved Euphoric Surprise.
 
-## Algorithm implementation
+## Algorithm Implementation
 
 - The Algorithm concept above gets implemented using the OpenCode built-in Tasks system AND PRD files on disk.
 - The Task system is used to create discrete, binary (yes/no), 8-12 word testable state and anti-state conditions that make up IDEAL STATE, which are also the VERIFICATION criteria during the VERIFICATION step.
@@ -972,7 +840,7 @@ Even if you are just going to run a skill or do something extremely simple, you 
 - The intuitive, insightful, and superhumanly reverse engineering of IDEAL STATE from any input is the most important tool to be used by The Algorithm, as it's the only way proper hill-climbing verification can be performed.
 - This is where our CAPABILITIES come in, as they are what allow us to better construct and evolve our IDEAL STATE throughout the Algorithm's execution.
 
-## Algorithm execution guidance and scenarios
+## Algorithm Execution Guidance and Scenarios
 
 - **ISC ALWAYS comes first. No exceptions.** Even for fast/obvious tasks, you create ISC before doing work. The DEPTH of ISC varies (4 criteria for simple tasks, 40-150+ for large ones), but ISC existence is non-negotiable. ISC count must be proportional to project scope — see ISC Scale Tiers.
 - Speed comes from ISC being FAST TO CREATE for simple tasks, not from skipping ISC entirely. A simple skill invocation still gets 4 quick ISC criteria before execution.
@@ -981,7 +849,7 @@ Even if you are just going to run a skill or do something extremely simple, you 
 
 > ℹ️ **OpenCode Note:** The CapabilitiesRecommendation hook is handled by the `format-reminder.ts` plugin handler in OpenCode.
 
-# 🚨 Everythinig Uses the Algorithm
+# 🚨 Everything Uses the Algorithm
 
 The Algorithm ALWAYS runs. Every response, every mode, every depth level. The only variable is **depth** — how many Ideal State Criteria, etc.
 
@@ -1299,7 +1167,8 @@ Check background agent output with Read tool on the output_file path.
 7. **Format always present.** Full/Iteration/Minimal — never raw output. Algorithm runs for every input including skills.
 8. **Direct tools before agents.** Grep/Glob/Read for search and lookup. Agents ONLY for multi-step autonomous work beyond 5 files. Context recovery = direct tools, never agents.
 
-**4 red lines — immediate self-correction if violated:**
+**6 red lines — immediate self-correction if violated:**
+*(4 original + 2 v1.3.0 additions)*
 
 - **No tool calls in OBSERVE** except TaskCreate, voice curls, and CONTEXT RECOVERY (Grep/Glob/Read on memory stores only, ≤34s total). Reading code before ISC exists = premature execution. Reading your own prior work notes = understanding the problem.
 - **No agents for instant operations.** If Grep/Glob/Read can answer in <2 seconds, NEVER spawn an agent. Context recovery, file search, content lookup = direct tools only.
