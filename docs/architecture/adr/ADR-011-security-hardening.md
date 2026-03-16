@@ -1,3 +1,11 @@
+---
+title: "ADR-011: Security Hardening — Prompt Injection Defense & Audit Logging"
+status: Implemented
+date: "2026-03-06"
+depends_on: "ADR-006 (Security Validation Preservation)"
+tags: [adr, security, hardening]
+---
+
 # ADR-011: Security Hardening — Prompt Injection Defense & Audit Logging
 
 **Status:** ✅ Implemented (WP-B)  
@@ -105,6 +113,44 @@ interface SecurityAuditEntry {
 - Fail-closed would be safer but risks blocking legitimate work
 
 **Alternative considered:** Fail-closed (block on error). Rejected because security validator bugs would break user workflows.
+
+## Architecture Diagram
+
+```text
+User Input (tool args)
+        │
+        ▼
+sanitizeForSecurityCheck()
+  (decodeBase64 → normalizeUnicode → collapseSpacing → stripHtml)
+        │
+        ├──▶ detectInjections()          ──▶ match?
+        │    (scan INJECTION_SCAN_FIELDS)        │ YES
+        │                                        ▼
+        ├──▶ dangerous command check             Block / Confirm
+        │    (DANGEROUS_PATTERNS)          │ NO
+        │                                  ▼
+        └──────────────────────────────▶ Allow
+                                          │
+                                          ▼
+                              Append to security-audit.jsonl
+                              (action: blocked | confirmed | allowed)
+```
+
+<details>
+<summary>Mermaid detail</summary>
+
+```mermaid
+flowchart TD
+    A["Incoming tool args"] --> B["sanitizeForSecurityCheck()"]
+    B --> C["Scan INJECTION_SCAN_FIELDS\nvia detectInjections()"]
+    C --> D{"Injection or\ndangerous pattern?"}
+    D -->|Yes| E["Block or Confirm\n(action: blocked/confirmed)"]
+    D -->|No| F["Allow\n(action: allowed)"]
+    E --> G["Append security-audit.jsonl"]
+    F --> G
+```
+
+</details>
 
 ## Consequences
 

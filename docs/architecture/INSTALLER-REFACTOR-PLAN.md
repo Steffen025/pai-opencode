@@ -31,7 +31,7 @@ PR #47 successfully merged PAI-Install v4.0.3 with all CodeRabbit fixes:
 ### ❌ What Still Needs Refactoring
 
 **Current installer structure (messy):**
-```
+```text
 install.sh          ← 163 lines (too complex)
   └── PAI-Install/
         ├── cli/          ← 3 files (TUI, interactive)
@@ -80,7 +80,7 @@ Tools/migration-v2-to-v3.ts      ← STILL EXISTS (separate script)
 
 **Clarified:** This is NOT installing PAI — it's building a custom OpenCode CLI tool:
 
-```
+```text
 Steffen025/opencode (fork)
     └── feature/model-tiers (branch with 60x cost optimization)
         └── bun build → /usr/local/bin/opencode (binary)
@@ -124,7 +124,7 @@ function detectInstallMode(): "fresh" | "migrate-v2" | "update-v3" {
 
 ### Simplified Structure
 
-```
+```text
 PAI-Install/
 ├── install.sh              ← Bootstrap ONLY (15 lines)
 ├── README.md               ← Entry point docs
@@ -199,7 +199,7 @@ fi
 
 ### 4.2 Electron Main Process Flow
 
-```
+```text
 Electron Starts
     │
     └── detectInstallMode()
@@ -240,7 +240,7 @@ Electron Starts
 | 8 | Done | Show summary, launch command | 100% |
 
 **Step 4 — Provider Selection UI:**
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                                                         │
 │   Step 4 of 7: Choose Your AI Provider                  │
@@ -486,7 +486,7 @@ bun PAI-Install/cli/quick-install.ts --migrate --dry-run
 
 Don't overwhelm users. Each step asks ONE thing:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                                                         │
 │   Step 5 of 7                                           │
@@ -512,7 +512,7 @@ Users must know:
 - How many steps total
 - What is happening (not just "Loading...")
 
-```
+```text
 Step 3 of 7: Building OpenCode Binary
 ████████████████████░░░░  67%
 
@@ -524,7 +524,7 @@ Estimated: 2 minutes remaining
 
 When asking for API keys or building binary, explain WHY:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                                                         │
 │   Why do you need an Anthropic API key?                 │
@@ -546,7 +546,7 @@ When asking for API keys or building binary, explain WHY:
 
 Building OpenCode takes 3-5 minutes. Allow skipping:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                                                         │
 │   ⚙  Building OpenCode                                  │
@@ -800,7 +800,7 @@ exec zsh
 - **OpenAI** — for GPT models
 
 **UI Design:**
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                                                         │
 │   Step 4 of 7: Choose Your AI Provider                  │
@@ -981,7 +981,7 @@ alias {AI_NAME}="/usr/local/bin/{AI_NAME}-wrapper"
 **Answer:** NO — Migration must be EXPLICIT with user confirmation
 
 **Migration Flow:**
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                                                         │
 │   ⚠️  Migration Required                                │

@@ -49,7 +49,7 @@ bash({ command: "python3 transcribe.py --key $GOOGLE_API_KEY" })
 **Available to:** All TypeScript plugin code via `process.env.KEY`  
 **Persists:** For entire OpenCode process lifetime
 
-```
+```text
 .opencode/.env
       │
       │ Bun auto-loads at startup
@@ -104,7 +104,7 @@ process.env (entire OpenCode process)
 
 ## Architecture Diagram
 
-```
+```text
 STARTUP:
 .opencode/.env ──Bun──> process.env (full OpenCode process)
                               │
@@ -115,6 +115,19 @@ STARTUP:
                     │                            │
             process.env.KEY ✅         shell.env Hook ──> output.env
 ```
+
+<details>
+<summary>Mermaid detail</summary>
+
+```mermaid
+flowchart TD
+    A[".opencode/.env"] -->|Bun auto-loads at startup| B["process.env (OpenCode process)"]
+    B --> C["Plugin TypeScript\n(process.env.KEY ✅)"]
+    B --> D["shell.env hook\n(runs before each bash call)"]
+    D --> E["output.env\n(injected into bash child process)"]
+```
+
+</details>
 
 ---
 
