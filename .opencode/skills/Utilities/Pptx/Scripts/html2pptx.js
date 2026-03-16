@@ -415,8 +415,9 @@ async function extractSlideData(page) {
       };
     };
 
-    // Parse inline formatting tags (<b>, <i>, <u>, <strong>, <em>, <span>) into text runs
-    const parseInlineFormatting = (element, baseOptions = {}, runs = [], baseTextTransform = (x) => x) => {
+    // Parse inline formatting tags (<b>, <i>, <u>, <strong>, <em>, <span>) into text runs.
+    // Returns { runs, errors } — self-contained, does not reference any outer-scope errors variable.
+    const parseInlineFormatting = (element, baseOptions = {}, runs = [], baseTextTransform = (x) => x, inlineErrors = []) => {
       let prevNodeIsText = false;
 
       element.childNodes.forEach((node) => {
@@ -457,20 +458,21 @@ async function extractSlideData(page) {
 
             // Validate: Check for margins on inline elements
             if (computed.marginLeft && parseFloat(computed.marginLeft) > 0) {
-              errors.push(`Inline element <${node.tagName.toLowerCase()}> has margin-left which is not supported in PowerPoint. Remove margin from inline elements.`);
+              inlineErrors.push(`Inline element <${node.tagName.toLowerCase()}> has margin-left which is not supported in PowerPoint. Remove margin from inline elements.`);
             }
             if (computed.marginRight && parseFloat(computed.marginRight) > 0) {
-              errors.push(`Inline element <${node.tagName.toLowerCase()}> has margin-right which is not supported in PowerPoint. Remove margin from inline elements.`);
+              inlineErrors.push(`Inline element <${node.tagName.toLowerCase()}> has margin-right which is not supported in PowerPoint. Remove margin from inline elements.`);
             }
             if (computed.marginTop && parseFloat(computed.marginTop) > 0) {
-              errors.push(`Inline element <${node.tagName.toLowerCase()}> has margin-top which is not supported in PowerPoint. Remove margin from inline elements.`);
+              inlineErrors.push(`Inline element <${node.tagName.toLowerCase()}> has margin-top which is not supported in PowerPoint. Remove margin from inline elements.`);
             }
             if (computed.marginBottom && parseFloat(computed.marginBottom) > 0) {
-              errors.push(`Inline element <${node.tagName.toLowerCase()}> has margin-bottom which is not supported in PowerPoint. Remove margin from inline elements.`);
+              inlineErrors.push(`Inline element <${node.tagName.toLowerCase()}> has margin-bottom which is not supported in PowerPoint. Remove margin from inline elements.`);
             }
 
-            // Recursively process the child node. This will flatten nested spans into multiple runs.
-            parseInlineFormatting(node, options, runs, textTransform);
+            // Recursively process the child node — pass the same accumulator so nested
+            // inline elements contribute to the same inlineErrors list.
+            parseInlineFormatting(node, options, runs, textTransform, inlineErrors);
           }
         }
 
@@ -483,7 +485,7 @@ async function extractSlideData(page) {
         runs[runs.length - 1].text = runs[runs.length - 1].text.replace(/\s+$/, '');
       }
 
-      return runs.filter(r => r.text.length > 0);
+      return { runs: runs.filter(r => r.text.length > 0), errors: inlineErrors };
     };
 
     // Extract background from body (image or color)
@@ -755,7 +757,8 @@ async function extractSlideData(page) {
 
         liElements.forEach((li, idx) => {
           const isLast = idx === liElements.length - 1;
-          const runs = parseInlineFormatting(li, { breakLine: false });
+          const { runs, errors: inlineErrors } = parseInlineFormatting(li, { breakLine: false });
+          errors.push(...inlineErrors);
           // Clean manual bullets from first run
           if (runs.length > 0) {
             runs[0].text = runs[0].text.replace(/^[•\-\*▪▸]\s*/, '');
@@ -845,7 +848,8 @@ async function extractSlideData(page) {
       if (hasFormatting) {
         // Text with inline formatting
         const transformStr = computed.textTransform;
-        const runs = parseInlineFormatting(el, {}, [], (str) => applyTextTransform(str, transformStr));
+        const { runs, errors: inlineErrors } = parseInlineFormatting(el, {}, [], (str) => applyTextTransform(str, transformStr));
+        errors.push(...inlineErrors);
 
         // Adjust lineSpacing based on largest fontSize in runs
         const adjustedStyle = { ...baseStyle };

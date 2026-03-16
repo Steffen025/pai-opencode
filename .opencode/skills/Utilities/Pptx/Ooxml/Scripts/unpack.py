@@ -11,10 +11,24 @@ from pathlib import Path
 assert len(sys.argv) == 3, "Usage: python unpack.py <office_file> <output_dir>"
 input_file, output_dir = sys.argv[1], sys.argv[2]
 
-# Extract and format
+# Extract and format (safe extraction — guards against zip-slip)
 output_path = Path(output_dir)
 output_path.mkdir(parents=True, exist_ok=True)
-zipfile.ZipFile(input_file).extractall(output_path)
+resolved_output = output_path.resolve()
+with zipfile.ZipFile(input_file) as zf:
+    for member in zf.infolist():
+        member_path = resolved_output / member.filename
+        try:
+            member_path.resolve().relative_to(resolved_output)
+        except ValueError:
+            raise ValueError(
+                f"Unsafe zip entry rejected (zip-slip): {member.filename}"
+            ) from None
+        if member.is_dir():
+            member_path.mkdir(parents=True, exist_ok=True)
+        else:
+            member_path.parent.mkdir(parents=True, exist_ok=True)
+            member_path.write_bytes(zf.read(member.filename))
 
 # Pretty print all XML files
 xml_files = list(output_path.rglob("*.xml")) + list(output_path.rglob("*.rels"))
