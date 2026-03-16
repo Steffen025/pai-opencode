@@ -89,8 +89,11 @@ interface SecurityAuditEntry {
 **Design decisions:**
 - **JSONL format:** Append-only, parseable, survives crashes
 - **Non-blocking:** Failures don't stop execution
-- **Command preview:** First 100 chars only, for privacy
-- **No PII:** No full file contents, no environment variables
+  - **Command preview:** Redact first — strip API keys, secrets, env var values,
+    and common secret patterns (e.g., `Bearer …`, `--key …`, `password=…`) before
+    generating any preview; preview is derived from the redacted command, not a
+    raw character-truncated excerpt. Truncate to 100 chars after redaction.
+  - **No PII:** No full file contents, no environment variables
 
 ### 5. Fail-Open Design
 

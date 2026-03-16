@@ -32,7 +32,7 @@ Two separate systems need to cooperate:
 const key = process.env.GOOGLE_API_KEY;  // ✅ Available
 
 // Bash child process — might NOT inherit all vars
-Bash({ command: "python3 transcribe.py --key $GOOGLE_API_KEY" })
+bash({ command: "python3 transcribe.py --key $GOOGLE_API_KEY" })
 // ⚠️ GOOGLE_API_KEY may be undefined in child process
 ```
 

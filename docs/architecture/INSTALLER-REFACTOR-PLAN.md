@@ -104,12 +104,13 @@ Steffen025/opencode (fork)
 **Detection Logic:**
 ```typescript
 function detectInstallMode(): "fresh" | "migrate-v2" | "update-v3" {
-  if (!existsSync("~/.opencode")) return "fresh";
+  const opencodePath = path.join(os.homedir(), ".opencode");
+  if (!existsSync(opencodePath)) return "fresh";
   
   const settings = readSettings();
   if (settings?.pai?.version?.startsWith("3")) {
     // Has v3, check if update needed
-    return isOutdated(settings.pai.version) ? "update-v3" : "already-current";
+    return isOutdated(settings.pai.version) ? "update-v3" : "fresh";
   }
   
   // Has .opencode but no v3 settings = v2
