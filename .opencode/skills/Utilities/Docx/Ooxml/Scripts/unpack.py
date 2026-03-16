@@ -24,8 +24,8 @@ with zipfile.ZipFile(input_file) as zf:
         member_path = (output_path / member).resolve()
         try:
             member_path.relative_to(out_resolved)
-        except ValueError:
-            raise ValueError(f"Unsafe zip entry rejected (zip-slip): {member}")
+        except ValueError as err:
+            raise ValueError(f"Unsafe zip entry rejected (zip-slip): {member}") from err
     zf.extractall(output_path)
 
 # Pretty print all XML files

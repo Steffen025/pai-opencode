@@ -60,15 +60,15 @@ class DocxXMLEditor(XMLEditor):
     """
 
     def __init__(
-        self, xml_path, rsid: str, author: str = "Claude", initials: str = "C"
+        self, xml_path, rsid: str, author: str = "OpenCode", initials: str = "O"
     ):
         """Initialize with required RSID and optional author.
 
         Args:
             xml_path: Path to XML file to edit
             rsid: RSID to automatically apply to new elements
-            author: Author name for tracked changes and comments (default: "Claude")
-            initials: Author initials (default: "C")
+            author: Author name for tracked changes and comments (default: "OpenCode")
+            initials: Author initials (default: "O")
         """
         super().__init__(xml_path)
         self.rsid = rsid
@@ -618,8 +618,8 @@ class Document:
         unpacked_dir,
         rsid=None,
         track_revisions=False,
-        author="Claude",
-        initials="C",
+        author="OpenCode",
+        initials="O",
     ):
         """
         Initialize with path to unpacked Word document directory.
@@ -629,8 +629,8 @@ class Document:
             unpacked_dir: Path to unpacked DOCX directory (must contain word/ subdirectory)
             rsid: Optional RSID to use for all comment elements. If not provided, one will be generated.
             track_revisions: If True, enables track revisions in settings.xml (default: False)
-            author: Default author name for comments (default: "Claude")
-            initials: Default author initials for comments (default: "C")
+            author: Default author name for comments (default: "OpenCode")
+            initials: Default author initials for comments (default: "O")
         """
         self.original_path = Path(unpacked_dir)
 
@@ -703,6 +703,11 @@ class Document:
         """
         if xml_path not in self._editors:
             file_path = self.unpacked_path / xml_path
+            # Validate that the resolved path stays within the unpacked directory
+            try:
+                file_path.resolve().relative_to(self.unpacked_path.resolve())
+            except ValueError:
+                raise ValueError(f"Path traversal detected: {xml_path}")
             if not file_path.exists():
                 raise ValueError(f"XML file not found: {xml_path}")
             # Use DocxXMLEditor with RSID, author, and initials for all editors
@@ -1205,53 +1210,49 @@ class Document:
         """Ensure word/_rels/document.xml.rels has comment relationships."""
         editor = self["word/_rels/document.xml.rels"]
 
-        if self._has_relationship(editor, "comments.xml"):
-            return
-
         root = editor.dom.documentElement
         root_tag = root.tagName  # type: ignore
         prefix = root_tag.split(":")[0] + ":" if ":" in root_tag else ""
-        next_rid_num = int(editor.get_next_rid()[3:])
 
-        # Add relationship elements
-        rels = [
+        # Check and add each relationship individually so that a pre-existing
+        # comments.xml relationship does not prevent companion relationships
+        # (commentsExtended, commentsIds, commentsExtensible) from being added.
+        rels_to_ensure = [
             (
-                next_rid_num,
                 "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
                 "comments.xml",
             ),
             (
-                next_rid_num + 1,
                 "http://schemas.microsoft.com/office/2011/relationships/commentsExtended",
                 "commentsExtended.xml",
             ),
             (
-                next_rid_num + 2,
                 "http://schemas.microsoft.com/office/2016/09/relationships/commentsIds",
                 "commentsIds.xml",
             ),
             (
-                next_rid_num + 3,
                 "http://schemas.microsoft.com/office/2018/08/relationships/commentsExtensible",
                 "commentsExtensible.xml",
             ),
         ]
 
-        for rel_id, rel_type, target in rels:
-            rel_xml = f'<{prefix}Relationship Id="rId{rel_id}" Type="{rel_type}" Target="{target}"/>'
-            editor.append_to(root, rel_xml)
+        for rel_type, target in rels_to_ensure:
+            if not self._has_relationship(editor, target):
+                # Re-query next rId each time since prior iterations may have added one
+                next_rid_num = int(editor.get_next_rid()[3:])
+                rel_xml = f'<{prefix}Relationship Id="rId{next_rid_num}" Type="{rel_type}" Target="{target}"/>'
+                editor.append_to(root, rel_xml)
 
     def _ensure_comment_content_types(self):
         """Ensure [Content_Types].xml has comment content types."""
         editor = self["[Content_Types].xml"]
 
-        if self._has_override(editor, "/word/comments.xml"):
-            return
-
         root = editor.dom.documentElement
 
-        # Add Override elements
-        overrides = [
+        # Check and add each Override individually so that a pre-existing
+        # comments.xml entry does not prevent companion content types
+        # (commentsExtended, commentsIds, commentsExtensible) from being added.
+        overrides_to_ensure = [
             (
                 "/word/comments.xml",
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml",
@@ -1270,8 +1271,9 @@ class Document:
             ),
         ]
 
-        for part_name, content_type in overrides:
-            override_xml = (
-                f'<Override PartName="{part_name}" ContentType="{content_type}"/>'
-            )
-            editor.append_to(root, override_xml)
+        for part_name, content_type in overrides_to_ensure:
+            if not self._has_override(editor, part_name):
+                override_xml = (
+                    f'<Override PartName="{part_name}" ContentType="{content_type}"/>'
+                )
+                editor.append_to(root, override_xml)
