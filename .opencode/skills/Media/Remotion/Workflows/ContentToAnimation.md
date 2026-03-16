@@ -27,7 +27,7 @@ This workflow handles ANY input via the Parser skill:
 
 ### 1. Extract Content
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │ STEP 1: CONTENT EXTRACTION                                                  │
 ├─────────────────────────────────────────────────────────────────────────────┤
@@ -51,7 +51,7 @@ This workflow handles ANY input via the Parser skill:
 
 ### 2. Analyze Structure
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │ STEP 2: STRUCTURE ANALYSIS                                                  │
 ├─────────────────────────────────────────────────────────────────────────────┤
@@ -85,7 +85,7 @@ interface ContentStructure {
 
 ### 3. Generate Animation Plan
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │ STEP 3: ANIMATION PLANNING                                                  │
 ├─────────────────────────────────────────────────────────────────────────────┤
@@ -114,7 +114,7 @@ interface ContentStructure {
 
 ### 3.5 Verify Logical Coherence ⚠️ CRITICAL GATE
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │ STEP 3.5: LOGICAL COHERENCE VERIFICATION                                    │
 ├─────────────────────────────────────────────────────────────────────────────┤
@@ -343,7 +343,7 @@ Cannot proceed - fix logical issues before rendering
 
 ### 4. Generate Remotion Components
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │ STEP 4: COMPONENT GENERATION                                                │
 ├─────────────────────────────────────────────────────────────────────────────┤
@@ -361,8 +361,14 @@ Cannot proceed - fix logical issues before rendering
 ```
 
 **MANDATORY: Apply PAI Theme**
+
+> **Note:** The path below uses `~` as a conceptual shorthand — it is not a valid
+> TypeScript/Node module path. Use a relative path from your component file or
+> configure a `paths` alias in `tsconfig.json` (e.g. `"@pai-theme": ["~/.opencode/skills/Media/Remotion/theme"]`).
+
 ```typescript
-import { PAI_THEME } from '~/.opencode/skills/Remotion/theme'
+// Conceptual: replace with a relative path or tsconfig alias
+import { PAI_THEME } from '~/.opencode/skills/Media/Remotion/theme'
 
 // All components MUST use:
 // - PAI_THEME.colors for all colors
@@ -373,12 +379,12 @@ import { PAI_THEME } from '~/.opencode/skills/Remotion/theme'
 
 ### 5. Render Output
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │ STEP 5: RENDER                                                              │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│ 1. Install dependencies: npm install                                        │
-│ 2. Render: npx remotion render {composition-id} ~/Downloads/{name}.mp4     │
+│ 1. Install dependencies: bun install                                        │
+│ 2. Render: bunx remotion render {composition-id} ~/Downloads/{name}.mp4    │
 │ 3. Open for preview: open ~/Downloads/{name}.mp4                           │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```

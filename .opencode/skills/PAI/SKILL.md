@@ -253,7 +253,7 @@ OUTPUT:
 
 OUTPUT:
 
-💪🏼 EFFORT LEVEL: [EFFORT LEVEL based on the reverse engineering step above] | [8 word reasoning]`
+💪🏼 EFFORT LEVEL: [EFFORT LEVEL based on the reverse engineering step above] | [8 word reasoning]
 
 - IDEAL STATE Criteria Generation — write criteria directly into the PRD:
 - Edit the stub PRD.md (already created at Algorithm entry) to add full content — update frontmatter `effort_level` field with the determined effort level, and add sections (Context, Criteria, Decisions, Verification)
@@ -319,7 +319,7 @@ OUTPUT:
 🏹 CAPABILITIES SELECTED:
  🏹 [List each selected CAPABILITY, which Algorithm phase it will be invoked in, and an 8-word reason for its selection]
 
-🏹 CAPABILITIES SELECTED:
+🏹 CAPABILITIES RATIONALE:
  🏹 [12-24 words on why only those CAPABILITIES were selected]
 
 - If any CAPABILITIES were selected for use in the OBSERVE phase, execute them now and update the ISC criteria in the PRD with the results
