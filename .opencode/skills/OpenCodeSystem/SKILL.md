@@ -41,6 +41,7 @@ This skill runs in the foreground. All lookups and diagnostic output should be v
 - **Plugin entry:** `.opencode/plugins/pai-unified.ts`
 
 ### Custom Tools Always Available
+
 | Tool | Purpose |
 |------|---------|
 | `session_registry` | List recent sessions for CONTEXT RECOVERY |
@@ -57,7 +58,7 @@ This skill runs in the foreground. All lookups and diagnostic output should be v
 If Grep, Glob, or Read can answer in <2 seconds → use them directly. Never spawn an agent for what a direct tool call can do instantly.
 
 ### Critical Path Rules
-```
+```text
 bash workdir parameter → ALWAYS (never cd &&)
 imports             → ALWAYS include .ts extension
 package manager     → ALWAYS bun (never npm/yarn/pnpm)
@@ -113,11 +114,14 @@ Full details: `docs/architecture/SystemArchitecture.md`
 
 ## Tools
 
-_No dedicated CLI tools for this skill. Reference documents are read directly via `read` tool._
+| Tool | Path | Purpose |
+|------|------|---------|
+| `db-archive.ts` | `Tools/db-archive.ts` | Archive old sessions to reclaim disk space. Supports `--dry-run`, `--vacuum`, and `--restore`. Run with `bun Tools/db-archive.ts`. |
+| `migration-v2-to-v3.ts` | `Tools/migration-v2-to-v3.ts` | Migrate existing v2.x PAI-OpenCode installations to v3.0 directory structure. Supports `--dry-run`, `--force`, `--backup-dir`. Run with `bun Tools/migration-v2-to-v3.ts`. |
 
 ## Workflows
 
-_No workflow files. This skill operates by directing the Algorithm to the correct reference document._
+_No dedicated workflow files. Operational procedures for the tools above are documented inline in each tool's source header and in `docs/DB-MAINTENANCE.md` (archival) and `docs/MIGRATION.md` (v2→v3 migration)._
 
 ---
 
