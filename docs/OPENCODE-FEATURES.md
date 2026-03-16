@@ -101,12 +101,31 @@ OpenCode has a **plugin architecture** for extending functionality without modif
 |---------|-------------------------|------------------|
 | **Scope** | PAI-specific lifecycle | OpenCode core functionality |
 | **Language** | TypeScript | TypeScript/JavaScript |
+| **Execution** | Subprocess (separate process) | In-process (same runtime) |
 | **Purpose** | AI behavior, memory, security | UI, integrations, providers |
+| **Events** | ~5 lifecycle hooks | 16+ typed Bus events |
+
+### Full Plugin Hook Interface (OpenCode-native)
+
+```typescript
+export interface Hooks {
+  event?: (input: { event: BusEvent }) => Promise<void>   // ALL 16+ events
+  tool?: { [key: string]: ToolDefinition }                 // Custom tools
+  auth?: AuthHook                                          // Provider auth
+  "shell.env"?: (input, output) => Promise<void>          // Env per bash call
+  "tool.execute.before"?: (input, output) => Promise<void> // Pre-tool hook
+  "tool.execute.after"?: (input, output) => Promise<void>  // Post-tool hook
+  "tool.definition"?: (input, output) => Promise<void>     // Tool desc modifier
+  "permission.ask"?: (info, output) => Promise<void>       // Permission control
+  "chat.parameters"?: (input, output) => Promise<void>     // LLM params
+}
+```
 
 **Example plugins:**
 - Custom AI provider integration
 - Enhanced terminal UI widgets
 - External tool integrations (Jira, Linear, Notion)
+- PAI-unified.ts — all PAI behavior (security, voice, learning, memory)
 
 PAI plugins control **what the AI does**. OpenCode plugins control **how the tool works**.
 
@@ -186,26 +205,63 @@ opencode run "/security --scan-all" >> reports/$(date +%Y-%m-%d).log
 opencode run "Check for secrets in staged files"
 ```
 
-## Comparison: OpenCode vs Alternatives
+## 7. Native Infrastructure Features (OpenCode-exclusive)
+
+These features work automatically — no PAI code needed:
+
+### LSP Integration
+After every `Write` or `Edit` tool call, OpenCode notifies all active Language Server Protocol servers and returns syntax errors/warnings immediately. PAI code gets code quality feedback for free.
+
+### Git Snapshot System
+Before each AI edit, OpenCode creates a Git snapshot in a hidden repository. Every change can be undone with a single click. Configured via `"snapshot": true` in `opencode.json`.
+
+### Parcel File Watcher
+OpenCode watches the entire project directory with native OS file system events (FSEvents on macOS, inotify on Linux). Plugins subscribe to `file.edited` and `file.watcher.updated` events for real-time reactions.
+
+### 6-Level Config Hierarchy
+```
+1. Remote .well-known/opencode  (lowest — org defaults)
+2. Global ~/.config/opencode/
+3. OPENCODE_CONFIG env var
+4. ./opencode.json              (project config)
+5. .opencode/ directories       (skills, commands, agents, plugins)
+6. Inline config                (highest — environment overrides)
+```
+Arrays are **concatenated** (not replaced) across levels — plugins and instructions from all levels are combined.
+
+### Backward-Compatible Skill Loading
+OpenCode reads from **both** `.claude/skills/` AND `.opencode/skills/` — PAI-OpenCode maintains full backward compatibility with Claude Code skill directories.
+
+### ACP Server (IDE Integration)
+OpenCode can run as an Agent Client Protocol server, allowing IDE integration (e.g., Zed editor) to connect to PAI as a native AI assistant.
+
+---
+
+## Comparison: OpenCode vs Alternatives (Updated 2026-03-06)
 
 | Feature | OpenCode | Cursor | Copilot | Claude Code |
 |---------|----------|--------|---------|-------------|
 | **Provider choice** | 75+ | OpenAI only | GitHub Models | Anthropic only |
 | **Session sharing** | ✅ Yes | ❌ No | ❌ No | ❌ No |
 | **Multi-client** | TUI + Desktop + Web | Desktop only | VS Code only | Desktop only |
-| **Plugin system** | ✅ Yes | Limited | GitHub extensions | Hooks only |
+| **Plugin system** | ✅ Yes (16+ events) | Limited | GitHub extensions | Hooks only (~5) |
 | **Open source** | ✅ Fully | ❌ Proprietary | ❌ Proprietary | ❌ Proprietary |
+| **LSP Integration** | ✅ Auto | ✅ Auto | ✅ Auto | ❌ Manual |
+| **Git Snapshots** | ✅ Auto | ❌ No | ❌ No | ❌ No |
+| **File Watching** | ✅ Native events | ✅ Yes | ✅ Yes | ❌ Limited |
+| **Agent Swarms** | ❌ Not yet | ❌ No | ❌ No | ✅ Experimental |
 | **PAI compatible** | ✅ Native support | ⚠️ Limited | ⚠️ Limited | ✅ Original |
 
 ## Why OpenCode + PAI?
 
-OpenCode's **provider flexibility** + **plugin system** + **multi-client architecture** + **dynamic agent routing** make it uniquely suited for PAI:
+OpenCode's **provider flexibility** + **plugin system** + **native infrastructure** + **dynamic agent routing** make it uniquely suited for PAI:
 
 1. **Freedom**: Run PAI skills on any model (Claude, GPT-4, local)
-2. **Dynamic Routing**: Each agent scales to the right model per task — something Claude Code cannot do
-3. **Collaboration**: Share PAI-enhanced sessions with teammates
-4. **Consistency**: Same PAI experience across terminal, desktop, browser
-5. **Extensibility**: Plugins = unlimited customization
+2. **Dynamic Routing**: Each agent scales to the right model per task — Claude Code cannot do this
+3. **Native Infrastructure**: LSP, Git snapshots, file watching — free, no extra code
+4. **Collaboration**: Share PAI-enhanced sessions with teammates
+5. **Extensibility**: 16+ event types for plugin hooks vs ~5 in Claude Code
+6. **Backward Compatibility**: Reads both `.claude/skills/` and `.opencode/skills/`
 
 OpenCode provides the **platform**. PAI provides the **personalization**. Dynamic tier routing provides the **cost optimization**.
 

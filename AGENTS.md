@@ -10,6 +10,26 @@ You are an AI coding assistant working on **PAI-OpenCode** — the community por
 
 **Tech Stack:** TypeScript, Bun (never npm), Biome (never ESLint/Prettier), GitHub Actions
 
+## OpenCode Bash Tool — CRITICAL Behavior
+
+**OpenCode's Bash tool is STATELESS. Every call spawns a fresh shell process.**
+
+| Behavior | OpenCode | Claude Code |
+|----------|---------|------------|
+| Working Directory | ❌ Does NOT persist | ✅ Persists |
+| Environment Variables | ❌ Does NOT persist | ✅ Persists |
+| `cd` commands | ❌ No effect on next call | ✅ Works |
+
+**ALWAYS use `workdir` parameter instead of `cd`:**
+
+```bash
+# ❌ WRONG — cd has no effect on next call
+Bash({ command: "cd /some/path && ls" })
+
+# ✅ CORRECT — use workdir parameter
+Bash({ command: "ls", workdir: "/some/path" })
+```
+
 ---
 
 ## CI/CD & Branch Protection Rules
@@ -224,6 +244,160 @@ When triggered via `/opencode` or `/oc` in a PR comment:
 1. Notify Steffen immediately
 2. Main is protected — the push might have failed anyway
 3. If it succeeded, a revert PR will be needed
+
+---
+
+## OpenCode Session API
+
+After context compaction, subagent results are **NOT lost**. They are stored in OpenCode's SQLite database and accessible via custom tools. Use these tools to recover session context after compaction or to resume subagent work.
+
+### Custom Tools
+
+**`session_registry`** — List all subagent sessions spawned in this session.
+
+- **When to use:** After context compaction, or when you need to check what subagents were spawned
+- **Returns:** Markdown table with session IDs, agent types, descriptions, and spawn times
+- **Example output:**
+  ```text
+  ## Subagent Registry (2 sessions)
+
+  | # | Agent Type | Session ID | Description | Spawned At |
+  |---|-----------|-----------|-------------|------------|
+  | 1 | Engineer | ses_abc123 | Refactor auth middleware | 2026-03-10T10:30:00Z |
+  | 2 | Research | ses_def456 | Investigate OpenCode API | 2026-03-10T10:35:00Z |
+  ```
+
+**`session_results`** — Get registry metadata for a specific subagent session.
+
+- **When to use:** When you need details about a specific subagent's work
+- **Args:** `{ session_id: string }`
+- **Returns:** Agent type, full description, model tier, status, and resume instructions
+- **Note:** The full conversation history is in OpenCode's database. Use Task tool with `session_id` to retrieve it.
+
+### Post-Compaction Recovery Pattern
+
+When the Algorithm says "subagent results are lost after compaction":
+
+1. **Call `session_registry`** to see what subagents exist
+   ```json
+   session_registry: {}
+   ```
+
+2. **Call `session_results`** for any sessions you need context on
+   ```json
+   session_results: { "session_id": "ses_abc123" }
+   ```
+
+3. **Resume the session** using Task tool if you need full conversation:
+   ```javascript
+   Task({ session_id: "ses_abc123", prompt: "Continue where you left off and summarize what you did" })
+   ```
+
+### Key Facts
+
+- Subagent data survives compaction — it's stored in OpenCode's SQLite with indexed `parent_id`
+- The registry file lives in `.opencode/MEMORY/STATE/subagent-registry-{parentSessionId}.json`
+- Registry is human-readable JSON for debugging
+- Session data persists across restarts, not just compaction
+
+---
+
+## Code Navigation (LSP Integration)
+
+OpenCode has 35+ Language Server Protocol (LSP) servers built-in. When enabled, they provide **type-aware code navigation** that goes beyond simple text matching.
+
+### Available LSP Tools
+
+| Tool | What It Does | When to Use |
+|------|-------------|-------------|
+| `goToDefinition` | Jump to symbol definition (type-aware, follows imports) | Find where a function/type is defined |
+| `findReferences` | All usages of a function (semantic, not text-match) | Understand impact before refactoring |
+| `hover` | Show type info and docs for a symbol | Quickly inspect unfamiliar APIs |
+| `callHierarchy` | Incoming/outgoing call chains | Trace execution paths |
+
+### LSP vs. Grep — When to Use Which
+
+| Use Case | LSP | Grep |
+|----------|-----|------|
+| Find all callers of `myFunction()` | ✅ `findReferences` — semantic, exact | ⚠️ Misses renamed imports, aliases |
+| Jump to type definition across files | ✅ `goToDefinition` — follows imports | ❌ Can't follow re-exports |
+| Check TypeScript type of a variable | ✅ `hover` — live type info | ❌ Not possible |
+| Find all files containing "TODO" | ❌ LSP can't do text search | ✅ Grep is correct tool |
+| Find all uses of a string literal | ❌ LSP is symbol-only | ✅ Grep is correct tool |
+| Quick pattern match in one file | ❌ Overhead not worth it | ✅ Grep is faster |
+
+**Rule of thumb:** Use LSP for **symbols** (functions, types, variables). Use Grep for **text** (strings, comments, patterns).
+
+### Activation
+
+LSP tools are **experimental** and must be explicitly enabled:
+
+```bash
+# Enable LSP tools for the current session
+export OPENCODE_EXPERIMENTAL_LSP_TOOL=true
+opencode
+```
+
+Or add to your shell profile for permanent activation:
+
+```bash
+echo 'export OPENCODE_EXPERIMENTAL_LSP_TOOL=true' >> ~/.zshrc
+```
+
+> [!NOTE]
+> LSP tools are only available when `OPENCODE_EXPERIMENTAL_LSP_TOOL=true` is set. Without this flag, the tools are not registered and will not appear in the tool list.
+
+---
+
+## Safe Experiments (Session Fork)
+
+> [!NOTE]
+> Plan Mode is **not available** in OpenCode. Session Fork is the native equivalent — a checkpoint system for safe experimentation.
+
+OpenCode's Session Fork creates an **exact copy** of the current session up to a specific message. The original session is untouched. If the experiment fails, discard the fork and return to the original.
+
+### When to Fork
+
+| Situation | Action |
+|-----------|--------|
+| About to do a risky refactoring | Fork first, then refactor in the fork |
+| Exploring multiple solution approaches | Fork once per approach, compare results |
+| About to run destructive operations (delete, overwrite) | Fork → verify in fork → apply to original |
+| Algorithm needs to "try something" without commitment | Fork, try, decide |
+| Pre-BUILD checkpoint in the PAI Algorithm | Fork at end of PLAN phase |
+
+### API Reference
+
+```http
+POST /session/{sessionID}/fork
+Content-Type: application/json
+
+{
+  "messageID": "msg_..."
+}
+```
+
+**Response:** A new session ID pointing to an exact copy of the session at the specified message.
+
+**How to get the current messageID:** Available via the OpenCode Session API (same endpoint used by `session_registry`).
+
+### Fork Workflow
+
+```text
+PLAN phase complete → identify last messageID
+                    → POST /session/{id}/fork
+                    → get forked_session_id
+                    → work in forked session (BUILD / EXECUTE)
+                    → if success: apply changes to original
+                    → if failure: discard fork, original is safe
+```
+
+### Key Properties
+
+- **Atomic:** Fork creates a complete snapshot — no partial state
+- **Non-destructive:** Original session is never modified by fork operations
+- **Persistent:** Forked sessions survive restarts (stored in OpenCode SQLite)
+- **Discardable:** Failed experiments leave no traces in the original session
 
 ---
 

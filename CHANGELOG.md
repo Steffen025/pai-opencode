@@ -7,6 +7,80 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.0] - 2026-03-12
+
+### Breaking Changes
+- Plugin system migrated from hooks to event-driven architecture (WP-A)
+- Skills structure changed: flat → hierarchical Category/Skill (WP-C)
+- Config dual-file: `opencode.json` + `settings.json` (replaces single file)
+- All paths migrated: `.claude/` → `.opencode/`, `CLAUDE.md` → `AGENTS.md`
+
+### Added
+
+#### Session Registry (WP-N1) — PR #50
+- **`session_registry` custom tool** — Lists all active sessions with IDs and metadata
+- **`session_results` custom tool** — Fetches output from a named session
+- OpenCode-native session awareness for post-compaction context recovery
+
+#### Compaction Intelligence (WP-N2) — PR #51
+- **`experimental.session.compacting` hook** — Detects compaction events in real time
+- **Context injection on resume** — Automatically re-injects PAI context after compaction
+- Prevents silent context loss mid-session
+
+#### Algorithm Awareness (WP-N3) — PR #52+#53
+- **SKILL.md CONTEXT RECOVERY** — Uses `session_registry` + `session_results` for post-compaction awareness
+- **PRD `parent_session_id`** — Links child PRDs back to originating session
+- Full Algorithm v1.8.0 context continuity across compaction boundaries
+
+#### LSP + Fork Documentation (WP-N4) — PR #53
+- **AGENTS.md LSP section** — Documents OpenCode's Language Server Protocol integration
+- **Fork documentation** — `Steffen025/opencode` fork relationship and model-tiers branch explained
+- **Installer `.env` setup** — API key configuration documented
+
+#### Plan Update (WP-N5) — PR #54
+- **All planning docs synced** — TODO-v3.0.md, OPTIMIZED-PR-PLAN.md reflect WP-N1..N4 complete
+- Progress diagrams updated
+
+#### System Self-Awareness (WP-N6) — PR #55
+- **OpenCodeSystem skill** — Self-referential skill for system introspection
+- **4 architecture reference docs** — SystemArchitecture.md, ToolReference.md, Configuration.md, Troubleshooting.md
+- **ADR-017** — System self-awareness architectural decision
+
+#### roborev + Biome CI (WP-N7) — PR #56
+- **roborev plugin handler** — `plugins/handlers/roborev-trigger.ts` for AI code review
+- **CodeReview skill** — `skills/CodeReview/SKILL.md` for in-session code review
+- **GitHub Actions CI** — `.github/workflows/code-quality.yml` runs Biome on every PR
+- **ADR-018** — roborev + Biome CI architectural decision
+
+#### Obsidian Formatting Guidelines (WP-N8) — PR #57
+- **FormattingGuidelines.md** — Obsidian frontmatter, callouts, Mermaid, code block patterns
+- **AgentCapabilityMatrix.md** — All agent types, model tiers, tool/MCP access, decision rules
+
+#### Installer opencode.json Fix (WP-N9) — PR #58
+- **4 provider presets** — anthropic, zen, openrouter, openai (was 3)
+- **opencode.json generation** — Correct provider-specific config per preset
+- `principalName` populated from username during install
+
+#### Docs Consolidation (WP-N10) — PR #59
+- **CHANGELOG.md** — Released, WP-N1..N10 Added sections with correct WP titles
+- **CONTRIBUTING.md** — Skills structure updated to hierarchical `Category/SkillName/`
+- **INSTALL.md** — 4 provider presets documented
+- **README.md** — Broken links to non-existent files removed
+- **Planning docs deleted** — GAP-ANALYSIS-v3.0.md, EPIC-v3.0-OpenCode-Native.md, OPENCODE-NATIVE-RESEARCH.md (completed, no longer needed)
+
+### Changed
+- Skills organization: flat → hierarchical (Category/Skill)
+- Config management: single-file → dual-file
+- Installer: CLI-only → CLI + Electron GUI
+- Security: none → full prompt injection protection
+
+### Migration
+- See [UPGRADE.md](/UPGRADE.md) for detailed migration instructions
+- Run `bun Tools/migration-v2-to-v3.ts --dry-run` to preview
+- Automatic backup created before any changes
+
+---
+
 ## [2.0.0] - 2026-02-19
 
 ### Breaking Changes
@@ -491,26 +565,62 @@ This release brings full PAI 2.5 Algorithm compatibility and adds 5 new handlers
 
 ## Version Comparison
 
-| Feature | v1.0.0 | v1.1.0 | v1.2.0 | v1.2.1 | v1.3.0 | v2.0.0 |
-|---------|--------|--------|--------|--------|--------|--------|
-| PAI Version | 2.4 | **2.5** | 2.5 | 2.5 | 2.5 | **3.0** |
-| Algorithm | Basic | **Full 7-phase** | Full 7-phase | Full 7-phase | Full 7-phase | **v1.8.0** |
-| Handlers | 8 | **13** | 13 | 13 | 13 | 13 |
-| Agents | 14 | 14 | 14 | 18 | **15 (cleaned)** | 15 |
-| Dynamic Tier Routing | No | No | No | No | **Yes** | Yes |
-| Provider Profiles | No | No | No | **Yes (5)** | **Yes (6)** | Yes (6) |
-| Multi-Provider Research | No | No | No | **Yes** | **Yes** | Yes |
-| Observability Dashboard | No | No | **Yes** | Yes | Yes | Yes |
-| Voice Notifications | No | **Yes** | Yes | Yes | Yes | Yes |
-| Sentiment Detection | No | **Yes** | Yes | Yes | Yes | Yes |
-| Image Optimization | No | No | No | No | **79% reduction** | 79% reduction |
-| Wisdom Frames | No | No | No | No | No | **Yes (5 domains)** |
-| Verify Completion Gate | No | No | No | No | No | **Yes** |
-| Effort-Scaled Gates | No | No | No | No | No | **Yes** |
+| Feature | v1.0.0 | v1.1.0 | v1.2.0 | v1.2.1 | v1.3.0 | v2.0.0 | **v3.0.0** |
+|---------|--------|--------|--------|--------|--------|--------|------------|
+| PAI Version | 2.4 | **2.5** | 2.5 | 2.5 | 2.5 | **3.0** | **3.0** |
+| Algorithm | Basic | **Full 7-phase** | Full 7-phase | Full 7-phase | Full 7-phase | **v1.8.0** | **v1.8.0** |
+| Handlers | 8 | **13** | 13 | 13 | 13 | 13 | **16** |
+| Agents | 14 | 14 | 14 | 18 | **15 (cleaned)** | 15 | **16** |
+| Dynamic Tier Routing | No | No | No | No | **Yes** | Yes | Yes |
+| Provider Profiles | No | No | No | **Yes (5)** | **Yes (6)** | Yes (6) | Yes (6) |
+| Multi-Provider Research | No | No | No | **Yes** | **Yes** | Yes | Yes |
+| Observability Dashboard | No | No | **Yes** | Yes | Yes | Yes | Yes |
+| Voice Notifications | No | **Yes** | Yes | Yes | Yes | Yes | Yes |
+| Sentiment Detection | No | **Yes** | Yes | Yes | Yes | Yes | Yes |
+| Image Optimization | No | No | No | No | **79% reduction** | 79% reduction | 79% reduction |
+| Wisdom Frames | No | No | No | No | No | **Yes (5 domains)** | Yes (5 domains) |
+| Verify Completion Gate | No | No | No | No | No | **Yes** | Yes |
+| Effort-Scaled Gates | No | No | No | No | No | **Yes** | Yes |
+| **DB Health Tooling** | No | No | No | No | No | No | **Yes** |
+| **Electron GUI Installer** | No | No | No | No | No | No | **Yes** |
+| **v2→v3 Migration** | No | No | No | No | No | No | **Yes** |
+| **Security Hardening** | No | No | No | No | No | No | **Full** |
 
 ---
 
 ## Upgrade Path
+
+### From v2.x to v3.0.0 (Breaking Changes)
+
+**Before you start:** The v3.0.0 release has significant breaking changes:
+- Skills structure: flat → hierarchical (Category/Skill)
+- Config: single-file → dual-file (opencode.json + settings.json)
+- Paths: `.claude/` → `.opencode/`
+- New Electron GUI installer
+
+**Recommended upgrade process:**
+
+1. **Backup your existing installation:**
+   ```bash
+   cp -r ~/.opencode ~/.opencode-backup-$(date +%Y%m%d)
+   ```
+
+2. **Run the migration tool (dry-run first):**
+   ```bash
+   bun Tools/migration-v2-to-v3.ts --dry-run
+   ```
+
+3. **Review the migration report**, then execute:
+   ```bash
+   bun Tools/migration-v2-to-v3.ts
+   ```
+
+4. **Alternative: Fresh install with the new GUI:**
+   ```bash
+   bash PAI-Install/install.sh
+   ```
+
+**See [UPGRADE.md](/UPGRADE.md) for detailed step-by-step instructions.**
 
 ### From v1.2.x to v1.3.0
 
@@ -545,5 +655,4 @@ See `.opencode/voice-server/README.md` for full documentation.
 **Links:**
 - [PAI v3.0 Upstream](https://github.com/danielmiessler/Personal_AI_Infrastructure)
 - [OpenCode](https://github.com/anomalyco/opencode)
-- [ROADMAP.md](ROADMAP.md)
 - [Upstream Sync Spec](docs/specs/UPSTREAM-SYNC-v1.8.0-SPEC.md)

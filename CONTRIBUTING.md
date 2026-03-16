@@ -120,13 +120,18 @@ type(scope): subject
 
 ```
 .opencode/
-├── skills/           # Skill definitions (SKILL.md files)
-├── agents/           # Agent configurations (PascalCase)
-├── plugins/          # Lifecycle plugins (TypeScript)
-├── MEMORY/           # Execution history (not in git)
-├── PAISECURITYSYSTEM/ # Security patterns
-├── PAISYSTEM/        # System documentation
-└── settings.json     # Configuration
+├── skills/                    # Skill definitions — hierarchical Category/SkillName/
+│   ├── Category/              # e.g. Security/, Research/, Agents/
+│   │   └── SkillName/
+│   │       └── SKILL.md
+│   └── StandaloneSkill/       # Top-level skills with no category
+│       └── SKILL.md
+├── agents/                    # Agent configurations (PascalCase)
+├── plugins/                   # Lifecycle plugins (TypeScript)
+├── MEMORY/                    # Execution history (not in git)
+├── PAISECURITYSYSTEM/         # Security patterns
+├── PAISYSTEM/                 # System documentation
+└── settings.json              # Configuration
 ```
 
 ## Importing PAI Versions
@@ -143,23 +148,25 @@ This document covers:
 - **Pre/During/Post import checklists**
 
 **Critical rules:**
-- Skills are **FLAT**: `skills/SkillName/SKILL.md` (NOT `SkillName/SkillName/`)
+- Skills are **hierarchical**: `skills/Category/SkillName/SKILL.md` (e.g. `skills/Security/Pentesting/SKILL.md`)
+- Top-level standalone skills: `skills/SkillName/SKILL.md` (only when no category fits)
 - Agent colors must be **hex format**: `#00FFFF` (NOT `cyan`)
 - YAML descriptions must be **<220 characters**
 - Fabric patterns go **only** in `skills/Fabric/Patterns/`
 
 ### Adding a New Skill
 
-1. Create directory: `.opencode/skills/YourSkill/`
-2. Add `SKILL.md` with frontmatter:
+1. Identify the category (e.g. `Security`, `Research`, `Agents`, `Documents`)
+2. Create directory: `.opencode/skills/Category/YourSkill/`
+3. Add `SKILL.md` with frontmatter:
    ```yaml
    ---
    name: YourSkill
    description: USE WHEN user says "trigger keywords"...
    ---
    ```
-3. Add skill content (instructions, examples)
-4. Test: Search for your skill and verify it loads
+4. Add skill content (instructions, examples)
+5. Test: Search for your skill and verify it loads
 
 ### Adding a Plugin Handler
 

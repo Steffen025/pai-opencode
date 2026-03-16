@@ -43,7 +43,8 @@ The wizard will:
 3. ✅ Ask you to choose a preset:
    - **Anthropic Max** (recommended) — Best quality, full PAI experience
    - **ZEN PAID** — Budget-friendly, paid tier models
-   - **ZEN FREE** — Try it out, free tier models
+   - **OpenRouter** — Provider diversity, 100+ models
+   - **OpenAI** — GPT-4 models via OpenAI directly
 4. ✅ Configure research agents (optional)
 5. ✅ Set up your identity (name, AI assistant name, timezone)
 6. ✅ Generate all configuration files
@@ -163,7 +164,7 @@ explorer.exe .
 ## Post-Installation
 
 After installation, see [ADVANCED-SETUP.md](docs/ADVANCED-SETUP.md) for:
-- Custom provider configuration (beyond the 3 presets)
+- Custom provider configuration (beyond the 4 presets)
 - Multi-provider research setup
 - Voice server configuration
 - Observability dashboard
@@ -230,7 +231,6 @@ ln -s $(pwd)/.opencode ~/.opencode
 opencode
 ```
 
-**Note:** OpenCode automatically connects to the **ZEN provider** (free models) on first run. No API key required to get started! However, for full PAI functionality (agents, advanced features), you'll need to configure your own API keys. See [API Configuration](#api-configuration) below.
 
 ---
 
@@ -352,7 +352,7 @@ Edit `.opencode/settings.json`:
 
 ## Provider Configuration
 
-### The Three Presets
+### The Four Presets
 
 PAI-OpenCode uses a **preset system** for simplicity:
 
@@ -360,7 +360,8 @@ PAI-OpenCode uses a **preset system** for simplicity:
 |--------|----------|--------|------|
 | **Anthropic Max** | Best quality | Claude Opus 4.6, Sonnet 4.5 | ~$75/1M tokens |
 | **ZEN PAID** | Budget-friendly | GLM 4.7, Kimi K2.5, Gemini Flash | ~$1-15/1M tokens |
-| **ZEN FREE** | Trying it out | Free tier | **FREE** |
+| **OpenRouter** | Provider diversity | 100+ models via OpenRouter | Varies by model |
+| **OpenAI** | GPT-4 models | GPT-4o, GPT-4.1 | ~$10-30/1M tokens |
 
 ### Switching Presets
 
@@ -371,7 +372,7 @@ bun run .opencode/PAIOpenCodeWizard.ts
 
 ### Advanced Provider Setup
 
-For custom provider configuration beyond the 3 presets, see [ADVANCED-SETUP.md](docs/ADVANCED-SETUP.md).
+For custom provider configuration beyond the 4 presets, see [ADVANCED-SETUP.md](docs/ADVANCED-SETUP.md).
 
 ### Multi-Provider Research (Optional)
 
@@ -400,12 +401,10 @@ bun run .opencode/tools/switch-provider.ts --researchers
 |--------|-----|----------|
 | **Subscription login** | Run `/login` in OpenCode | Claude Pro/Max, ChatGPT Plus users |
 | **API key** | Add to `~/.opencode/.env` | Pay-per-use, multiple providers |
-| **ZEN free** | No setup needed | Trying PAI-OpenCode |
-| **Ollama local** | `ollama serve` | Privacy, offline use |
 
 ### API Keys for Multi-Provider Research (Optional)
 
-The 3-preset system covers most use cases. For multi-provider research or custom providers, see [ADVANCED-SETUP.md](docs/ADVANCED-SETUP.md).
+The 4-preset system covers most use cases. For multi-provider research or custom providers, see [ADVANCED-SETUP.md](docs/ADVANCED-SETUP.md).
 
 | Provider | Where to Get Key | For |
 |----------|-----------------|-----|
@@ -469,7 +468,6 @@ See [.opencode/observability-server/README.md](.opencode/observability-server/RE
 
 - Read [docs/WHAT-IS-PAI.md](docs/WHAT-IS-PAI.md) for PAI fundamentals
 - Explore [docs/OPENCODE-FEATURES.md](docs/OPENCODE-FEATURES.md) for OpenCode features
-- Check [ROADMAP.md](ROADMAP.md) for upcoming features
 - See [ADVANCED-SETUP.md](docs/ADVANCED-SETUP.md) for custom configuration
 
 ---

@@ -309,10 +309,14 @@ Based on [opencode.ai/docs](https://opencode.ai/docs/) and GitHub research:
 │   ├── Security/                 # Infosec skills
 │   └── ...                       # Other categories
 │
-├── agents/                       # OpenCode-native agents
-│   ├── build.md                  # Default with model_tier routing
-│   ├── plan.md                   # Planning agent
-│   └── custom/                   # PAI-specific agents
+├── agents/                       # PAI 4.0.3 Agent personalities (Algorithm, Architect, Engineer, Pentester, etc.)
+│   ├── Algorithm.md              # PAI Algorithm specialist
+│   ├── Architect.md              # System architecture
+│   ├── Engineer.md               # Principal engineering
+│   ├── Pentester.md              # Penetration testing
+│   ├── PerplexityResearcher.md   # Perplexity web research
+│   ├── QATester.md               # Quality assurance
+│   └── ...                       # 14 total agents from PAI 4.0.3
 │
 ├── plugins/
 │   └── pai-core.ts              # Unified plugin (simplified)
@@ -480,18 +484,27 @@ interface VoiceConfig {
 
 ---
 
-## 📋 Work Packages (Revised post-Research)
+## 📋 Work Packages — Aktueller Stand (Audit 2026-03-06)
 
-> **Critical Insight from Research:**
-> - Model Tiers: ✅ **Production-ready** (no dev needed, just use)
-> - Lazy Loading: ✅ **OpenCode-native** (use skill tool, don't build)
-> - Context Compaction: ✅ **OpenCode-native** (auto-handled, don't build)
-> - MCP Skills: ✅ **OpenCode-native** (configure, don't implement)
-> - Plugin Events: ✅ **OpenCode-native** (migrate hooks → events)
-> - Agent Swarms: ❌ **Not available** (skip entirely)
+> [!note]
+> **Status nach vollständigem 3-Wege-Audit** (Epic vs. PAI v4.0.3 vs. Implementierung PRs `#32`–#40)  
+> Vollständige Analyse: `docs/epic/GAP-ANALYSIS-v3.0.md` | Aufgabenliste: `docs/epic/TODO-v3.0.md`
+
+| WP | Name | Status | PRs | Vollständigkeit |
+|----|------|--------|-----|----------------|
+| **WP1** | Algorithm v3.7.0 + Workdir | ✅ **KOMPLETT** | #32, #33, #35 | 100% |
+| **WP2** | Context Modernization | ✅ **KOMPLETT** | #34 | 100% |
+| **WP3** | Event-Driven Plugin + Skills | ✅ **KOMPLETT** | #37 | 100% (Struktur ✅, Basis-Plugin ✅) |
+| **WP4** | Integration & Validation | ✅ **KOMPLETT** | #38, #39, #40 | 100% |
+| **WP-A** | WP3-Completion: Hooks + Plugin | 🔄 **IN REVIEW** | #42 | ~90% (PR open) |
+| **WP-B** | Security Hardening (WP3.5) | 🔄 **OFFEN** | — | 0% |
+| **WP-C** | Core PAI System + Skill-Fixes | 🔄 **OFFEN** | — | 0% |
+| **WP-D** | Installer & Migration | 🔄 **OFFEN** | — | 0% |
+
+---
 
 ### WP1: Algorithm v3.7.0 Core + Model Tier Integration
-**Status:** CRITICAL PATH  
+**Status:** ✅ KOMPLETT  
 **Effort:** 8-12 hours  
 **Dependencies:** None  
 **Branch:** `v3.0-wp1-algorithm`
@@ -522,10 +535,10 @@ interface VoiceConfig {
 ---
 
 ### WP2: Context System Modernization (Lazy Loading)
-**Status:** HIGH PRIORITY  
+**Status:** ✅ KOMPLETT  
 **Effort:** 6-8 hours  
 **Dependencies:** WP1 (Algorithm provides structure)  
-**Branch:** `v3.0-wp2-context`
+**Branch:** `v3.0-wp2-context` → merged via PR #34
 
 **Goal:** Replace 233KB static context with OpenCode-native lazy loading
 
@@ -558,31 +571,48 @@ interface VoiceConfig {
 ---
 
 ### WP3: Event-Driven Plugin Architecture
-**Status:** HIGH PRIORITY  
-**Effort:** 5-7 hours  
+**Status:** ✅ KOMPLETT (Basis) — PR #37 merged. WP-A (PR #42) ergänzt fehlende Hooks.  
+**Effort:** 5-7 hours (original) | WP-A: 1-2 Tage zusätzlich  
 **Dependencies:** WP2 (context system ready)  
-**Branch:** `v3.0-wp3-plugins`
+**Branch:** `v3.0-wp3-plugins` → PR #37 merged | `feature/wp-a-plugin-hooks` → PR #42 in review
 
-**Goal:** Migrate PAI Hooks → OpenCode native Plugin Events
+**Goal:** Migrate PAI Hooks → OpenCode native Plugin Events ✅ (via WP-A)
 
 **Tasks:**
-1. **Consolidate 6 existing plugins into 1 unified plugin**
-   - Current: pai-context-loader, pai-security, pai-work-tracking, etc.
-   - Target: Single `plugins/pai-core.ts`
-2. **USE OpenCode native events:**
+1. ✅ **Consolidated into 1 unified plugin** (`pai-unified.ts`)
+2. **Port remaining PAI 4.0.3 Hooks to OpenCode events (WP-A — PR #42):**
+   - ✅ Already ported (WP3): `context-loader.ts`, `security-validator.ts`, `voice-notification.ts`, `integrity-check.ts`, `rating-capture.ts`, `update-counts.ts`
+   - ✅ **Ported in WP-A (PR #42):**
+     - `prd-sync.ts` → Sync PRD frontmatter to prd-registry.json
+     - `relationship-memory.ts` → Track user relationships
+     - `session-cleanup.ts` → Cleanup on session end
+     - `last-response-cache.ts` → Cache last response for continuity
+     - `question-tracking.ts` → Track AskUserQuestion Q&A pairs
+   - ✅ **New Bus Events activated (PR #42):**
+     - `session.compacted` → Extract learnings BEFORE context loss (CRITICAL)
+     - `session.error`, `permission.asked`, `command.executed`
+     - `installation.update.available`, `session.updated`
+   - ✅ **New shell.env hook (PR #42):** PAI context per bash call
+   - ❌ **Deferred to later PRs:**
+     - `LearningPatternSynthesis.hook.ts` → WP-C
+     - `UpdateTabTitle.hook.ts` → WP-C
+     - `WorkCompletionLearning.hook.ts` → WP-C
+     - `ResponseTabReset.hook.ts` → WP-C
+     - `SetQuestionTab.hook.ts` → WP-C
+3. **USE OpenCode native events:**
    - `session.created` → Load minimal bootstrap context
    - `tool.execute.before` → Security validation + **Prompt Injection detection**
    - `session.compacted` → Extract learnings to MEMORY
    - `message.updated` → Work tracking / ratings
-3. **ADD Prompt Injection Protection:**
+4. **ADD Prompt Injection Protection:**
    - Detect common injection patterns (ignore previous instructions, system prompt leaks, etc.)
    - Sanitize user input before processing
    - Use `tool.execute.before` to validate prompts
    - Log suspicious patterns for review
-4. **REMOVE hook emulation layer**
+5. **REMOVE hook emulation layer**
    - Delete hook compatibility code
    - Use native TypeScript events
-5. Update `plugins/pai-core.ts` with event handlers
+6. Update `plugins/pai-core.ts` with event handlers
 
 **Key Insight:** Don't emulate hooks - use native OpenCode events! Add Prompt Injection defense as core security feature.
 
@@ -598,7 +628,7 @@ interface VoiceConfig {
 ---
 
 ### WP3.5: Security Hardening (Prompt Injection Protection)
-**Status:** HIGH PRIORITY (Security Critical)  
+**Status:** 🔄 OFFEN — umbenannt in WP-B  
 **Effort:** 4-6 hours  
 **Dependencies:** WP3 (plugin system ready)  
 **Branch:** `v3.0-wp3-security`
@@ -676,10 +706,10 @@ PAI-OpenCode processes user input and executes system commands. Without protecti
 ---
 
 ### WP4: Hierarchical Skill Structure (PAI v4.0.3)
-**Status:** MEDIUM PRIORITY  
+**Status:** ⚠️ ~70% KOMPLETT — Basis funktional, Skill-Lücken (Telos, USMetrics, Utilities, Research) offen → WP-C  
 **Effort:** 8-10 hours  
 **Dependencies:** None (can run parallel to WP1-3)  
-**Branch:** `v3.0-wp4-skills`
+**Branch:** `v3.0-wp4-skills` → PRs #38, #39, #40 merged
 
 **Goal:** Migrate 39 skills to PAI v4.0.3's 11-category structure
 
@@ -707,8 +737,12 @@ PAI-OpenCode processes user input and executes system commands. Without protecti
 
 ---
 
-### WP5: MCP-First Skills (Configuration, not Implementation)
-**Status:** MEDIUM PRIORITY  
+### WP5: Core PAI System + Skill-Fixes (umbenannt: WP-C)
+**Status:** 🔄 OFFEN  
+> ⚠️ **Umbenannt:** Ursprüngliches WP5 (MCP-First) ist nachrangig. WP-C enthält jetzt fehlende PAI-Docs, PAI-Tools und Skill-Struktur-Fixes aus dem Audit.
+
+### WP5-Original: MCP-First Skills (Configuration, not Implementation)
+**Status:** ZURÜCKGESTELLT (nach v3.0, kein Blocker)  
 **Effort:** 4-6 hours  
 **Dependencies:** WP4 (skills organized)  
 **Branch:** `v3.0-wp5-mcp`
@@ -749,31 +783,105 @@ PAI-OpenCode processes user input and executes system commands. Without protecti
 
 ---
 
-### ~~WP6: Voice & Ambient AI Foundation~~ → **MOVED TO OPEN ARC**
+### WP6: VoiceServer Foundation (TTS Core)
 
-**Status:** ❌ EXCLUDED FROM PAI-OpenCode v3.0  
-**New Home:** [github.com/jeremaiah-ai/openark](https://github.com/jeremaiah-ai/openark)  
-**Decision Date:** 2026-03-03  
-**Decision Rationale:** Scope separation — PAI-OpenCode is community port, Open Arc is product vision
+**Status:** MEDIUM PRIORITY  
+**Effort:** 4-6 hours  
+**Dependencies:** WP1-5 complete  
+**Branch:** `v3.0-wp6-voiceserver`
 
-**Why This Was Removed:**
-- Voice-to-Voice is **product feature**, not core PAI port
-- OMI Ambient AI integration is **commercial product territory**
-- PAI-OpenCode must stay focused: "as little as necessary"
-- Open Arc will contain: Voice architecture, OMI integration, Brand UX, End-user features
+**Goal:** Port PAI 4.0.3 VoiceServer for TTS notifications (NOT Voice-to-Voice)
 
-**Original Scope (now Open Arc):**
-- WebSocket-ready VoiceServer architecture
-- OMI integration points and message formats
-- Voice-to-Voice roadmap (3 phases)
-- Future V2V implementation
+**Clarification:**
+- ✅ **PAI-OpenCode:** Native VoiceServer (TTS, status, basic notifications)
+- ❌ **Open Arc:** Voice-to-Voice, WebSocket Streaming, Real-time processing
 
-**Reference:** See `docs/SCOPE-BOUNDARY.md` for complete boundary definition
+**Tasks:**
+1. **Port VoiceServer from PAI 4.0.3:**
+   - `VoiceServer/server.ts` - TTS server
+   - `VoiceServer/start.sh`, `stop.sh`, `restart.sh`
+   - `voices.json` - Voice configuration  
+   - `pronunciations.json` - Custom pronunciations
+2. **Integrate with OpenCode plugin events:**
+   - `voice-notification.ts` handler (already exists)
+   - Trigger on session events, task completion
+3. **Update for OpenCode compatibility:**
+   - Port from Claude voice_id to OpenCode voice_id
+   - Ensure local TTS works (macOS say, Google TTS, 11labs)
+
+**Output:**
+- `.opencode/PAI/VoiceServer/` (core TTS)
+- Voice notifications working in Algorithm phases
+
+**Note:** Voice-to-Voice/WebSocket remains in Open Arc — see `docs/SCOPE-BOUNDARY.md`
 
 ---
 
-### WP7: Migration & Installer
-**Status:** MEDIUM PRIORITY  
+### WP-G: OpenCode-Native Hardening (NEU — 2026-03-06)
+**Status:** 🔄 OFFEN — integrierbar in WP-A  
+**Effort:** 0.5 Tag  
+**Dependencies:** WP-A (Plugin-System)  
+**Source:** DeepWiki Codemap Research 2026-03-06
+
+**Hintergrund:** 6 DeepWiki Codemap-Queries auf `anomalyco/opencode` haben fundamentale Unterschiede aufgedeckt. Vollständiges Research-Dokument: `docs/epic/OPENCODE-NATIVE-RESEARCH.md`
+
+**Kritische Punkte:**
+- Bash ist STATELESS — `workdir` Parameter ist PFLICHT überall (nicht `cd`)
+- `session.compacted` Event = letzter Moment für Learning-Rescue
+- `shell.env` Hook für PAI-Kontext-Injektion per Bash-Call
+- `file.edited` Event für Event-driven PRD-Sync
+- OpenCode liest AUCH `.claude/skills/` — Backward-Kompatibel!
+
+**Tasks (in WP-A integrieren):**
+1. ✅ AGENTS.md: `workdir` Pflicht dokumentiert (2026-03-06)
+2. pai-unified.ts: `shell.env` Hook für PAI-Kontext
+3. session-cleanup.ts: `session.compacted` als Learning-Rescue
+4. prd-sync.ts: `file.edited` auf `*.prd.md` für PRD-Sync
+
+---
+
+### WP-F: DB Health & Session Archivierung (NEU — 2026-03-06)
+**Status:** 🔄 OFFEN — integriert in PR #D  
+**Effort:** 0.5–1 Tag  
+**Dependencies:** WP-A (session-cleanup.ts als Basis)
+
+**Hintergrund:** OpenCode hat keine automatische Session-Retention-Policy. Die `opencode.db` wächst ungebremst (2.4 GB nach 3 Monaten). Ohne Lösung: Startup-Errors, Performance-Degradation, unhandhabbare DB-Größe.
+
+**Goal:** OpenCode-native Lösung in 3 Ebenen — automatisch, manuell, visuell.
+
+**Drei Ebenen:**
+
+```
+EBENE 1 — Plugin (automatisch):
+└── session-cleanup.ts: Warnung wenn DB > 500 MB oder > 100 alte Sessions
+
+EBENE 2 — CLI Tool (manuell, standalone):
+└── Tools/db-archive.ts: Archive, Delete, VACUUM, Restore
+
+EBENE 3 — Custom Command (OpenCode-native):
+└── /db-archive Command: Status + Archivierung direkt im TUI
+
+EBENE 4 — Electron GUI (visuell):
+└── PAI-Install DB Health Tab: Dashboard + Archiv-Browser
+```
+
+**Output:**
+- `plugins/lib/db-utils.ts` (Size/Session Utilities)
+- `Tools/db-archive.ts` (Standalone Bun Tool)
+- `.opencode/commands/db-archive.ts` (Custom Command)
+- `PAI-Install/electron/` — DB Health Tab
+- `docs/DB-MAINTENANCE.md`
+
+**Verification:**
+- `bun db-archive.ts --dry-run` zeigt korrekten Preview
+- Archivierte Sessions in `~/.opencode/archives/*.db`
+- Restore einer archivierten Session funktioniert
+- `/db-archive` Command erreichbar im TUI
+
+---
+
+### WP-D (ehemals WP7): Migration & Installer
+**Status:** 🔄 OFFEN  
 **Effort:** 6-8 hours  
 **Dependencies:** WP1-5 complete  
 **Branch:** `v3.0-wp7-migration`
@@ -807,8 +915,8 @@ PAI-OpenCode processes user input and executes system commands. Without protecti
 
 ---
 
-### WP8: Testing & v3.0.0 Release
-**Status:** CRITICAL PATH (Final)  
+### WP-E (ehemals WP8): Testing & v3.0.0 Release
+**Status:** 🔄 OFFEN (nach WP-A bis WP-D)  
 **Effort:** 6-10 hours  
 **Dependencies:** ALL WPs complete  
 **Branch:** `v3.0-rearchitecture` (integration)
@@ -847,46 +955,57 @@ PAI-OpenCode processes user input and executes system commands. Without protecti
 
 ---
 
-## 🔄 Revised Work Package Dependencies (Scoped for Community Port)
+## 🔄 Aktueller Dependency-Graph (nach Audit 2026-03-06)
 
-```
-WP1 (Algorithm + Model Tiers)
+```text
+WP1 ✅ (Algorithm v3.7.0)
     │
-    ├──► WP2 (Lazy Context) ──► WP3 (Event Plugins) ──► WP3.5 (Security) ──► WP7 (Migration) ──► WP8 (Testing/Release)
-    │                                                         │
-    │                                                         └──► Security logging integration
-    │
-    └──► WP4 (Skills) ──► WP5 (MCP Config)
-         │
-         └──► (WP6 was here: MOVED to Open Arc — see SCOPE-BOUNDARY.md)
+    └──► WP2 ✅ (Lazy Context)
+              │
+              └──► WP3 ⚠️ (Kategorie-Struktur ✅, Hooks/Plugin-Architektur ❌)
+                        │
+                        └──► WP-A 🔄 (WP3-Completion: 6 Hooks + Plugin)
+                                  │                     │
+                                  │                     └──► WP-F 🔄 (DB Health — session-cleanup.ts Basis)
+                                  │
+                                  └──► WP-B 🔄 (Security Hardening)
+                                            │
+                                            └──► WP-C 🔄 (Core PAI System + Skill-Fixes)
+                                                      │
+                                                      └──► WP-D 🔄 (Installer + Migration + WP-F GUI)
+                                                                │
+                                                                └──► WP-E 🔄 (Testing + v3.0 Release)
+
+Parallel (ab WP-A unabhängig):
+WP4 ⚠️ (Basis fertig) ──► Skill-Lücken in WP-C adressiert
+WP-F ──► in PR #D integriert (Tools/db-archive.ts + Electron GUI)
 ```
 
-**Critical Path:** WP1 → WP2 → WP3 → **WP3.5** → WP7 → WP8  
-**Security is Critical:** WP3.5 added to critical path  
-**Parallel Work:** WP4, WP5 (after WP1)  
-**Open Arc (separate):** Voice-to-Voice, OMI Ambient AI — NOT in PAI-OpenCode  
-**Final Steps:** WP7 → WP8
+**Critical Path:** WP-A → WP-B → WP-C → WP-D (inkl. WP-F) → WP-E  
+**WP-F Integration:** Session-Cleanup-Erweiterung in WP-A, GUI in WP-D  
+**Open Arc (out of scope):** Voice-to-Voice, OMI Ambient AI  
+**Referenzdokumente:** `GAP-ANALYSIS-v3.0.md` (was fehlt) | `TODO-v3.0.md` (konkrete Tasks)
 
 ---
 
-## 📊 Revised Effort & Timeline
+## 📊 Aktueller Effort & Timeline (nach Audit)
 
-| WP | Effort | Cumulative | Deliverable |
-|----|--------|------------|-------------|
-| WP1 | 8-12h | 8-12h | Algorithm v3.7.0 + Model Tiers |
-| WP2 | 6-8h | 14-20h | Lazy Context (~20KB) |
-| WP3 | 5-7h | 19-27h | Event-Driven Plugins |
-| **WP3.5** | **4-6h** | **23-33h** | **Prompt Injection Protection** |
-| WP4 | 8-10h | 31-43h (parallel) | Skill Hierarchy |
-| WP5 | 4-6h | 35-49h (parallel) | MCP Configuration |
-| WP6 | ~~4-6h~~ | ~~MOVED~~ | ~~Voice Foundation~~ → **See Open Arc** |
-| WP7 | 6-8h | 41-57h | Migration & Installer |
-| WP8 | 6-10h | 47-67h | Testing & Release |
+| WP | Status | Effort | Deliverable |
+|----|--------|--------|-------------|
+| WP1 | ✅ Fertig | 8-12h | Algorithm v3.7.0 + Model Tiers |
+| WP2 | ✅ Fertig | 6-8h | Lazy Context (~20KB) |
+| WP3 | ⚠️ 40% | 5-7h investiert | Nur Kategorie-Struktur |
+| WP4 | ⚠️ 70% | 8-10h investiert | Integration (funktional, unvollständig) |
+| **WP-A** | 🔄 Offen | **1-2 Tage** | **6 Hooks + Plugin-Architektur + DB-Warnung** |
+| **WP-B** | 🔄 Offen | **0.5-1 Tag** | **Prompt Injection Protection** |
+| **WP-C** | 🔄 Offen | **2-3 Tage** | **Core PAI System + Skill-Fixes + PAI Tools** |
+| **WP-D** | 🔄 Offen | **1.5-3 Tage** | **Installer + Migration + DB Health GUI** |
+| **WP-E** | 🔄 Offen | **0.5-1 Tag** | **Testing + v3.0.0 Release** |
+| **WP-F** | 🔄 Offen (in WP-D) | **0.5-1 Tag** | **DB Archivierung: Tool + Command + Electron Tab** |
 
-**Total Critical Path:** 47-67 hours (reduced from 73h by removing Open Arc scope)  
-**With Parallel Work:** 5-8 weeks (1 person)  
-**With Multiple Agents:** 2-3 weeks  
-**Scope Note:** Voice-to-Voice and Ambient AI (OMI) moved to Open Arc — see `docs/SCOPE-BOUNDARY.md`
+**Verbleibender Aufwand:** ~6-10 Tage  
+**Open Arc (out of scope):** Voice-to-Voice, OMI Ambient AI  
+**MCP-Skills:** Zurückgestellt auf v3.1 (kein v3.0-Blocker)
 
 ---
 
@@ -918,6 +1037,55 @@ WP1 (Algorithm + Model Tiers)
 8. ✅ Documentation complete
 9. ✅ Biome zero errors
 10. ✅ CI/CD passing
+11. ✅ **DB archivierbar via `/db-archive` Command** (OpenCode-native)
+12. ✅ **`bun db-archive.ts --dry-run` zeigt korrekte Session-Vorschau**
+13. ✅ **Archivierte Sessions wiederherstellbar via `--restore`**
+14. ✅ **Electron DB Health Tab zeigt Größe, Sessions, Archiv-Button**
+
+---
+
+## 🛠️ Implementation Guidelines (Conventions für alle WPs)
+
+> Übernommen aus WORK-PACKAGE-GUIDELINES.md (v1.0, 2026-03-05) — Original gelöscht nach Konsolidierung
+
+### Skill-Architektur: Hybrid Discovery System
+
+PAI-OpenCode verwendet einen **Hybrid-Ansatz**:
+1. **Category-Level Skills** — Breite Capability-Bereiche (z.B. `Security/`, `Media/`)
+2. **Sub-Skill Access** — Direktzugriff auf spezifische Skills (z.B. `Investigation/OSINT/`)
+3. **Flat Skills** — Eigenständige Skills (z.B. `Research/`, `Council/`)
+
+**MINIMAL_BOOTSTRAP.md** muss BEIDE Ebenen enthalten (Kategorien UND Sub-Skills), damit kein Skill undiscoverable wird.
+
+### Architektur-Entscheidungen (Decision Log)
+
+| Datum | Entscheidung | Begründung |
+|-------|-------------|------------|
+| 2026-03-05 | Hybrid Discovery (Categories + Sub-Skills) | Direkt- und Kategoriezugriff beides möglich |
+| 2026-03-05 | Skip Research/ als Kategorie | Einzelner Skill, bereits als Flat funktional |
+| 2026-03-05 | MANDATORY/OPTIONAL-Sections ignorieren | Nicht in PAI 4.0.3 Referenz vorhanden |
+| 2026-03-06 | **Option B für Plugin-Konsolidierung** | Handler-Module bleiben (pragmatisch), nur fehlende Hooks hinzufügen. Echte Konsolidierung auf v3.1 verschoben |
+| 2026-03-06 | MCP-Skills auf v3.1 zurückgestellt | Kein v3.0-Blocker, Mehraufwand zu hoch |
+
+### CodeRabbit Review Strategy
+
+**Echte Issues (fixen):** Tippfehler, fehlende Pfad-Updates, PII in Docs, kaputte Code-Fences  
+**Wahrscheinliche Halluzinationen (verifizieren):** MANDATORY/OPTIONAL Sections, YAML-Frontmatter-Requirements, Mermaid-Diagramme als Pflicht  
+→ Immer zuerst gegen PAI 4.0.3 Referenz prüfen bevor man CodeRabbit-Feedback umsetzt.
+
+### WP-Implementierungs-Checkliste
+
+**Vor Implementierung:**
+- [ ] Scope identifizieren: Welche Kategorien/Skills aus PAI 4.0.3?
+- [ ] Current State prüfen: `ls .opencode/skills/`
+- [ ] Upstream-Struktur verifizieren: PAI 4.0.3 als Referenz
+- [ ] Hybrid-Ansatz entscheiden: Welche Sub-Skills brauchen Direktzugriff?
+
+**Nach Implementierung:**
+- [ ] Git-Tracking prüfen: `git status` sollte "renamed" zeigen, nicht "deleted/new"
+- [ ] Skill Discovery testen: `grep -r "name:" .opencode/skills/*/SKILL.md`
+- [ ] MINIMAL_BOOTSTRAP.md aktualisiert (Kategorien + Sub-Skills)
+- [ ] Biome check passing: `biome check .`
 
 ---
 

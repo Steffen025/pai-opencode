@@ -23,15 +23,19 @@ Architecture Decision Records document **WHY** we made specific technical choice
 
 ## ADR Index
 
-| ADR | Title | Status | Category |
-|-----|-------|--------|----------|
-| [ADR-001](ADR-001-hooks-to-plugins-architecture.md) | Hooks → Plugins Architecture | ✅ Accepted | Platform Adaptation |
-| [ADR-002](ADR-002-directory-structure-claude-to-opencode.md) | Directory Structure (.claude/ → .opencode/) | ✅ Accepted | Platform Convention |
-| [ADR-003](ADR-003-skills-system-unchanged.md) | Skills System - 100% Unchanged | ✅ Accepted | Compatibility |
-| [ADR-004](ADR-004-plugin-logging-file-based.md) | Plugin Logging (console.log → File-Based) | ✅ Accepted | Platform Adaptation |
-| [ADR-005](ADR-005-configuration-dual-file-approach.md) | Configuration - Dual File Approach | ✅ Accepted | Platform Convention |
-| [ADR-006](ADR-006-security-validation-preservation.md) | Security Validation Pattern Preservation | ✅ Accepted | Security |
-| [ADR-007](ADR-007-memory-system-structure-preserved.md) | Memory System Structure Preserved | ✅ Accepted | Compatibility |
+| ADR | Title | Status | Category | PR |
+|-----|-------|--------|----------|----|
+| [ADR-001](ADR-001-hooks-to-plugins-architecture.md) | Hooks → Plugins Architecture | ✅ Accepted | Platform Adaptation | v1.0 |
+| [ADR-002](ADR-002-directory-structure-claude-to-opencode.md) | Directory Structure (.claude/ → .opencode/) | ✅ Accepted | Platform Convention | v1.0 |
+| [ADR-003](ADR-003-skills-system-unchanged.md) | Skills System - 100% Unchanged | ✅ Accepted | Compatibility | v1.0 |
+| [ADR-004](ADR-004-plugin-logging-file-based.md) | Plugin Logging (console.log → File-Based) | ✅ Accepted | Platform Adaptation | v1.0 |
+| [ADR-005](ADR-005-configuration-dual-file-approach.md) | Configuration - Dual File Approach | ✅ Accepted | Platform Convention | v1.0 |
+| [ADR-006](ADR-006-security-validation-preservation.md) | Security Validation Pattern Preservation | ✅ Accepted | Security | v1.0 |
+| [ADR-007](ADR-007-memory-system-structure-preserved.md) | Memory System Structure Preserved | ✅ Accepted | Compatibility | v1.0 |
+| [ADR-008](ADR-008-opencode-bash-workdir-parameter.md) | OpenCode Bash workdir Parameter | ✅ Accepted | Platform Adaptation | v1.0 |
+| [ADR-009](ADR-009-handler-audit-opencode-adaptation.md) | Handler Audit — Claude-Code-specific Patterns | ✅ Accepted | Platform Adaptation | PR #42 |
+| [ADR-010](ADR-010-shell-env-two-layer-system.md) | Shell.env + .env Two-Layer Env Variable System | ✅ Accepted | Platform Adaptation | PR #42 |
+| [ADR-011](ADR-011-security-hardening.md) | Security Hardening — Prompt Injection Defense | ✅ Accepted | Security | WP-B |
 
 ---
 
@@ -41,6 +45,9 @@ Architecture Decision Records document **WHY** we made specific technical choice
 Decisions about translating Claude Code patterns to OpenCode platform.
 - ADR-001: Hooks → Plugins
 - ADR-004: File-based logging
+- ADR-008: Bash workdir parameter (stateless shell)
+- ADR-009: Handler audit — Claude-Code-specific patterns fixed
+- ADR-010: shell.env + .env two-layer environment variable system
 
 ### Platform Convention
 Decisions about following OpenCode conventions vs PAI patterns.
@@ -55,6 +62,7 @@ Decisions prioritizing upstream PAI compatibility.
 ### Security
 Decisions about security and safety guarantees.
 - ADR-006: Security validation preservation
+- ADR-011: Prompt injection defense & audit logging (WP-B)
 
 ---
 
@@ -130,17 +138,28 @@ When adding new ADRs, use this structure:
 
 ---
 
-## Future ADRs
+## OpenCode-Native ADRs (ADR-012 to ADR-016)
 
-Potential topics for future documentation:
+These ADRs document the **native OpenCode transformation** — the shift from "port"
+to "genuinely native". See `docs/epic/EPIC-v3.0-OpenCode-Native.md` for context.
 
-| Topic | Why It Matters |
-|-------|----------------|
-| Voice Server Implementation | When adding in v1.1 |
-| Observability Dashboard Port | When adding in v1.2 |
-| Model Name Mapping Strategy | If changing provider system |
-| Agent Type Mapping | If OpenCode adds native agents |
-| Memory System Evolution | If changing from file-based |
+| ADR | Title | Status | WP |
+|-----|-------|--------|----|
+| ADR-012 | Session Registry as Custom Plugin Tool | ✅ Merged | WP-N1 |
+| ADR-013 | Algorithm Session Awareness Post-Compaction | ✅ Merged | WP-N3 |
+| ADR-014 | LSP-Native Code Navigation | ✅ Merged | WP-N4 |
+| ADR-015 | Compaction Intelligence via Plugin Hook | ✅ Merged | WP-N2 |
+| ADR-016 | Session Fork for Experiment Isolation | ✅ Merged | WP-N4 |
+| ADR-017 | System Self-Awareness Documentation | ✅ Merged | WP-N6 |
+| ADR-018 | roborev Code Review + Biome CI Pipeline | ✅ Accepted | WP-N7 |
+
+## Legacy Future ADRs
+
+| Topic | Why It Matters | Status |
+|-------|----------------|--------|
+| Config Hierarchy (6-Level) | Understanding override precedence | Future |
+| Relationship Memory Names | Hardcoded @Jeremy/@Steffen → config-based | Future |
+| Session-Scoped Response Cache | Global cache causes cross-session pollution | Future |
 
 ---
 
@@ -173,5 +192,5 @@ Potential topics for future documentation:
 
 ---
 
-*Last Updated: 2026-01-25*
-*ADRs Created: 7*
+*Last Updated: 2026-03-12*
+*ADRs Created: 18 (ADR-011: Security Hardening — WP-B; ADR-012–018: OpenCode-Native Transformation — ADR-012–017 merged, ADR-018 WP-N7)*

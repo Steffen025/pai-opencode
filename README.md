@@ -4,13 +4,16 @@
 
 **Personal AI Infrastructure for OpenCode** — Bring Daniel Miessler's renowned PAI scaffolding to any AI provider.
 
-[![Version](https://img.shields.io/badge/Version-2.0.0-brightgreen)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-3.0.0-brightgreen)](CHANGELOG.md)
 [![OpenCode Compatible](https://img.shields.io/badge/OpenCode-Compatible-green)](https://github.com/anomalyco/opencode)
 [![PAI Version](https://img.shields.io/badge/PAI-3.0-blue)](https://github.com/danielmiessler/Personal_AI_Infrastructure)
 [![Algorithm](https://img.shields.io/badge/Algorithm-1.8.0-blueviolet)](https://github.com/danielmiessler/TheAlgorithm)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> **v2.0 Release** — PAI v3.0 / Algorithm v1.8.0 with 8 effort levels, Verify Completion Gate, Wisdom Frames, 25-capability audit, PRD system, and 39 skills. See [CHANGELOG.md](CHANGELOG.md).
+> [!note]
+> **v3.0 Release** — Plugin event bus, security hardening (prompt injection protection), Electron GUI installer, DB health tooling, hierarchical skills structure, and 52 skills. See [CHANGELOG.md](CHANGELOG.md) and [UPGRADE.md](UPGRADE.md).
+
+> **🎯 Scope Note:** PAI-OpenCode is a **community port** of PAI to OpenCode. For the future vision (Voice-to-Voice, Ambient AI, OMI integration), see **[Open Arc](https://github.com/jeremaiah-ai/openark)**.
 
 ---
 
@@ -23,10 +26,13 @@ PAI-OpenCode is the complete port of **Daniel Miessler's Personal AI Infrastruct
 **PAI** is a scaffolding system that makes AI assistants work better for *you*. It's not about which model you use — it's about the infrastructure around it:
 
 - **The Algorithm (v1.8.0)** — 8 effort levels with Verify Completion Gate, Wisdom Frames, phase separation enforcement, and quality gates
-- **Skills** — Modular capabilities (39 skills including Cloudflare, ExtractWisdom, Science)
-- **Agents** — Dynamic multi-agent orchestration
+- **Skills** — Modular capabilities (52 skills including AudioEditor, Cloudflare, ExtractWisdom, Security)
+- **Agents** — Dynamic multi-agent orchestration with model tier routing (60x cost optimization)
 - **Memory** — Session history, project context, learning loops, PRD system
-- **Plugins** — Lifecycle automation (session init, security validation, observability, algorithm tracking)
+- **Plugins** — Event-driven lifecycle automation (security validation, observability, algorithm tracking, DB health)
+- **Installer** — Electron GUI + CLI installer for easy setup
+- **Security** — Prompt injection protection with 200+ patterns
+- **DB Health** — Automated session archiving and maintenance
 
 **OpenCode** is an open-source alternative to Claude Code that supports 75+ AI providers — from Anthropic and OpenAI to Google, AWS Bedrock, Ollama, and beyond.
 
@@ -57,7 +63,48 @@ PAI-OpenCode is the complete port of **Daniel Miessler's Personal AI Infrastruct
 
 ---
 
+## 📋 Scope: What PAI-OpenCode Is (and Isn't)
+
+**PAI-OpenCode is a community contribution** — focused, minimal, "as little as necessary."
+
+### ✅ What It IS
+
+| Feature | Description |
+|---------|-------------|
+| **Core PAI Port** | Algorithm v3.7.0, Skills, TELOS on OpenCode |
+| **OpenCode-Native** | Lazy Loading, Model Tiers, Events, MCP integration |
+| **Developer Tool** | Infrastructure for power users and developers |
+| **Community-Driven** | Open source, documented, maintainable |
+| **Minimal Context** | ~20KB core, not 233KB static loading |
+
+### ❌ What It Is NOT (See [Open Arc](https://github.com/jeremaiah-ai/openark))
+
+| Excluded Feature | Why Excluded | Belongs To |
+|------------------|--------------|------------|
+| **Voice-to-Voice** | Custom orchestration beyond core PAI | Open Arc |
+| **OMI Ambient AI** | Hardware integration, product layer | Open Arc |
+| **Branded UX** | End-user product experience | Open Arc |
+| **SaaS Infrastructure** | User management, billing | Open Arc |
+
+**The Rule:** If it's an OpenCode-native feature that improves PAI → **PAI-OpenCode**. If it's a new product abstraction → **Open Arc**.
+
+
+---
+
 ## Quick Start
+
+### New Users (GUI Installer)
+
+```bash
+# Run the installer (automatically uses GUI if display available, else CLI)
+bash PAI-Install/install.sh
+```
+
+The installer automatically detects your environment:
+- **GUI mode**: Used when a display is available (opens Electron installer)
+- **CLI mode**: Used in headless environments (terminal wizard)
+
+### Manual Setup
 
 ```bash
 # 1. Clone PAI-OpenCode
@@ -138,7 +185,7 @@ This **10-15 minute** interactive session will configure your complete TELOS fra
 
 ![Features Showcase](docs/images/features-showcase.jpg)
 
-### 🎯 Skills System (39 Skills)
+### 🎯 Skills System (52 Skills)
 Modular, reusable capabilities invoked by name:
 - **CORE** — Identity, preferences, auto-loaded at session start (Algorithm v1.8.0)
 - **Art** — Excalidraw-style visual diagrams
@@ -148,7 +195,7 @@ Modular, reusable capabilities invoked by name:
 - **ExtractWisdom** — Fabric-style wisdom extraction
 - **Science** — Hypothesis-driven experimentation
 - **Cloudflare** — Pages, Workers, R2, KV automation
-- **Plus 31 more** — See `.opencode/skills/` for full list
+- **Plus 44 more** — See `.opencode/skills/` for full list
 
 ### 🤖 Agent Orchestration (16 Agents)
 Dynamic multi-agent composition with **intelligent tier routing** — every agent scales up or down based on task complexity:
@@ -329,11 +376,14 @@ PAI-OpenCode's design is documented through **Architecture Decision Records (ADR
 | [ADR-005](docs/architecture/adr/ADR-005-configuration-dual-file-approach.md) | Dual Config Files | PAI settings.json + OpenCode opencode.json |
 | [ADR-006](docs/architecture/adr/ADR-006-security-validation-preservation.md) | Security Patterns Preserved | Critical security validation unchanged |
 | [ADR-007](docs/architecture/adr/ADR-007-memory-system-structure-preserved.md) | Memory Structure Preserved | File-based MEMORY/ system unchanged |
+| [ADR-008](docs/architecture/adr/ADR-008-opencode-bash-workdir-parameter.md) | Bash workdir Parameter | Critical platform difference for multi-repo workflows |
 
 **Key Principles:**
 - **Preserve PAI's design** where possible
 - **Adapt to OpenCode** where necessary
 - **Document every change** in ADRs
+
+**Platform Differences:** See [PLATFORM-DIFFERENCES.md](docs/PLATFORM-DIFFERENCES.md) for a comprehensive guide to Claude Code vs OpenCode differences.
 
 ---
 
@@ -344,10 +394,10 @@ PAI-OpenCode's design is documented through **Architecture Decision Records (ADR
 | [CHANGELOG.md](CHANGELOG.md) | Version history and release notes |
 | [docs/WHAT-IS-PAI.md](docs/WHAT-IS-PAI.md) | PAI fundamentals explained |
 | [docs/OPENCODE-FEATURES.md](docs/OPENCODE-FEATURES.md) | OpenCode unique features |
+| [docs/PLATFORM-DIFFERENCES.md](docs/PLATFORM-DIFFERENCES.md) | Claude Code vs OpenCode differences |
 | [docs/PLUGIN-SYSTEM.md](docs/PLUGIN-SYSTEM.md) | Plugin architecture (20 handlers) |
 | [docs/PAI-ADAPTATIONS.md](docs/PAI-ADAPTATIONS.md) | Changes from PAI v3.0 |
 | [docs/MIGRATION.md](docs/MIGRATION.md) | Migration from Claude Code PAI |
-| [ROADMAP.md](ROADMAP.md) | Version roadmap |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines |
 
 **For Contributors:**

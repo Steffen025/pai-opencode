@@ -255,17 +255,46 @@ export function fileLog(message: string, level = "info") {
 | **Plan Mode** | Built-in tools `EnterPlanMode`/`ExitPlanMode` — OpenCode doesn't have these |
 | **StatusLine** | Claude Code UI feature — terminal status bar integration |
 
-### New Handlers (v2.0)
+### New Handlers (WP-A — PR #42, 2026-03-06)
 
-Five new plugin handlers added for v3.0:
+Five new handlers ported from PAI v4.0.3 + new OpenCode-native handlers:
 
 | Handler | Purpose | Event | Status |
 |---------|---------|-------|--------|
-| `algorithm-tracker.ts` | Monitors Algorithm phase transitions, ISC progress | tool.execute.after | ✅ Created |
-| `agent-execution-guard.ts` | Validates agent invocations before execution | tool.execute.before | ✅ Created |
-| `skill-guard.ts` | Ensures skill prerequisites are met | tool.execute.before | ✅ Created |
-| `check-version.ts` | Verifies Algorithm version compatibility | session.start | ✅ Created |
-| `integrity-check.ts` | Session-end validation and cleanup | session.end | ✅ Created |
+| `prd-sync.ts` | Sync PRD frontmatter → `prd-registry.json` | `tool.execute.after` (Write/Edit on PRD.md) | ✅ PR #42 |
+| `session-cleanup.ts` | Mark work COMPLETED, clear state files | `session.ended/idle` | ✅ PR #42 |
+| `last-response-cache.ts` | Cache last assistant response for context | `message.updated` (assistant) | ✅ PR #42 |
+| `relationship-memory.ts` | Extract W/B/O notes → `MEMORY/RELATIONSHIP/` | `session.ended/idle` | ✅ PR #42 |
+| `question-tracking.ts` | Record AskUserQuestion Q&A pairs | `tool.execute.after` (AskUserQuestion) | ✅ PR #42 |
+
+New Bus Events activated (all previously unused):
+
+| Event | Purpose | Status |
+|-------|---------|--------|
+| `session.compacted` | **Critical:** Learning rescue before context loss | ✅ PR #42 |
+| `session.error` | Error diagnostics and resilience monitoring | ✅ PR #42 |
+| `permission.asked` | Full audit log of ALL permission requests | ✅ PR #42 |
+| `command.executed` | `/command` usage tracking | ✅ PR #42 |
+| `installation.update.available` | Native OpenCode update notification | ✅ PR #42 |
+| `session.updated` | Session title tracking | ✅ PR #42 |
+
+New Plugin Hook added (OpenCode-native, no PAI v4.0.3 equivalent):
+
+| Hook | Purpose | Status |
+|------|---------|--------|
+| `shell.env` | PAI context injection per bash call (stateless shell fix) | ✅ PR #42 |
+
+### New Handlers (v2.0)
+
+Five new plugin handlers added for v2.0:
+
+| Handler | Purpose | Event | Status |
+|---------|---------|-------|--------|
+| `algorithm-tracker.ts` | Monitors Algorithm phase transitions, ISC progress | `tool.execute.after` | ✅ Created |
+| `agent-execution-guard.ts` | Validates agent invocations before execution | `tool.execute.before` | ✅ Created |
+| `skill-guard.ts` | Ensures skill prerequisites are met | `tool.execute.before` | ✅ Created |
+| `check-version.ts` | Verifies Algorithm version compatibility | `session.created` | ✅ Created |
+| `integrity-check.ts` | Session-end validation and cleanup | `session.ended` | ✅ Created |
 
 ### PRD System Directory Structure
 
@@ -402,6 +431,10 @@ Mandatory in THINK phase - justify exclusion of:
 | MCP Server Adapters | Deferred | v3.0 |
 | PRD Auto-Creation Handler | Deferred | v2.1 |
 | Dynamic Algorithm Version (LATEST file) | Deferred | v2.1 |
+| DB Archive Tool (WP-F) | Planned | v3.0 PR #D |
+| `file.edited` → PRD Sync (WP-G) | Planned | v3.0 PR #B |
+| relationship-memory config-based names | Planned | v3.0 PR #C |
+| last-response-cache session-scoped | Planned | v3.0 PR #B |
 
 See **ROADMAP.md** for detailed timeline.
 
@@ -474,4 +507,8 @@ See **MIGRATION.md** for full guide.
 
 ---
 
-**PAI-OpenCode v2.0** — Full PAI v3.0, Algorithm v1.8.0, 39 Skills, 20 Handlers, Wisdom Frames
+---
+
+*Last updated: 2026-03-06 (PR #42 — WP-A complete, shell.env hook, 6 new Bus events, 5 new handlers)*
+
+**PAI-OpenCode v3.0-dev** — Full PAI v3.0, Algorithm v1.8.0, 39 Skills, 25 Handlers, Wisdom Frames, shell.env Hook
