@@ -27,7 +27,6 @@
 
 const { chromium } = require('playwright');
 const path = require('path');
-const sharp = require('sharp');
 
 const PT_PER_PX = 0.75;
 const PX_PER_IN = 96;
@@ -104,7 +103,8 @@ function validateTextBoxPosition(slideData, bodyDimensions) {
           if (Array.isArray(el.items)) return el.items.find(item => item.text)?.text || '';
           return '';
         };
-        const textPrefix = getText().substring(0, 50) + (getText().length > 50 ? '...' : '');
+        const rawText = getText();
+        const textPrefix = rawText.substring(0, 50) + (rawText.length > 50 ? '...' : '');
 
         errors.push(
           `Text box "${textPrefix}" ends too close to bottom edge ` +
@@ -186,7 +186,7 @@ function addElements(slideData, targetSlide, pres) {
       targetSlide.addText(el.items, listOptions);
     } else {
       // Check if text is single-line (height suggests one line)
-      const lineHeight = el.style.lineSpacing || el.style.fontSize * 1.2;
+      const lineHeight = el.style.lineSpacing ?? el.style.fontSize * 1.2;
       const isSingleLine = el.position.h <= lineHeight * 1.5;
 
       let adjustedX = el.position.x;
@@ -825,7 +825,7 @@ async function extractSlideData(page) {
         fontFace: computed.fontFamily.split(',')[0].replace(/['"]/g, '').trim(),
         color: rgbToHex(computed.color),
         align: computed.textAlign === 'start' ? 'left' : computed.textAlign,
-        lineSpacing: pxToPoints(computed.lineHeight),
+        lineSpacing: computed.lineHeight && computed.lineHeight !== 'normal' ? pxToPoints(computed.lineHeight) : null,
         paraSpaceBefore: pxToPoints(computed.marginTop),
         paraSpaceAfter: pxToPoints(computed.marginBottom),
         // PptxGenJS margin array is [left, right, bottom, top] (not [top, right, bottom, left] as documented)

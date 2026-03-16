@@ -37,7 +37,7 @@ with zipfile.ZipFile(input_file) as zf:
 # Pretty print all XML files
 xml_files = list(output_path.rglob("*.xml")) + list(output_path.rglob("*.rels"))
 for xml_file in xml_files:
-    content = xml_file.read_text(encoding="utf-8")
+    content = xml_file.read_bytes()
     dom = defusedxml.minidom.parseString(content)
     xml_file.write_bytes(dom.toprettyxml(indent="  ", encoding="ascii"))
 
