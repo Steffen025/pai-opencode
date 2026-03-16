@@ -13,7 +13,7 @@
 
 import { existsSync, statSync, copyFileSync, mkdirSync, renameSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { join, basename, dirname } from "node:path";
+import { join, basename, dirname, relative, isAbsolute } from "node:path";
 import { spawn } from "bun";
 
 // ═══════════════════════════════════════════════════════════
@@ -57,7 +57,7 @@ function parseArgs(): Options {
 	const backupIndex = args.findIndex((a) => a === "--backup-dir" || a.startsWith("--backup-dir="));
 	if (backupIndex !== -1) {
 		if (args[backupIndex].includes("=")) {
-			const value = args[backupIndex].split("=")[1];
+			const value = args[backupIndex].split("=")[1].trim();
 			if (!value) {
 				console.error("Error: --backup-dir requires a non-empty path (e.g. --backup-dir=/path)");
 				process.exit(1);
@@ -65,11 +65,12 @@ function parseArgs(): Options {
 			backupDir = value;
 		} else {
 			const next = args[backupIndex + 1];
-			if (!next || next.startsWith("-")) {
+			const nextTrimmed = next ? next.trim() : "";
+			if (!nextTrimmed || next.startsWith("-")) {
 				console.error("Error: --backup-dir requires a path argument that is not a flag");
 				process.exit(1);
 			}
-			backupDir = next;
+			backupDir = nextTrimmed;
 		}
 	}
 
@@ -137,8 +138,8 @@ async function detectVersion(): Promise<string> {
 
 async function createBackup(backupPath: string, dryRun: boolean): Promise<void> {
 	// Validate backup path is not inside source directory
-	const relativePath = require("node:path").relative(PAI_DIR, backupPath);
-	if (!relativePath.startsWith("..") && !require("node:path").isAbsolute(relativePath)) {
+	const relativePath = relative(PAI_DIR, backupPath);
+	if (!relativePath.startsWith("..") && !isAbsolute(relativePath)) {
 		throw new Error(`Backup path cannot be inside source directory: ${backupPath}`);
 	}
 
@@ -380,8 +381,9 @@ async function main(): Promise<void> {
     console.log("  3. If issues: restore from backup at", backupPath);
 
   } catch (error) {
-    log(`Migration failed: ${error.message}`, "error");
-    report.errors.push(error.message);
+    const errMsg = error instanceof Error ? error.message : String(error);
+    log(`Migration failed: ${errMsg}`, "error");
+    report.errors.push(errMsg);
     process.exit(1);
   }
 }
