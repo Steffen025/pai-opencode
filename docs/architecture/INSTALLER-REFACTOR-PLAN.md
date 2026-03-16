@@ -111,14 +111,14 @@ Steffen025/opencode (fork)
 
 **Detection Logic:**
 ```typescript
-function detectInstallMode(): "fresh" | "migrate-v2" | "update-v3" {
+function detectInstallMode(): "fresh" | "migrate-v2" | "update-v3" | "current" {
   const opencodePath = path.join(os.homedir(), ".opencode");
   if (!existsSync(opencodePath)) return "fresh";
   
   const settings = readSettings();
   if (settings?.pai?.version?.startsWith("3")) {
     // Has v3, check if update needed
-    return isOutdated(settings.pai.version) ? "update-v3" : "fresh";
+    return isOutdated(settings.pai.version) ? "update-v3" : "current";
   }
   
   // Has .opencode but no v3 settings = v2
@@ -151,7 +151,7 @@ PAI-Install/
 │   ├── config-gen.ts       ← Settings generation
 │   ├── state.ts            ← State machine (already atomic ✓)
 │   ├── validate.ts         ← Validation (already has opencode.json ✓)
-│   ├── steps-fresh.ts      ← ⭐ NEW: 7-step fresh install
+│   ├── steps-fresh.ts      ← ⭐ NEW: 8-step fresh install
 │   ├── steps-migrate.ts    ← ⭐ NEW: 5-step migration
 │   ├── steps-update.ts     ← ⭐ NEW: 3-step update
 │   └── types.ts            ← Types (already has DEFAULT_VOICES ✓)

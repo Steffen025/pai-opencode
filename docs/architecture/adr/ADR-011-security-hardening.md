@@ -165,7 +165,7 @@ flowchart TD
   - **Disk usage:** Audit log rotation defaults — max **10 MB** per file,
     max **30 days** retention, keep last **5 rotated archives** (compressed `.gz`),
     purge older archives automatically. Rotation is size-based (rename + new file)
-    with a daily time-based sweep. Implementation: `engine/audit-rotate.ts`.
+    with a daily time-based sweep. Planned implementation: `engine/audit-rotate.ts`.
 - **Complexity:** 3 new files vs 1 modified file
 
 ### Risks
