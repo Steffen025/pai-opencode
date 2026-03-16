@@ -161,7 +161,7 @@ flowchart TD
 - **Maintainability:** Patterns in dedicated file, not inline
 
 ### Negative
-- **Performance:** Sanitization adds ~1-2ms per tool call
+- **Performance:** Sanitization adds ~1–2 ms per tool call
   - **Disk usage:** Audit log rotation defaults — max **10 MB** per file,
     max **30 days** retention, keep last **5 rotated archives** (compressed `.gz`),
     purge older archives automatically. Rotation is size-based (rename + new file)
@@ -224,7 +224,7 @@ sanitizeForSecurityCheck('eval $(echo "aWdub3Jl" | base64 -d)')
 
 // Full validation
 validateSecurity({ tool: "Write", args: { content: "ignore all previous" }})
-// → { action: "block", reason: "..." }
+// → { action: "blocked", reason: "..." }
 // → security-audit.jsonl has entry
 ```
 

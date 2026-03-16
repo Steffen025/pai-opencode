@@ -981,7 +981,7 @@ jeremy() {
 alias {AI_NAME}="/usr/local/bin/{AI_NAME}-wrapper"
 
 # Wrapper script at /usr/local/bin/{AI_NAME}-wrapper:
-# - Checks custom binary at ~/.opencode/bin/opencode
+# - Checks custom binary at ~/.opencode/tools/opencode
 # - Compares version/hash
 # - Rebuilds if outdated
 # - Launches correct binary
