@@ -46,10 +46,14 @@ function parseArgs(): Options {
 	if (restoreIdx !== -1) {
 		// Check for --restore=/path form
 		if (args[restoreIdx].includes("=")) {
-			restore = args[restoreIdx].split("=")[1];
+			const extracted = args[restoreIdx].split("=")[1].trim();
+			if (!extracted) {
+				throw new Error("--restore requires a path argument. Usage: --restore=/path/to/archive.db or --restore /path/to/archive.db");
+			}
+			restore = extracted;
 		} else if (restoreIdx + 1 < args.length && !args[restoreIdx + 1].startsWith("-")) {
 			// Check for --restore /path form (next arg exists and is not a flag)
-			restore = args[restoreIdx + 1];
+			restore = args[restoreIdx + 1].trim();
 		} else {
 			// --restore provided without a path
 			throw new Error("--restore requires a path argument. Usage: --restore=/path/to/archive.db or --restore /path/to/archive.db");

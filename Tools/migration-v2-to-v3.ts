@@ -5,10 +5,10 @@
  * Automatically migrates existing v2.x installations to v3.0 structure.
  *
  * Usage:
- *   bun tools/migration-v2-to-v3.ts              # Run migration
- *   bun tools/migration-v2-to-v3.ts --dry-run  # Preview only
- *   bun tools/migration-v2-to-v3.ts --force     # Skip version check
- *   bun tools/migration-v2-to-v3.ts --backup-dir /custom/path
+ *   bun Tools/migration-v2-to-v3.ts              # Run migration
+ *   bun Tools/migration-v2-to-v3.ts --dry-run  # Preview only
+ *   bun Tools/migration-v2-to-v3.ts --force     # Skip version check
+ *   bun Tools/migration-v2-to-v3.ts --backup-dir /custom/path
  */
 
 import { existsSync, statSync, copyFileSync, mkdirSync, renameSync, writeFileSync } from "node:fs";
