@@ -22,8 +22,13 @@ runtime context) reach Bash child processes reliably?
 
 Two separate systems need to cooperate:
 
-1. **`.opencode/.env`** — Static secrets (API keys, credentials)
-2. **`shell.env` plugin hook** — Dynamic runtime context per bash call
+| | `.opencode/.env` | `shell.env` plugin hook |
+|---|---|---|
+| **Purpose** | Static secrets, API keys, credentials | Dynamic runtime context per bash call |
+| **Lifetime** | Entire OpenCode process | Single bash invocation only |
+| **Examples** | `GOOGLE_API_KEY`, `ZEN_API_KEY`, `TTS_PROVIDER` | `PAI_SESSION_ID`, `PAI_WORK_DIR`, `PAI_VERSION` |
+| **Security posture** | Stored in `.opencode/.env`, access-controlled | Ephemeral, least-privilege |
+| **Typical consumers** | TypeScript plugin code (`process.env.KEY`) | Bash scripts, Python child processes |
 
 ### The Problem Without This Design
 

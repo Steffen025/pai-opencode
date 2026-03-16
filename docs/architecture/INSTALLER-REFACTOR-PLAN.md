@@ -1,9 +1,17 @@
+---
+title: "PAI-OpenCode Installer Refactor Plan (Updated)"
+status: "Ready for Implementation — Post PR #47"
+date: "2026-03-09"
+tags: [architecture, installer, roadmap]
+---
+
 # PAI-OpenCode Installer Refactor Plan (Updated)
 
-> **Status:** Ready for Implementation — Post PR #47
+> [!info]
+> **Status:** Ready for Implementation — Post PR `#47`
 > **Goal:** One Electron GUI entry point for both new and existing users
 > **Author:** Jeremy (Updated after WP-D completion)
-> **Target:** New PR #48 (after PR #47 merged)
+> **Target:** New PR `#48` (after PR `#47` merged)
 
 ---
 
@@ -205,7 +213,7 @@ Electron Starts
     └── detectInstallMode()
           │
           ├── "fresh" → loadURL('/flow/fresh')
-          │               └── 7-Step Fresh Install
+          │               └── 8-Step Fresh Install
           │
           ├── "migrate-v2" → loadURL('/flow/migrate')
           │                    └── 5-Step Migration
@@ -216,11 +224,26 @@ Electron Starts
           └── "current" → show "Already up to date"
 ```
 
+<details>
+<summary>Mermaid detail</summary>
+
+```mermaid
+flowchart TD
+    A["Electron Starts"] --> B["detectInstallMode()"]
+    B --> C{"Result?"}
+    C -->|fresh| D["loadURL('/flow/fresh')\n→ 8-Step Fresh Install"]
+    C -->|migrate-v2| E["loadURL('/flow/migrate')\n→ 5-Step Migration"]
+    C -->|update-v3| F["loadURL('/flow/update')\n→ 3-Step Update"]
+    C -->|current| G["Show 'Already up to date'"]
+```
+
+</details>
+
 ---
 
 ## 5. Step Definitions (Updated)
 
-### 5.1 Fresh Install (7 Steps)
+### 5.1 Fresh Install (8 Steps)
 
 | Step | UI Screen | Backend Action | Progress |
 |------|-----------|----------------|----------|
@@ -243,7 +266,7 @@ Electron Starts
 ```text
 ┌─────────────────────────────────────────────────────────┐
 │                                                         │
-│   Step 4 of 7: Choose Your AI Provider                  │
+│   Step 4 of 8: Choose Your AI Provider                  │
 │                                                         │
 │   💚 RECOMMENDED: OpenCode Zen (Start FREE)            │
 │   ┌──────────────────────────────────────┐             │
@@ -489,7 +512,7 @@ Don't overwhelm users. Each step asks ONE thing:
 ```text
 ┌─────────────────────────────────────────────────────────┐
 │                                                         │
-│   Step 5 of 7                                           │
+│   Step 5 of 8                                           │
 │                                                         │
 │   What's your name?                                     │
 │                                                         │
@@ -513,7 +536,7 @@ Users must know:
 - What is happening (not just "Loading...")
 
 ```text
-Step 3 of 7: Building OpenCode Binary
+Step 3 of 8: Building OpenCode Binary
 ████████████████████░░░░  67%
 
 Current: Compiling TypeScript...
@@ -803,7 +826,7 @@ exec zsh
 ```text
 ┌─────────────────────────────────────────────────────────┐
 │                                                         │
-│   Step 4 of 7: Choose Your AI Provider                  │
+│   Step 4 of 8: Choose Your AI Provider                  │
 │                                                         │
 │   💡 RECOMMENDED: OpenCode Zen (FREE)                  │
 │   ┌──────────────────────────────────────┐             │

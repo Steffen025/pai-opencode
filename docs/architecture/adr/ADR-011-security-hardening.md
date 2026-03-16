@@ -2,7 +2,7 @@
 title: "ADR-011: Security Hardening — Prompt Injection Defense & Audit Logging"
 status: Implemented
 date: "2026-03-06"
-depends_on: "ADR-006 (Security Validation Preservation)"
+depends_on: ["ADR-006 (Security Validation Preservation)"]
 tags: [adr, security, hardening]
 ---
 
@@ -162,7 +162,10 @@ flowchart TD
 
 ### Negative
 - **Performance:** Sanitization adds ~1-2ms per tool call
-- **Disk usage:** Audit log grows unbounded (future: rotation)
+  - **Disk usage:** Audit log rotation defaults — max **10 MB** per file,
+    max **30 days** retention, keep last **5 rotated archives** (compressed `.gz`),
+    purge older archives automatically. Rotation is size-based (rename + new file)
+    with a daily time-based sweep. Implementation: `engine/audit-rotate.ts`.
 - **Complexity:** 3 new files vs 1 modified file
 
 ### Risks
@@ -231,7 +234,8 @@ validateSecurity({ tool: "Write", args: { content: "ignore all previous" }})
 - Rate limiting for repeated blocked attempts (needs persistent state)
 - MCP tool pre-loading validation (needs OpenCode plugin hook)
 - Security dashboard UI (part of observability system)
-- Log rotation and retention policies
+- Log rotation implementation (`engine/audit-rotate.ts` — 10 MB max,
+  30-day retention, 5 compressed archives, automatic purge)
 
 ---
 
