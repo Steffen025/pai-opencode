@@ -2,7 +2,7 @@
 # Free Tier (OSS/personal project)
 # Docs: https://docs.coderabbit.ai/getting-started/configure-coderabbit
 
-language: "de"
+language: "en"
 
 # Review profile: assertive = flags everything, chill = only critical issues
 # For active AI development, "chill" prevents review noise on AI-generated code
