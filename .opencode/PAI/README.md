@@ -30,8 +30,8 @@ The 7-phase execution engine: Observe, Think, Plan, Build, Execute, Verify, Lear
 ### Skills (`SKILLSYSTEM.md`)
 12 hierarchical categories with 49 total skills in `~/.opencode/skills/`, each with a `SKILL.md` defining triggers, workflows, and tools. Skills are the primary capability unit.
 
-### Hooks (`THEHOOKSYSTEM.md`)
-21+ event hooks across the session lifecycle: SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, Stop, SessionEnd. Defined in `settings.json`, implemented in `~/.opencode/hooks/`.
+### Plugins (`THEPLUGINSYSTEM.md`)
+Event-driven plugin system across the session lifecycle: SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, Stop, SessionEnd. Defined in `settings.json`, implemented in `~/.opencode/plugins/`.
 
 ### Memory (`MEMORYSYSTEM.md`)
 Persistent storage across sessions:
