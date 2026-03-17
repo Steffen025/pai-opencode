@@ -101,7 +101,7 @@ Evidence for each criterion. Written during VERIFY phase.
 ## File Location
 
 ```
-~/.claude/MEMORY/WORK/{slug}/PRD.md
+~/.opencode/MEMORY/WORK/{slug}/PRD.md
 ```
 
 Directory created with `mkdir -p MEMORY/WORK/{slug}/` during OBSERVE.
@@ -140,4 +140,4 @@ Key design choices:
 - **Checkboxes over EARS/BDD**: Simpler to parse, write, and verify. ISC pattern proven over 48 PRDs.
 - **YAML frontmatter over JSON**: Universal standard (Jekyll, Hugo, Astro, Kiro, spec-kit all use it).
 - **Convention-based sections**: Sections appear when needed, not as empty boilerplate.
-- **Reference file pattern**: This spec lives at `~/.claude/PAI/PRDFORMAT.md`, not inline in CLAUDE.md. Saves ~2,500 tokens/response.
+- **Reference file pattern**: This spec lives at `~/.opencode/PAI/PRDFORMAT.md`, not inline in AGENTS.md. Saves ~2,500 tokens/response.

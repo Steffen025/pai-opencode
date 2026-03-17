@@ -3,20 +3,20 @@
 **The unified system memory - what happened, what we learned, what we're working on.**
 
 **Version:** 7.0 (Projects-native architecture, 2026-01-12)
-**Location:** `~/.claude/MEMORY/`
+**Location:** `~/.opencode/MEMORY/`
 
 ---
 
 ## Architecture
 
-**Claude Code's `projects/` is the source of truth. Hooks capture domain-specific events directly. Harvesting tools extract learnings from session transcripts.**
+**OpenCode's `projects/` is the source of truth. Plugins capture domain-specific events directly. Harvesting tools extract learnings from session transcripts.**
 
 ```
 User Request
     ↓
-Claude Code projects/ (native transcript storage - 30-day retention)
+OpenCode projects/ (native session storage - SQLite database, 30-day retention)
     ↓
-Hook Events trigger domain-specific captures:
+Plugin Events trigger domain-specific captures:
     ├── Algorithm (AI) → WORK/
     ├── RatingCapture → LEARNING/SIGNALS/
     ├── WorkCompletionLearning → LEARNING/
@@ -27,14 +27,14 @@ Harvesting (periodic):
     └── LearningPatternSynthesis → LEARNING/SYNTHESIS/ (aggregates ratings)
 ```
 
-**Key insight:** Hooks write directly to specialized directories. There is no intermediate "firehose" layer - Claude Code's `projects/` serves that purpose natively.
+**Key insight:** Plugins write directly to specialized directories. There is no intermediate "firehose" layer - OpenCode's `projects/` serves that purpose natively.
 
 ---
 
 ## Directory Structure
 
 ```
-~/.claude/MEMORY/
+~/.opencode/MEMORY/
 ├── WORK/                   # PRIMARY work tracking
 │   └── {timestamp}_{slug}/
 │       └── PRD.md          # Single source of truth (metadata + ISC + decisions + changelog)
@@ -65,8 +65,8 @@ Harvesting (periodic):
 │   ├── algorithms/         # Per-session algorithm state (phase, criteria, effort level)
 │   ├── kitty-sessions/     # Per-session Kitty terminal env (listenOn, windowId)
 │   ├── tab-titles/         # Per-window tab state (title, color, phase)
-│   ├── events.jsonl        # Unified event log (append-only, typed events from hooks)
-│   ├── session-names.json  # Auto-generated session names (from SessionAutoName hook)
+│   ├── events.jsonl        # Unified event log (append-only, typed events from plugins)
+│   ├── session-names.json  # Auto-generated session names (from SessionAutoName plugin)
 │   ├── current-work.json
 │   ├── format-streak.json
 │   ├── algorithm-streak.json
@@ -84,14 +84,13 @@ Harvesting (periodic):
 
 ## Directory Details
 
-### Claude Code projects/ - Native Session Storage
+### OpenCode projects/ - Native Session Storage
 
-**Location:** `~/.claude/projects/-Users-{username}--claude/`
-*(Replace `{username}` with your system username, e.g., `-Users-john--claude`)*
-**What populates it:** Claude Code automatically (every conversation)
-**Content:** Complete session transcripts in JSONL format
-**Format:** `{uuid}.jsonl` - one file per session
-**Retention:** 30 days (Claude Code manages cleanup)
+**Location:** `~/.opencode/projects/` (SQLite database)
+**What populates it:** OpenCode automatically (every conversation)
+**Content:** Complete session transcripts in SQLite format
+**Format:** Session data stored in SQLite database with structured tables
+**Retention:** 30 days (OpenCode manages cleanup)
 **Purpose:** Source of truth for all session data; harvesting tools read from here
 
 This is the actual "firehose" - every message, tool call, and response. PAI leverages this native storage rather than duplicating it.
@@ -100,8 +99,8 @@ This is the actual "firehose" - every message, tool call, and response. PAI leve
 
 **What populates it:**
 - Algorithm (AI) creates work dir with PRD.md during execution
-- `WorkCompletionLearning.hook.ts` on Stop (updates PRD/THREAD)
-- `SessionCleanup.hook.ts` on SessionEnd (marks COMPLETED)
+- `WorkCompletionLearning.plugin.ts` on Stop (updates PRD/THREAD)
+- `SessionCleanup.plugin.ts` on SessionEnd (marks COMPLETED)
 
 **Content:** Flat work directories with a single PRD.md as source of truth
 **Format:** `WORK/{timestamp}_{slug}/PRD.md` — consolidated metadata + ISC + decisions + changelog
@@ -128,8 +127,8 @@ This is the actual "firehose" - every message, tool call, and response. PAI leve
 ### LEARNING/ - Categorized Learnings
 
 **What populates it:**
-- `RatingCapture.hook.ts` (explicit ratings + implicit sentiment + low-rating learnings)
-- `WorkCompletionLearning.hook.ts` (significant work session completions)
+- `RatingCapture.plugin.ts` (explicit ratings + implicit sentiment + low-rating learnings)
+- `WorkCompletionLearning.plugin.ts` (significant work session completions)
 - `SessionHarvester.ts` (periodic extraction from projects/ transcripts)
 - `LearningPatternSynthesis.ts` (aggregates ratings into pattern reports)
 
@@ -143,7 +142,7 @@ This is the actual "firehose" - every message, tool call, and response. PAI leve
 **Categorization logic:**
 | Directory | When Used | Example Triggers |
 |-----------|-----------|------------------|
-| `SYSTEM/` | Tooling/infrastructure failures | hook crash, config error, deploy failure |
+| `SYSTEM/` | Tooling/infrastructure failures | plugin crash, config error, deploy failure |
 | `ALGORITHM/` | Task execution issues | wrong approach, over-engineered, missed the point |
 | `FAILURES/` | Full context for low ratings (1-3) | severe frustration, repeated errors |
 | `REFLECTIONS/` | Algorithm performance analysis | per-session 3-question reflection from LEARN phase |
@@ -152,7 +151,7 @@ This is the actual "firehose" - every message, tool call, and response. PAI leve
 ### LEARNING/FAILURES/ - Full Context Failure Analysis
 
 **What populates it:**
-- `RatingCapture.hook.ts` via `FailureCapture.ts` (for ratings 1-3)
+- `RatingCapture.plugin.ts` via `FailureCapture.ts` (for ratings 1-3)
 - Manual migration via `bun FailureCapture.ts --migrate`
 
 **Content:** Complete context dumps for low-sentiment events
@@ -194,14 +193,14 @@ This is the actual "firehose" - every message, tool call, and response. PAI leve
 
 ### SECURITY/ - Security Events
 
-**What populates it:** `SecurityValidator.hook.ts` on tool validation
+**What populates it:** `SecurityValidator.plugin.ts` on tool validation
 **Content:** Security audit events (blocks, confirmations, alerts)
 **Format:** `SECURITY/security-events.jsonl`
 **Purpose:** Security decision audit trail
 
 ### STATE/ - Fast Runtime Data
 
-**What populates it:** Various tools and hooks
+**What populates it:** Various tools and plugins
 **Content:** High-frequency read/write JSON files for runtime state
 **Key Property:** Ephemeral - can be rebuilt from RAW or other sources. Optimized for speed, not permanence.
 
@@ -209,7 +208,7 @@ This is the actual "firehose" - every message, tool call, and response. PAI leve
 - `algorithms/` - Per-session algorithm state files (`{sessionId}.json` — phase, criteria, effort level, active flag)
 - `kitty-sessions/` - Per-session Kitty terminal env (`{sessionId}.json` — listenOn, windowId for tab control and voice gating)
 - `tab-titles/` - Per-window tab state (`{windowId}.json` — title, color, phase for daemon recovery)
-- `session-names.json` - Auto-generated session names from SessionAutoName hook
+- `session-names.json` - Auto-generated session names from SessionAutoName plugin
 - `current-work.json` - Active work directory pointer
 - `format-streak.json`, `algorithm-streak.json` - Performance metrics
 - `progress/` - Multi-session project tracking
@@ -219,7 +218,7 @@ This is mutable state that changes during execution - not historical records. If
 
 **`events.jsonl` - Unified Event Log:**
 
-An append-only JSONL file where hooks emit structured, typed events alongside their normal state writes. Each line is a JSON object with `timestamp`, `session_id`, `source`, `type`, and type-specific fields. The type field uses a dot-separated topic hierarchy (e.g., `algorithm.phase`, `work.created`, `rating.captured`, `voice.sent`). This file is an observability layer -- it does NOT replace any of the mutable state files listed above. Events are written by `${PAI_DIR}/hooks/lib/event-emitter.ts` using synchronous append, and errors are silently swallowed so the event log never disrupts hook execution. Consumers can tail or `fs.watch` this file for real-time visibility into PAI activity.
+An append-only JSONL file where plugins emit structured, typed events alongside their normal state writes. Each line is a JSON object with `timestamp`, `session_id`, `source`, `type`, and type-specific fields. The type field uses a dot-separated topic hierarchy (e.g., `algorithm.phase`, `work.created`, `rating.captured`, `voice.sent`). This file is an observability layer -- it does NOT replace any of the mutable state files listed above. Events are written by `${PAI_DIR}/plugins/lib/event-emitter.ts` using synchronous append, and errors are silently swallowed so the event log never disrupts plugin execution. Consumers can tail or `fs.watch` this file for real-time visibility into PAI activity.
 
 ### PAISYSTEMUPDATES/ - Change History
 
@@ -229,18 +228,18 @@ An append-only JSONL file where hooks emit structured, typed events alongside th
 
 ---
 
-## Hook Integration
+## Plugin Integration
 
-| Hook | Trigger | Writes To |
-|------|---------|-----------|
+| Plugin | Trigger | Writes To |
+|--------|---------|-----------|
 | Algorithm (AI) | During execution | WORK/PRD.md, STATE/current-work-{sessionId}.json |
-| PRDSync.hook.ts | PostToolUse (Write/Edit) | STATE/work.json (syncs PRD frontmatter) |
-| WorkCompletionLearning.hook.ts | SessionEnd | LEARNING/ (significant work) |
-| SessionCleanup.hook.ts | SessionEnd | WORK/PRD.md (status→COMPLETED), clears STATE |
-| RatingCapture.hook.ts | UserPromptSubmit | LEARNING/SIGNALS/, LEARNING/, FAILURES/ (1-3) |
-| SecurityValidator.hook.ts | PreToolUse | SECURITY/ |
+| PRDSync.plugin.ts | PostToolUse (Write/Edit) | STATE/work.json (syncs PRD frontmatter) |
+| WorkCompletionLearning.plugin.ts | SessionEnd | LEARNING/ (significant work) |
+| SessionCleanup.plugin.ts | SessionEnd | WORK/PRD.md (status→COMPLETED), clears STATE |
+| RatingCapture.plugin.ts | UserPromptSubmit | LEARNING/SIGNALS/, LEARNING/, FAILURES/ (1-3) |
+| SecurityValidator.plugin.ts | PreToolUse | SECURITY/ |
 
-> **Note:** All hooks listed above also emit typed events to `STATE/events.jsonl` via `appendEvent()`. See [THEHOOKSYSTEM.md § Unified Event System](THEHOOKSYSTEM.md) for event types and consumer details.
+> **Note:** All plugins listed above also emit typed events to `STATE/events.jsonl` via `appendEvent()`. See [THEPLUGINSYSTEM.md § Unified Event System](THEPLUGINSYSTEM.md) for event types and consumer details.
 
 ## Harvesting Tools
 
@@ -258,7 +257,7 @@ An append-only JSONL file where hooks emit structured, typed events alongside th
 ```
 User Request
     ↓
-Claude Code → projects/{uuid}.jsonl (native transcript)
+OpenCode → projects/ (SQLite session storage)
     ↓
 Algorithm (AI) → WORK/{timestamp}_{slug}/PRD.md + STATE/current-work-{sessionId}.json
     ↓
@@ -282,56 +281,56 @@ LearningPatternSynthesis → analyzes SIGNALS/ → writes SYNTHESIS/
 
 ### Check current work
 ```bash
-cat ~/.claude/MEMORY/STATE/current-work.json
-ls ~/.claude/MEMORY/WORK/ | tail -5
+cat ~/.opencode/MEMORY/STATE/current-work.json
+ls ~/.opencode/MEMORY/WORK/ | tail -5
 ```
 
 ### Check ratings
 ```bash
-tail ~/.claude/MEMORY/LEARNING/SIGNALS/ratings.jsonl
+tail ~/.opencode/MEMORY/LEARNING/SIGNALS/ratings.jsonl
 ```
 
 ### View session transcripts
 ```bash
-# List recent sessions (newest first)
-# Replace {username} with your system username
-ls -lt ~/.claude/projects/-Users-{username}--claude/*.jsonl | head -5
+# OpenCode stores sessions in SQLite database
+# Use opencode CLI to list recent sessions
+opencode sessions list --recent 5
 
-# View last session events
-tail ~/.claude/projects/-Users-{username}--claude/$(ls -t ~/.claude/projects/-Users-{username}--claude/*.jsonl | head -1) | jq .
+# Or query the database directly
+sqlite3 ~/.opencode/projects/sessions.db "SELECT id, created_at FROM sessions ORDER BY created_at DESC LIMIT 5"
 ```
 
 ### Check learnings
 ```bash
-ls ~/.claude/MEMORY/LEARNING/SYSTEM/
-ls ~/.claude/MEMORY/LEARNING/ALGORITHM/
-ls ~/.claude/MEMORY/LEARNING/SYNTHESIS/
+ls ~/.opencode/MEMORY/LEARNING/SYSTEM/
+ls ~/.opencode/MEMORY/LEARNING/ALGORITHM/
+ls ~/.opencode/MEMORY/LEARNING/SYNTHESIS/
 ```
 
 ### Check failures
 ```bash
 # List recent failure captures
-ls -lt ~/.claude/MEMORY/LEARNING/FAILURES/$(date +%Y-%m)/ 2>/dev/null | head -10
+ls -lt ~/.opencode/MEMORY/LEARNING/FAILURES/$(date +%Y-%m)/ 2>/dev/null | head -10
 
 # View a specific failure
-cat ~/.claude/MEMORY/LEARNING/FAILURES/2026-01/*/CONTEXT.md | head -100
+cat ~/.opencode/MEMORY/LEARNING/FAILURES/2026-01/*/CONTEXT.md | head -100
 
 # Migrate historical low ratings to FAILURES
-bun run ~/.claude/PAI/Tools/FailureCapture.ts --migrate
+bun run ~/.opencode/PAI/Tools/FailureCapture.ts --migrate
 ```
 
 ### Check multi-session progress
 ```bash
-ls ~/.claude/MEMORY/STATE/progress/
+ls ~/.opencode/MEMORY/STATE/progress/
 ```
 
 ### Run harvesting tools
 ```bash
 # Harvest learnings from recent sessions
-bun run ~/.claude/PAI/Tools/SessionHarvester.ts --recent 10
+bun run ~/.opencode/PAI/Tools/SessionHarvester.ts --recent 10
 
 # Generate pattern synthesis
-bun run ~/.claude/PAI/Tools/LearningPatternSynthesis.ts --week
+bun run ~/.opencode/PAI/Tools/LearningPatternSynthesis.ts --week
 ```
 
 ---
@@ -343,31 +342,31 @@ bun run ~/.claude/PAI/Tools/LearningPatternSynthesis.ts --week
 - PRD.md frontmatter now holds session metadata (title, session_id, status, completed_at)
 - ISC section in PRD (checkbox markdown) is the system of record for criteria
 - CHANGELOG section in PRD replaces THREAD.md
-- All hooks updated: SessionCleanup, WorkCompletionLearning, LoadContext
+- All plugins updated: SessionCleanup, WorkCompletionLearning, LoadContext
 - Legacy fallback preserved: consumers check PRD.md first, fall back to META.yaml/ISC.json
 - Dropped never-populated sections: NON-SCOPE, ASSUMPTIONS, OPEN QUESTIONS
 
 **2026-01-17:** v7.1 - Full Context Failure Analysis
 - Added LEARNING/FAILURES/ directory for comprehensive failure captures
 - Created FailureCapture.ts tool for generating context dumps
-- Updated RatingCapture.hook.ts to create failure captures for ratings 1-3
+- Updated RatingCapture.plugin.ts to create failure captures for ratings 1-3
 - Each failure gets its own directory with transcript, sentiment, tool-calls, and context
 - Directory names use 8-word descriptions generated by fast inference
 - Added migration capability via `bun FailureCapture.ts --migrate`
 
 **2026-01-12:** v7.0 - Projects-native architecture
-- Eliminated RAW/ directory entirely - Claude Code's `projects/` is the source of truth
-- Removed EventLogger.hook.ts (was duplicating what projects/ already captures)
+- Eliminated RAW/ directory entirely - OpenCode's `projects/` is the source of truth
+- Removed EventLogger.plugin.ts (was duplicating what projects/ already captures)
 - Created SessionHarvester.ts to extract learnings from projects/ transcripts
-- Created WorkCompletionLearning.hook.ts for session-end learning capture
+- Created WorkCompletionLearning.plugin.ts for session-end learning capture
 - Created LearningPatternSynthesis.ts for rating pattern aggregation
 - Added LEARNING/SYNTHESIS/ for pattern reports
 - Updated ActivityParser.ts to use projects/ as data source
-- Removed archive functionality from pai.ts (Claude Code handles 30-day cleanup)
+- Removed archive functionality from pai.ts (OpenCode handles 30-day cleanup)
 
 **2026-01-11:** v6.1 - Removed RECOVERY system
 - Deleted RECOVERY/ directory (5GB of redundant snapshots)
-- Removed RecoveryJournal.hook.ts, recovery-engine.ts, snapshot-manager.ts
+- Removed RecoveryJournal.plugin.ts, recovery-engine.ts, snapshot-manager.ts
 - Git provides all necessary rollback capability
 
 **2026-01-11:** v6.0 - Major consolidation
@@ -376,25 +375,25 @@ bun run ~/.claude/PAI/Tools/LearningPatternSynthesis.ts --week
 - Merged SIGNALS/ into LEARNING/SIGNALS/
 - Merged PROGRESS/ into STATE/progress/
 - Merged integrity-checks/ into STATE/integrity/
-- Fixed AutoWorkCreation hook (prompt vs user_prompt field)
-- Updated all hooks to use correct paths
+- Fixed AutoWorkCreation plugin (prompt vs user_prompt field)
+- Updated all plugins to use correct paths
 
 **2026-01-10:** v5.0 - Documentation consolidation
 - Consolidated WORKSYSTEM.md into MEMORYSYSTEM.md
 
 **2026-01-09:** v4.0 - Major restructure
-- Moved BACKUPS to `~/.claude/BACKUPS/` (outside MEMORY)
+- Moved BACKUPS to `~/.opencode/BACKUPS/` (outside MEMORY)
 - Renamed RAW-OUTPUTS to RAW
 - All directories now ALL CAPS
 
 **2026-01-05:** v1.0 - Unified Memory System migration
-- Previous: `~/.claude/history/`, `~/.claude/context/`, `~/.claude/progress/`
-- Current: `~/.claude/MEMORY/`
+- Previous: `~/.opencode/history/`, `~/.opencode/context/`, `~/.opencode/progress/`
+- Current: `~/.opencode/MEMORY/`
 - Files migrated: 8,415+
 
 ---
 
 ## Related Documentation
 
-- **Hook System:** `THEHOOKSYSTEM.md`
+- **Plugin System:** `THEPLUGINSYSTEM.md`
 - **Architecture:** `PAISYSTEMARCHITECTURE.md`

@@ -7,11 +7,11 @@
  * Part of PAI CORE Tools.
  *
  * Usage:
- *   bun ~/.claude/PAI/Tools/SecretScan.ts <directory>
- *   bun ~/.claude/PAI/Tools/SecretScan.ts . --verbose
- *   bun ~/.claude/PAI/Tools/SecretScan.ts . --verify
+ *   bun ~/.opencode/PAI/Tools/SecretScan.ts <directory>
+ *   bun ~/.opencode/PAI/Tools/SecretScan.ts . --verbose
+ *   bun ~/.opencode/PAI/Tools/SecretScan.ts . --verify
  *
- * @see ~/.claude/skills/_SYSTEM/Workflows/SecretScanning.md
+ * @see ~/.opencode/skills/_SYSTEM/Workflows/SecretScanning.md
  */
 
 /*
