@@ -5,7 +5,7 @@
 **Location:** `~/.opencode/plugins/`
 **Configuration:** `~/.opencode/opencode.json`
 **Status:** Active — All plugins running in production
-**Version:** v3.0 (28 handlers, 8 libraries)
+**Version:** v3.0 (27 handlers, 9 libraries)
 
 ---
 
@@ -211,7 +211,7 @@ OpenCode Bash is **stateless** — every call spawns a fresh process. This hook 
 
 ---
 
-## Handler Reference (28 Handlers)
+## Handler Reference (27 Handlers)
 
 | Handler | Hook | Purpose |
 |---------|------|---------|
@@ -266,7 +266,7 @@ OpenCode Bash is **stateless** — every call spawns a fresh process. This hook 
 ```text
 plugins/
 ├── pai-unified.ts              # Main plugin — routes all 9 hooks to handlers
-├── handlers/                   # 28 specialized handler modules
+├── handlers/                   # 27 specialized handler modules
 │   ├── agent-capture.ts        # Subagent output capture
 │   ├── agent-execution-guard.ts # Agent spawning validation
 │   ├── algorithm-tracker.ts    # Algorithm phase tracking
@@ -296,7 +296,7 @@ plugins/
 │   └── work-tracker.ts         # Work session management
 ├── adapters/
 │   └── types.ts                # Shared types + PAI_TO_OPENCODE_HOOKS mapping
-└── lib/                        # 8 shared libraries
+└── lib/                        # 9 shared libraries
     ├── db-utils.ts             # Database health
     ├── file-logger.ts          # TUI-safe logging
     ├── identity.ts             # DA/Principal identity
@@ -494,5 +494,5 @@ If migrating from PAI's Claude Code implementation:
 ---
 
 **Last Updated:** 2026-03-17
-**Status:** Production — 28 handlers, 8 libraries, 9 hooks active
+**Status:** Production — 27 handlers, 9 libraries, 9 hooks active
 **Maintainer:** PAI System
