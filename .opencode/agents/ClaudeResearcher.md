@@ -2,7 +2,7 @@
 name: ClaudeResearcher
 description: Academic researcher using Claude's WebSearch. Called BY Research skill workflows only. Excels at multi-query decomposition, parallel search execution, and synthesizing scholarly sources.
 model: opus
-color: yellow
+color: "#EAB308"
 voiceId: AXdMgz6evoL7OPd7eU12
 voice:
   stability: 0.58
