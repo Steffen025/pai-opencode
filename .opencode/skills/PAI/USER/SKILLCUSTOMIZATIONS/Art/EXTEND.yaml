@@ -1,9 +1,0 @@
----
-skill: Art
-extends:
-  - PREFERENCES.md
-  - CharacterSpecs.md
-  - SceneConstruction.md
-merge_strategy: override
-enabled: true
-description: "Art skill customization - aesthetic preferences and character specs"
