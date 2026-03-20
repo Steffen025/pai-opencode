@@ -10,8 +10,9 @@ import { buildOpenCodeBinary } from "./build-opencode.ts";
 import type { BuildResult } from "./build-opencode.ts";
 import { PROVIDER_MODELS, PROVIDER_LABELS } from "./provider-models.ts";
 import type { ProviderName } from "./provider-models.ts";
-import { existsSync, mkdirSync, writeFileSync, chmodSync, symlinkSync, unlinkSync, lstatSync, realpathSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { existsSync, mkdirSync, writeFileSync, chmodSync, symlinkSync, unlinkSync, lstatSync, realpathSync, copyFileSync, readFileSync } from "node:fs";
+import { join, resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
 
 // ═══════════════════════════════════════════════════════════
@@ -187,6 +188,173 @@ export async function stepVoice(
 }
 
 // ═══════════════════════════════════════════════════════════
+// Anthropic Max Bridge — Token + Plugin installer
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * Result from the Anthropic Max Bridge installation step.
+ */
+export interface AnthropicMaxBridgeResult {
+	success: boolean;
+	/** Human-readable status line shown in the installer UI */
+	message: string;
+	/** How many hours the extracted token is valid for (0 if extraction failed) */
+	tokenHoursRemaining: number;
+}
+
+/**
+ * Install the Anthropic Max Bridge for a user who has an Anthropic Max/Pro
+ * subscription and the Claude Code CLI installed on macOS.
+ *
+ * Actions:
+ *  1. Locate the bundled plugin file  (anthropic-max-bridge.js)
+ *  2. Copy it to ~/.opencode/plugins/
+ *  3. Extract the OAuth token from the macOS Keychain
+ *  4. Inject the token into ~/.local/share/opencode/auth.json
+ *
+ * The function is intentionally non-throwing — if something goes wrong the
+ * installer shows a clear message and the user can run `refresh-token.sh`
+ * manually instead of blocking the whole install.
+ */
+async function installAnthropicMaxBridge(
+	pluginsDir: string,
+	onProgress: (percent: number, message: string) => void,
+): Promise<AnthropicMaxBridgeResult> {
+	// ── 1. Copy plugin file ──────────────────────────────────
+	onProgress(93, "Installing Anthropic Max Bridge plugin...");
+
+	// The plugin lives next to this engine file:
+	// PAI-Install/engine/../../../.opencode/plugins/anthropic-max-bridge.js
+	const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+	const pluginSrc = join(repoRoot, ".opencode", "plugins", "anthropic-max-bridge.js");
+	const pluginDst = join(pluginsDir, "anthropic-max-bridge.js");
+
+	if (!existsSync(pluginSrc)) {
+		return {
+			success: false,
+			message: `Plugin source not found at ${pluginSrc}. Re-clone the repository and retry.`,
+			tokenHoursRemaining: 0,
+		};
+	}
+
+	mkdirSync(pluginsDir, { recursive: true });
+	copyFileSync(pluginSrc, pluginDst);
+
+	// ── 2. Extract token from macOS Keychain ─────────────────
+	onProgress(95, "Extracting OAuth token from macOS Keychain...");
+
+	let keychainJson: string;
+	try {
+		const proc = Bun.spawn(
+			["security", "find-generic-password", "-s", "Claude Code-credentials", "-w"],
+			{ stdout: "pipe", stderr: "pipe" },
+		);
+		// Read both streams before awaiting exit to avoid deadlock on large output
+		const [stdout, stderr, exitCode] = await Promise.all([
+			new Response(proc.stdout).text(),
+			new Response(proc.stderr).text(),
+			proc.exited,
+		]);
+		keychainJson = stdout.trim();
+		if (exitCode !== 0 || !keychainJson) {
+			const detail = stderr.trim();
+			return {
+				success: false,
+				message: detail
+					? `Keychain lookup failed (exit ${exitCode}): ${detail}. Run 'claude' to authenticate, then re-run the installer.`
+					: "No Claude Code credentials in Keychain. Run 'claude' to authenticate, then re-run the installer.",
+				tokenHoursRemaining: 0,
+			};
+		}
+	} catch {
+		return {
+			success: false,
+			message:
+				"Could not access macOS Keychain. This preset requires macOS with Claude Code CLI installed.",
+			tokenHoursRemaining: 0,
+		};
+	}
+
+	// ── 3. Parse credentials ──────────────────────────────────
+	let accessToken: string;
+	let refreshToken: string;
+	let expiresAt: number;
+
+	try {
+		const creds = JSON.parse(keychainJson) as {
+			claudeAiOauth?: {
+				accessToken?: string;
+				refreshToken?: string;
+				expiresAt?: number;
+			};
+		};
+		const oauth = creds.claudeAiOauth;
+		if (!oauth?.accessToken || !oauth.accessToken.startsWith("sk-ant-oat")) {
+			return {
+				success: false,
+				message:
+					"Unexpected token format in Keychain. Re-authenticate Claude Code CLI and retry.",
+				tokenHoursRemaining: 0,
+			};
+		}
+		accessToken = oauth.accessToken;
+		refreshToken = oauth.refreshToken ?? "";
+		expiresAt = oauth.expiresAt ?? Date.now() + 8 * 60 * 60 * 1000;
+		
+		// Warn if refresh token is missing - user will need to re-authenticate when access token expires
+		if (!oauth.refreshToken) {
+			console.warn("\n⚠️  Warning: No refresh token found in Keychain.");
+			console.warn("   You will need to re-authenticate with 'claude' when the access token expires.");
+			console.warn("   Run 'claude' and then PAI-Install/anthropic-max-refresh.sh to refresh.\n");
+		}
+	} catch {
+		return {
+			success: false,
+			message: "Failed to parse Keychain credentials JSON.",
+			tokenHoursRemaining: 0,
+		};
+	}
+
+	// ── 4. Write token to auth.json ───────────────────────────
+	onProgress(97, "Writing OAuth token to auth.json...");
+
+	const authFile = join(homedir(), ".local", "share", "opencode", "auth.json");
+	mkdirSync(dirname(authFile), { recursive: true });
+
+	let authData: Record<string, unknown> = {};
+	if (existsSync(authFile)) {
+		try {
+			authData = JSON.parse(readFileSync(authFile, "utf-8")) as Record<string, unknown>;
+		} catch {
+			// Corrupt auth.json — start fresh, don't fail
+		}
+	}
+
+	authData["anthropic"] = {
+		type: "oauth",
+		access: accessToken,
+		refresh: refreshToken,
+		expires: expiresAt,
+	};
+
+	writeFileSync(authFile, `${JSON.stringify(authData, null, 2)}\n`);
+	chmodSync(authFile, 0o600);
+
+	const hoursRemaining = Math.max(0, Math.round((expiresAt - Date.now()) / 3_600_000));
+
+	const message =
+		hoursRemaining === 0
+			? "Token installed — expired or valid for less than 1 hour. Run anthropic-max-refresh.sh now."
+			: `Token installed — valid for ~${hoursRemaining} hours. Run anthropic-max-refresh.sh when it expires.`;
+
+	return {
+		success: true,
+		message,
+		tokenHoursRemaining: hoursRemaining,
+	};
+}
+
+// ═══════════════════════════════════════════════════════════
 // Step 7: Install PAI Files
 // ═══════════════════════════════════════════════════════════
 
@@ -329,8 +497,19 @@ ${providerEnvVar}=${state.collected.apiKey || ""}
 		join(localOpencodeDir, "opencode.json"),
 		JSON.stringify(opencode, null, 2),
 	);
-	onProgress(97, "Generated opencode.json...");
-	
+	onProgress(96, "Generated opencode.json...");
+
+	// ── Anthropic Max Bridge (only for anthropic-max preset) ──
+	if (state.collected.provider === "anthropic-max") {
+		const pluginsDir = join(localOpencodeDir, "plugins");
+		const bridgeResult = await installAnthropicMaxBridge(pluginsDir, onProgress);
+		if (!bridgeResult.success) {
+			// Non-fatal: print warning but continue — user can fix token manually
+			console.error(`\n⚠️  Anthropic Max Bridge: ${bridgeResult.message}`);
+			console.error("   Run PAI-Install/anthropic-max-refresh.sh after fixing the issue.\n");
+		}
+	}
+
 	// Create symlink from ~/.opencode to local .opencode
 	onProgress(98, "Creating symlink ~/.opencode → ./.opencode...");
 	
@@ -414,7 +593,28 @@ export async function runFreshInstall(
     description,
   }));
   const provider = (await requestChoice("provider", "Choose your AI provider:", providerChoices)) as ProviderName || "zen";
-  const apiKey = await requestInput("api-key", `Enter your ${provider} API key:`, "key", "sk-...");
+
+  // anthropic-max uses an OAuth token from the macOS Keychain — no API key needed.
+  // Show a clear instruction instead of an API key prompt.
+  let apiKey = "";
+  if (provider === "anthropic-max") {
+    await emit({
+      event: "message",
+      content:
+        "Anthropic Max/Pro preset selected.\n\n" +
+        "Requirements:\n" +
+        "  • macOS (Keychain access required)\n" +
+        "  • Claude Code CLI installed and authenticated\n\n" +
+        "If Claude Code is not yet installed, get it at https://claude.ai/code\n" +
+        "then run 'claude' once to log in before continuing.\n\n" +
+        "Press Enter when Claude Code is authenticated.",
+    });
+    // Pause so the user can read the message in interactive mode.
+    // In headless/CLI mode this resolves immediately.
+    await requestInput("anthropic-max-confirm", "Press Enter to continue", "text", "");
+  } else {
+    apiKey = await requestInput("api-key", `Enter your ${provider} API key:`, "key", "sk-...");
+  }
 
   await stepProviderConfig(state, {
     provider,
