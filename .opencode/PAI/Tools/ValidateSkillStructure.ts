@@ -19,7 +19,7 @@ import { readdir, readFile, stat, realpath } from 'fs/promises';
 import { join, relative, sep } from 'path';
 import { existsSync } from 'fs';
 
-const SKILLS_DIR = join(import.meta.dir, '..', '..', '..', 'skills');
+const SKILLS_DIR = join(import.meta.dir, '..', '..', 'skills');
 
 interface ValidationIssue {
   type: 'error' | 'warning';
@@ -50,6 +50,13 @@ async function validateSkillStructure(): Promise<ValidationResult> {
 
   async function scanDirectory(dir: string, depth: number = 0, visitedPaths: Set<string> = new Set()): Promise<void> {
     try {
+      // Track canonical path of current directory to prevent cycles
+      const dirCanonical = await realpath(dir);
+      if (visitedPaths.has(dirCanonical)) {
+        return;
+      }
+      visitedPaths.add(dirCanonical);
+
       const entries = await readdir(dir, { withFileTypes: true });
 
       for (const entry of entries) {
@@ -69,7 +76,6 @@ async function validateSkillStructure(): Promise<ValidationResult> {
               });
               continue;
             }
-            // Will be processed below; canonical path added before recursion
           } catch (err) {
             // Report broken symlinks as structural errors
             issues.push({
@@ -100,9 +106,19 @@ async function validateSkillStructure(): Promise<ValidationResult> {
             const pathParts = relativePath.split(sep);
             
             if (pathParts.length === 1) {
-              // Flat skill: skills/SkillName/
-              flatSkills++;
-              await validateSkill(skillMdPath, relativePath, issues, skillNames);
+              // Check if this is a category directory (has subdirs with SKILL.md)
+              const subEntries = await readdir(fullPath, { withFileTypes: true });
+              const hasChildSkills = subEntries.some(e =>
+                e.isDirectory() && existsSync(join(fullPath, e.name, 'SKILL.md'))
+              );
+              if (hasChildSkills) {
+                // Category metadata SKILL.md — register as category, don't count as skill
+                categories.add(entry.name);
+              } else {
+                // Flat skill: skills/SkillName/
+                flatSkills++;
+                await validateSkill(skillMdPath, relativePath, issues, skillNames);
+              }
             } else if (pathParts.length === 2) {
               // Hierarchical skill: skills/Category/SkillName/
               hierarchicalSkills++;

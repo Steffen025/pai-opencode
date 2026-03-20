@@ -10,7 +10,7 @@
  * Output: ~/.opencode/skills/skill-index.json
  */
 
-import { readdir, readFile, writeFile, stat } from 'fs/promises';
+import { readdir, readFile, writeFile, stat, realpath } from 'fs/promises';
 import { join, relative, sep } from 'path';
 import { existsSync } from 'fs';
 
@@ -49,10 +49,17 @@ const ALWAYS_LOADED_SKILLS = [
   'Art',
 ];
 
-async function findSkillFiles(dir: string): Promise<string[]> {
+async function findSkillFiles(dir: string, visited: Set<string> = new Set()): Promise<string[]> {
   const skillFiles: string[] = [];
 
   try {
+    // Track canonical path to prevent symlink cycles
+    const canonical = await realpath(dir);
+    if (visited.has(canonical)) {
+      return skillFiles;
+    }
+    visited.add(canonical);
+
     const entries = await readdir(dir, { withFileTypes: true });
 
     for (const entry of entries) {
@@ -83,7 +90,7 @@ async function findSkillFiles(dir: string): Promise<string[]> {
         }
 
         // Recurse into subdirectories (including symlinked ones)
-        const nestedFiles = await findSkillFiles(fullPath);
+        const nestedFiles = await findSkillFiles(fullPath, visited);
         skillFiles.push(...nestedFiles);
       }
     }
@@ -371,4 +378,7 @@ async function main() {
   }
 }
 
-main().catch(console.error);
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

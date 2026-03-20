@@ -101,6 +101,12 @@
       "upstream": "PAISYSTEMARCHITECTURE.md"
     },
 
+    "THEPLUGINSYSTEM.md": {
+      "description": "Plugin system documentation (OpenCode adaptation of Hook system, see ADR-001)",
+      "tier": 2,
+      "upstream": "PAISYSTEMARCHITECTURE.md"
+    },
+
     "PAIAGENTSYSTEM.md": {
       "description": "Agent system detailed documentation",
       "tier": 2,

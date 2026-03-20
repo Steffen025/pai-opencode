@@ -245,7 +245,7 @@ OpenCode Bash is **stateless** — every call spawns a fresh process. This hook 
 
 ---
 
-## Library Reference (8 Libraries)
+## Library Reference (9 Libraries)
 
 | Library | Purpose |
 |---------|---------|

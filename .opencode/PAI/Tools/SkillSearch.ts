@@ -19,7 +19,7 @@ import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
 
-const INDEX_FILE = join(import.meta.dir, '..', 'Skills', 'skill-index.json');
+const INDEX_FILE = join(import.meta.dir, '..', '..', 'skills', 'skill-index.json');
 
 interface SkillEntry {
   name: string;
@@ -200,4 +200,7 @@ async function main() {
   }
 }
 
-main().catch(console.error);
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

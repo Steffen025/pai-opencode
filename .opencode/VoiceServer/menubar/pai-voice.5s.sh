@@ -4,7 +4,7 @@
 # For BitBar/SwiftBar - updates every 5 seconds
 
 # Get the VoiceServer directory
-PAI_DIR="${PAI_DIR:-$HOME/.claude}"
+PAI_DIR="${PAI_DIR:-$HOME/.opencode}"
 VOICE_SERVER_DIR="$PAI_DIR/VoiceServer"
 
 # Check if server is running
