@@ -238,7 +238,7 @@ More ISC = finer verification = better hill-climbing. When in doubt, more criter
 
 🗒️ TASK: [8 word description]
 
-`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"fTtv3eikoepIosk8dTZ5","message": "Entering the PAI Algorithm Observe phase"}'`
+`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"default","title":"Jeremy","message": "Entering the PAI Algorithm Observe phase"}'`
 
 ━━━ 👁️ OBSERVE ━━━ 1/7
 ```
@@ -270,7 +270,7 @@ Walk the Full Capability Registry (25 capabilities, Sections A-F) and assign USE
 **Quality Gate → OPEN or BLOCKED.**
 
 ```
-`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"fTtv3eikoepIosk8dTZ5","message": "Entering the Think phase"}'`
+`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"default","title":"Jeremy","message": "Entering the Think phase"}'`
 
 ━━━ 🧠 THINK ━━━ 2/7
 ```
@@ -286,7 +286,7 @@ Walk the Full Capability Registry (25 capabilities, Sections A-F) and assign USE
 Extended+: Rehearse verification for each CRITICAL criterion.
 
 ```
-`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"fTtv3eikoepIosk8dTZ5","message": "Entering the Plan phase"}'`
+`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"default","title":"Jeremy","message": "Entering the Plan phase"}'`
 
 ━━━ 📋 PLAN ━━━ 3/7
 ```
@@ -299,7 +299,7 @@ Extended+: Rehearse verification for each CRITICAL criterion.
 - Quality Gate re-check.
 
 ```
-`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"fTtv3eikoepIosk8dTZ5","message": "Entering the Build phase"}'`
+`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"default","title":"Jeremy","message": "Entering the Build phase"}'`
 
 ━━━ 🔨 BUILD ━━━ 4/7
 ```
@@ -309,7 +309,7 @@ Extended+: Rehearse verification for each CRITICAL criterion.
 - Create artifacts. Log work and observations to PRD.
 
 ```
-`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"fTtv3eikoepIosk8dTZ5","message": "Entering the Execute phase"}'`
+`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"default","title":"Jeremy","message": "Entering the Execute phase"}'`
 
 ━━━ ⚡ EXECUTE ━━━ 5/7
 ```
@@ -320,7 +320,7 @@ Extended+: Rehearse verification for each CRITICAL criterion.
 - Log work and observations to PRD.
 
 ```
-`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"fTtv3eikoepIosk8dTZ5","message": "Entering the Verify phase."}'`
+`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"default","title":"Jeremy","message": "Entering the Verify phase."}'`
 
 ━━━ ✅ VERIFY ━━━ 6/7
 ```
@@ -337,7 +337,7 @@ Extended+: Rehearse verification for each CRITICAL criterion.
 - Clear ISC/VERIFICATION TaskList.
 
 ```
-`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"fTtv3eikoepIosk8dTZ5","message": "Entering the Learn phase"}'`
+`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"default","title":"Jeremy","message": "Entering the Learn phase"}'`
 
 ━━━ 📚 LEARN ━━━ 7/7
 ```
@@ -460,7 +460,7 @@ Critical PAI documentation organized by domain. Load on-demand based on context.
 | **System Architecture** | `SYSTEM/PAISYSTEMARCHITECTURE.md` | Core PAI design and principles |
 | **Memory System** | `SYSTEM/MEMORYSYSTEM.md` | WORK, STATE, LEARNING directories |
 | **Skill System** | `SYSTEM/SKILLSYSTEM.md` | How skills work, structure, triggers |
-| **Hook System** | `SYSTEM/THEHOOKSYSTEM.md` | Event hooks, patterns, implementation |
+| **Plugin System** | `SYSTEM/THEPLUGINSYSTEM.md` | Event-driven plugins, hooks, automation |
 | **Agent System** | `SYSTEM/PAIAGENTSYSTEM.md` | Agent types, spawning, delegation |
 | **Delegation** | `SYSTEM/THEDELEGATIONSYSTEM.md` | Background work, parallelization |
 | **Browser Automation** | `SYSTEM/BROWSERAUTOMATION.md` | Playwright, screenshots, testing |

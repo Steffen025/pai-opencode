@@ -6,7 +6,7 @@ A foundational security framework for Personal AI Infrastructure.
 
 ## Two-Layer Design
 
-This directory (`PAISECURITYSYSTEM/`) contains the **base system**—default patterns, documentation, and the security hook. It provides sensible defaults that work out of the box.
+This directory (`PAISECURITYSYSTEM/`) contains the **base system**—default patterns, documentation, and the security plugin. It provides sensible defaults that work out of the box.
 
 Your personal security policies live in `USER/PAISECURITYSYSTEM/`. This is where you:
 - Define your own blocked/confirm/alert patterns
@@ -14,7 +14,7 @@ Your personal security policies live in `USER/PAISECURITYSYSTEM/`. This is where
 - Customize path protections
 - Keep policies that should never be shared publicly
 
-**The hook checks USER first, then falls back to this base system.** This means:
+**The plugin checks USER first, then falls back to this base system.** This means:
 - New PAI users get working security immediately
 - You can override any default with your own rules
 - Your personal policies stay private (USER/ is never synced to public PAI)
@@ -46,7 +46,7 @@ This security system provides essential protection against catastrophic operatio
 PAISECURITYSYSTEM/           # System defaults (this directory)
 ├── README.md                # This file
 ├── ARCHITECTURE.md          # Security layer design
-├── HOOKS.md                 # Hook implementation docs
+├── PLUGINS.md               # Plugin implementation docs
 ├── PROMPTINJECTION.md       # Prompt injection defense
 ├── COMMANDINJECTION.md      # Command injection defense
 └── patterns.example.yaml    # Default security patterns
@@ -57,7 +57,7 @@ USER/PAISECURITYSYSTEM/      # Your customizations
 └── ...                      # Your additions
 ```
 
-The hook loads `USER/PAISECURITYSYSTEM/patterns.yaml` first, falling back to `patterns.example.yaml` if not found.
+The plugin loads `USER/PAISECURITYSYSTEM/patterns.yaml` first, falling back to `patterns.example.yaml` if not found.
 
 ---
 
@@ -87,7 +87,7 @@ Contributions and feedback welcome.
 | Document | Purpose |
 |----------|---------|
 | `ARCHITECTURE.md` | Security layers, trust hierarchy, philosophy |
-| `HOOKS.md` | SecurityValidator implementation details |
+| `PLUGINS.md` | SecurityValidator implementation details |
 | `PROMPTINJECTION.md` | Defense against prompt injection attacks |
 | `COMMANDINJECTION.md` | Defense against command injection |
 | `patterns.example.yaml` | Default pattern template |

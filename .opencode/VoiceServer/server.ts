@@ -422,7 +422,8 @@ async function sendNotification(
   if (voiceEnabled && apiKeyConfigured) {
     try {
       const voiceConfig = voiceId ? getVoiceConfig(voiceId) : null;
-      const agentName = voiceConfig?.voice_name || voiceId;
+      // Use title (agent name) for voice resolution, falling back to voice config name
+      const agentName = voiceConfig?.voice_name || safeTitle;
       const voice = resolveVoiceId(voiceConfig?.voice_id || voiceId, agentName);
 
       // Determine voice settings (priority: emotional > personality > defaults)

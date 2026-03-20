@@ -10,7 +10,7 @@ PAI uses a 4-layer defense-in-depth model:
 
 ```
 Layer 1: settings.json permissions  → Allow list for tools (fast, native)
-Layer 2: SecurityValidator hook     → patterns.yaml validation (blocking)
+Layer 2: SecurityValidator plugin   → patterns.yaml validation (blocking)
 Layer 3: Security Event Logging     → All events to MEMORY/SECURITY/ (audit)
 Layer 4: Git version control        → Rollback via git restore/checkout
 ```
@@ -51,13 +51,13 @@ The result: you get meaningful protection without the friction that drives peopl
 - MCP servers: `mcp__*`
 - Task delegation tools
 
-### Blocked via Hook (hard block)
+### Blocked via Plugin (hard block)
 Irreversible, catastrophic operations:
 - Filesystem destruction: `r.m -rf /`, `r.m -rf ~`
 - Disk operations: `disk.util erase*`, `d.d if=/dev/zero`, `mk.fs`
 - Repository exposure: `g.h repo delete`, `g.h repo edit --visibility public`
 
-### Confirm via Hook (prompt first)
+### Confirm via Plugin (prompt first)
 Dangerous but sometimes legitimate:
 - Git force operations: `git push --force`, `git reset --hard`
 - Cloud destructive: AWS/GCP/Terraform deletion commands
@@ -74,11 +74,10 @@ Suspicious but allowed:
 
 ### Bash Patterns
 
-| Level | Exit Code | Behavior |
-|-------|-----------|----------|
-| `blocked` | 2 | Hard block, operation prevented |
-| `confirm` | 0 + JSON | User prompted for confirmation |
-| `alert` | 0 | Logged but allowed |
+| Level | Action | Behavior |
+|-------|--------|----------|
+| `blocked` | throw Error | Hard block, operation prevented |
+| `alert` | log + return | Logged but allowed |
 
 ### Path Patterns
 
@@ -112,14 +111,14 @@ ZERO TRUST:    External websites, APIs, unknown documents
 
 ---
 
-## Hook Execution Flow
+## Plugin Execution Flow
 
 ```
 User Action (Bash/Edit/Write/Read)
             ↓
-    PreToolUse Hook Triggered
+    tool.execute.before Event Triggered
             ↓
-SecurityValidator.hook.ts Runs
+SecurityValidator Plugin Runs (pai-unified.ts)
             ↓
     Loads patterns.yaml (USER first, then root fallback)
             ↓
@@ -129,8 +128,7 @@ SecurityValidator.hook.ts Runs
     • Projects: special rules per project
             ↓
     Decision:
-    ├─ block    → exit(2), hard block
-    ├─ confirm  → JSON {"decision":"ask"}, prompt user
+    ├─ block    → throw Error, hard block
     ├─ alert    → log, allow execution
     └─ allow    → proceed normally
             ↓
@@ -197,8 +195,8 @@ git stash
 |------|---------|
 | `USER/PAISECURITYSYSTEM/patterns.yaml` | User's security rules (primary) |
 | `PAISECURITYSYSTEM/patterns.example.yaml` | Default template (fallback) |
-| `hooks/SecurityValidator.hook.ts` | Enforcement logic |
-| `settings.json` | Hook configuration |
+| `plugins/pai-unified.ts` | Enforcement logic |
+| `opencode.json` | Plugin configuration |
 | `MEMORY/SECURITY/YYYY/MM/security-*.jsonl` | Security event logs (one per event) |
 
 ---
@@ -210,9 +208,9 @@ To customize security for your environment:
 1. Copy `PAISECURITYSYSTEM/patterns.example.yaml` to `USER/PAISECURITYSYSTEM/patterns.yaml`
 2. Edit patterns to match your needs
 3. Add project-specific rules in the `projects` section
-4. The hook automatically loads USER patterns when available
+4. The plugin automatically loads USER patterns when available
 
-See `PAISECURITYSYSTEM/HOOKS.md` for hook configuration details.
+See `PAISECURITYSYSTEM/PLUGINS.md` for plugin configuration details.
 
 ---
 
