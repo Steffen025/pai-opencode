@@ -1,3 +1,11 @@
+---
+title: Anthropic Max/Pro — OAuth Preset
+tags: [providers, anthropic]
+published: true
+type: guide
+summary: Use your Anthropic Max or Pro subscription inside PAI-OpenCode via OAuth — no API key required.
+---
+
 # Anthropic Max/Pro — OAuth Preset
 
 > Use your existing Anthropic Max or Pro subscription inside PAI-OpenCode.  
@@ -51,8 +59,8 @@ The installer will:
 
 ### Option B — Standalone (no full PAI install)
 
-See [`contrib/anthropic-max-bridge/`](../../contrib/anthropic-max-bridge/README.md) in the
-[jeremy-opencode](https://github.com/Steffen025/jeremy-opencode) repository.
+See [`contrib/anthropic-max-bridge/`](../../contrib/anthropic-max-bridge/README.md) in this
+repository. No Bun, no PAI installer — just bash and Python 3.
 
 ---
 
@@ -80,7 +88,8 @@ bash PAI-Install/anthropic-max-refresh.sh
 
 Then restart OpenCode.
 
-> **Tip:** Claude Code CLI silently refreshes its own token whenever you use it.  
+> [!tip]
+> Claude Code CLI silently refreshes its own token whenever you use it.  
 > So `bash PAI-Install/anthropic-max-refresh.sh` right after any `claude` session
 > will always find a fresh token.
 

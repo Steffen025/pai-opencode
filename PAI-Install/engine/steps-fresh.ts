@@ -12,6 +12,7 @@ import { PROVIDER_MODELS, PROVIDER_LABELS } from "./provider-models.ts";
 import type { ProviderName } from "./provider-models.ts";
 import { existsSync, mkdirSync, writeFileSync, chmodSync, symlinkSync, unlinkSync, lstatSync, realpathSync, copyFileSync, readFileSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
 
 // ═══════════════════════════════════════════════════════════
@@ -224,7 +225,7 @@ async function installAnthropicMaxBridge(
 
 	// The plugin lives next to this engine file:
 	// PAI-Install/engine/../../../.opencode/plugins/anthropic-max-bridge.js
-	const repoRoot = join(dirname(import.meta.url.replace("file://", "")), "..", "..", "..");
+	const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 	const pluginSrc = join(repoRoot, ".opencode", "plugins", "anthropic-max-bridge.js");
 	const pluginDst = join(pluginsDir, "anthropic-max-bridge.js");
 
@@ -477,7 +478,7 @@ ${providerEnvVar}=${state.collected.apiKey || ""}
 		join(localOpencodeDir, "opencode.json"),
 		JSON.stringify(opencode, null, 2),
 	);
-	onProgress(92, "Generated opencode.json...");
+	onProgress(96, "Generated opencode.json...");
 
 	// ── Anthropic Max Bridge (only for anthropic-max preset) ──
 	if (state.collected.provider === "anthropic-max") {
