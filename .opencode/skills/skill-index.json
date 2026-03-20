@@ -1,11 +1,11 @@
 {
-  "generated": "2026-03-12T08:28:30.465Z",
-  "totalSkills": 54,
+  "generated": "2026-03-19T23:43:15.603Z",
+  "totalSkills": 52,
   "categories": 7,
-  "flatSkills": 19,
-  "hierarchicalSkills": 35,
+  "flatSkills": 11,
+  "hierarchicalSkills": 41,
   "alwaysLoadedCount": 2,
-  "deferredCount": 52,
+  "deferredCount": 50,
   "skills": {
     "agents": {
       "name": "Agents",
@@ -129,8 +129,8 @@
     },
     "audioeditor": {
       "name": "AudioEditor",
-      "path": "AudioEditor/SKILL.md",
-      "category": null,
+      "path": "Utilities/AudioEditor/SKILL.md",
+      "category": "Utilities",
       "fullDescription": "AI-powered audio/video editing — transcription, intelligent cut detection, automated editing with crossfades, and optional cloud polish. USE WHEN clean audio, edit audio, remove filler words, clean podcast, remove ums, fix audio, cut dead air, polish audio, clean recording, transcribe and edit.",
       "triggers": [
         "clean",
@@ -153,7 +153,7 @@
         "Clean"
       ],
       "tier": "deferred",
-      "isHierarchical": false
+      "isHierarchical": true
     },
     "becreative": {
       "name": "BeCreative",
@@ -236,8 +236,8 @@
     },
     "codereview": {
       "name": "CodeReview",
-      "path": "CodeReview/SKILL.md",
-      "category": null,
+      "path": "Utilities/CodeReview/SKILL.md",
+      "category": "Utilities",
       "fullDescription": "AI-powered code review via roborev. USE WHEN review code, check code quality, roborev, audit changes, review before commit, review before PR, code quality check, lint review, architecture review.",
       "triggers": [
         "review",
@@ -254,7 +254,7 @@
       ],
       "workflows": [],
       "tier": "deferred",
-      "isHierarchical": false
+      "isHierarchical": true
     },
     "contentanalysis": {
       "name": "ContentAnalysis",
@@ -557,8 +557,8 @@
     },
     "opencodesystem": {
       "name": "OpenCodeSystem",
-      "path": "OpenCodeSystem/SKILL.md",
-      "category": null,
+      "path": "Utilities/OpenCodeSystem/SKILL.md",
+      "category": "Utilities",
       "fullDescription": "PAI-OpenCode system self-awareness. USE WHEN asking about tools, config, model routing, plugin handlers, MCP servers, troubleshooting, or operating environment.",
       "triggers": [
         "asking",
@@ -578,7 +578,7 @@
         "PAI"
       ],
       "tier": "deferred",
-      "isHierarchical": false
+      "isHierarchical": true
     },
     "osint": {
       "name": "OSINT",
@@ -605,16 +605,6 @@
       ],
       "tier": "deferred",
       "isHierarchical": true
-    },
-    "pai": {
-      "name": "PAI",
-      "path": "PAI/SKILL.md",
-      "category": null,
-      "fullDescription": "Personal AI Infrastructure core. The authoritative reference for how PAI works.",
-      "triggers": [],
-      "workflows": [],
-      "tier": "deferred",
-      "isHierarchical": false
     },
     "paiupgrade": {
       "name": "PAIUpgrade",
@@ -868,8 +858,8 @@
     },
     "sales": {
       "name": "Sales",
-      "path": "Sales/SKILL.md",
-      "category": null,
+      "path": "Utilities/Sales/SKILL.md",
+      "category": "Utilities",
       "fullDescription": "Sales workflows. USE WHEN sales, proposal, pricing. SkillSearch('sales') for docs.",
       "triggers": [
         "sales",
@@ -882,7 +872,7 @@
         "Create-visual"
       ],
       "tier": "deferred",
-      "isHierarchical": false
+      "isHierarchical": true
     },
     "science": {
       "name": "Science",
@@ -1003,8 +993,8 @@
     },
     "system": {
       "name": "System",
-      "path": "System/SKILL.md",
-      "category": null,
+      "path": "Utilities/System/SKILL.md",
+      "category": "Utilities",
       "fullDescription": "System maintenance - integrity check, document session, secret scanning. USE WHEN integrity, audit, document session, secrets, security scan.",
       "triggers": [
         "integrity",
@@ -1027,7 +1017,7 @@
         "WorkContextRecall"
       ],
       "tier": "deferred",
-      "isHierarchical": false
+      "isHierarchical": true
     },
     "telos": {
       "name": "Telos",
@@ -1141,24 +1131,6 @@
       "tier": "deferred",
       "isHierarchical": false
     },
-    "voiceserver": {
-      "name": "VoiceServer",
-      "path": "VoiceServer/SKILL.md",
-      "category": null,
-      "fullDescription": "Voice server management. USE WHEN voice server, TTS server, voice notification, prosody.",
-      "triggers": [
-        "voice",
-        "server",
-        "tts",
-        "notification",
-        "prosody"
-      ],
-      "workflows": [
-        "Status"
-      ],
-      "tier": "deferred",
-      "isHierarchical": false
-    },
     "webassessment": {
       "name": "WebAssessment",
       "path": "Security/WebAssessment/SKILL.md",
@@ -1218,8 +1190,8 @@
     },
     "writestory": {
       "name": "WriteStory",
-      "path": "WriteStory/SKILL.md",
-      "category": null,
+      "path": "Utilities/WriteStory/SKILL.md",
+      "category": "Utilities",
       "fullDescription": "Layered fiction writing system using Will Storr's storytelling science and rhetorical figures. USE WHEN write story, fiction, novel, short story, book, chapter, story bible, character arc, plot outline, creative writing, worldbuilding, narrative, mystery writing, dialogue, prose, series planning.",
       "triggers": [
         "write",
@@ -1252,7 +1224,7 @@
         "Revise"
       ],
       "tier": "deferred",
-      "isHierarchical": false
+      "isHierarchical": true
     },
     "xlsx": {
       "name": "Xlsx",
@@ -1303,8 +1275,10 @@
     ],
     "Utilities": [
       "Aphorisms",
+      "AudioEditor",
       "Browser",
       "Cloudflare",
+      "CodeReview",
       "CreateCLI",
       "CreateSkill",
       "Delegation",
@@ -1312,11 +1286,15 @@
       "Docx",
       "Evals",
       "Fabric",
+      "OpenCodeSystem",
       "PAIUpgrade",
       "Parser",
       "Pdf",
       "Pptx",
       "Prompting",
+      "Sales",
+      "System",
+      "WriteStory",
       "Xlsx"
     ]
   }
