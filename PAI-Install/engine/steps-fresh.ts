@@ -249,13 +249,20 @@ async function installAnthropicMaxBridge(
 			["security", "find-generic-password", "-s", "Claude Code-credentials", "-w"],
 			{ stdout: "pipe", stderr: "pipe" },
 		);
-		keychainJson = (await new Response(proc.stdout).text()).trim();
-		await proc.exited;
-		if (!keychainJson) {
+		// Read both streams before awaiting exit to avoid deadlock on large output
+		const [stdout, stderr, exitCode] = await Promise.all([
+			new Response(proc.stdout).text(),
+			new Response(proc.stderr).text(),
+			proc.exited,
+		]);
+		keychainJson = stdout.trim();
+		if (exitCode !== 0 || !keychainJson) {
+			const detail = stderr.trim();
 			return {
 				success: false,
-				message:
-					"No Claude Code credentials in Keychain. Run 'claude' to authenticate, then re-run the installer.",
+				message: detail
+					? `Keychain lookup failed (exit ${exitCode}): ${detail}. Run 'claude' to authenticate, then re-run the installer.`
+					: "No Claude Code credentials in Keychain. Run 'claude' to authenticate, then re-run the installer.",
 				tokenHoursRemaining: 0,
 			};
 		}
