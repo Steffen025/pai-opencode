@@ -300,6 +300,13 @@ async function installAnthropicMaxBridge(
 		accessToken = oauth.accessToken;
 		refreshToken = oauth.refreshToken ?? "";
 		expiresAt = oauth.expiresAt ?? Date.now() + 8 * 60 * 60 * 1000;
+		
+		// Warn if refresh token is missing - user will need to re-authenticate when access token expires
+		if (!oauth.refreshToken) {
+			console.warn("\n⚠️  Warning: No refresh token found in Keychain.");
+			console.warn("   You will need to re-authenticate with 'claude' when the access token expires.");
+			console.warn("   Run 'claude' and then PAI-Install/anthropic-max-refresh.sh to refresh.\n");
+		}
 	} catch {
 		return {
 			success: false,
