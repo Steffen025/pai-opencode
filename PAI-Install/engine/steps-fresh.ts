@@ -328,9 +328,14 @@ async function installAnthropicMaxBridge(
 
 	const hoursRemaining = Math.max(0, Math.round((expiresAt - Date.now()) / 3_600_000));
 
+	const message =
+		hoursRemaining === 0
+			? "Token installed — expired or valid for less than 1 hour. Run anthropic-max-refresh.sh now."
+			: `Token installed — valid for ~${hoursRemaining} hours. Run anthropic-max-refresh.sh when it expires.`;
+
 	return {
 		success: true,
-		message: `Token installed — valid for ~${hoursRemaining} hours. Run refresh-token.sh when it expires.`,
+		message,
 		tokenHoursRemaining: hoursRemaining,
 	};
 }

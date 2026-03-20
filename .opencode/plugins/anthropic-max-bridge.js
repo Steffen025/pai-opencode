@@ -45,6 +45,17 @@ export async function AnthropicMaxBridgePlugin() {
 		async "experimental.chat.system.transform"(input, output) {
 			if (input.model?.providerID !== "anthropic") return;
 
+			// Normalise output.system to an array before mapping so we never
+			// call .map() on undefined, null, or a bare string/object.
+			if (!Array.isArray(output.system)) {
+				if (output.system === undefined || output.system === null) {
+					output.system = [];
+				} else {
+					// Single string or single object — wrap it
+					output.system = [output.system];
+				}
+			}
+
 			output.system = output.system.map((s) =>
 				typeof s === "string" ? { type: "text", text: s } : s,
 			);

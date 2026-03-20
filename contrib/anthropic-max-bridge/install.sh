@@ -156,7 +156,7 @@ export PAI_AUTH_FILE="$AUTH_FILE"
 export PAI_EXISTING_JSON="$EXISTING_JSON"
 
 python3 - <<'PYEOF'
-import json, os
+import json, os, stat
 
 auth_file    = os.environ["PAI_AUTH_FILE"]
 access       = os.environ["PAI_ACCESS_TOKEN"]
@@ -175,6 +175,9 @@ existing["anthropic"] = {
 with open(auth_file, "w") as f:
     json.dump(existing, f, indent=2)
     f.write("\n")
+
+# Restrict to owner read/write only — tokens must not be world-readable
+os.chmod(auth_file, stat.S_IRUSR | stat.S_IWUSR)
 
 print("auth.json updated")
 PYEOF
