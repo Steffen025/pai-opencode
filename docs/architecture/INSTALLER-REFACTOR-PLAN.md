@@ -1,9 +1,17 @@
+---
+title: "PAI-OpenCode Installer Refactor Plan (Updated)"
+status: "Ready for Implementation — Post PR #47"
+date: "2026-03-09"
+tags: [architecture, installer, roadmap]
+---
+
 # PAI-OpenCode Installer Refactor Plan (Updated)
 
-> **Status:** Ready for Implementation — Post PR #47
+> [!info]
+> **Status:** Ready for Implementation — Post PR `#47`
 > **Goal:** One Electron GUI entry point for both new and existing users
 > **Author:** Jeremy (Updated after WP-D completion)
-> **Target:** New PR #48 (after PR #47 merged)
+> **Target:** New PR `#48` (after PR `#47` merged)
 
 ---
 
@@ -31,7 +39,7 @@ PR #47 successfully merged PAI-Install v4.0.3 with all CodeRabbit fixes:
 ### ❌ What Still Needs Refactoring
 
 **Current installer structure (messy):**
-```
+```text
 install.sh          ← 163 lines (too complex)
   └── PAI-Install/
         ├── cli/          ← 3 files (TUI, interactive)
@@ -80,7 +88,7 @@ Tools/migration-v2-to-v3.ts      ← STILL EXISTS (separate script)
 
 **Clarified:** This is NOT installing PAI — it's building a custom OpenCode CLI tool:
 
-```
+```text
 Steffen025/opencode (fork)
     └── feature/model-tiers (branch with 60x cost optimization)
         └── bun build → /usr/local/bin/opencode (binary)
@@ -103,13 +111,14 @@ Steffen025/opencode (fork)
 
 **Detection Logic:**
 ```typescript
-function detectInstallMode(): "fresh" | "migrate-v2" | "update-v3" {
-  if (!existsSync("~/.opencode")) return "fresh";
+function detectInstallMode(): "fresh" | "migrate-v2" | "update-v3" | "current" {
+  const opencodePath = path.join(os.homedir(), ".opencode");
+  if (!existsSync(opencodePath)) return "fresh";
   
   const settings = readSettings();
   if (settings?.pai?.version?.startsWith("3")) {
     // Has v3, check if update needed
-    return isOutdated(settings.pai.version) ? "update-v3" : "already-current";
+    return isOutdated(settings.pai.version) ? "update-v3" : "current";
   }
   
   // Has .opencode but no v3 settings = v2
@@ -123,7 +132,7 @@ function detectInstallMode(): "fresh" | "migrate-v2" | "update-v3" {
 
 ### Simplified Structure
 
-```
+```text
 PAI-Install/
 ├── install.sh              ← Bootstrap ONLY (15 lines)
 ├── README.md               ← Entry point docs
@@ -142,7 +151,7 @@ PAI-Install/
 │   ├── config-gen.ts       ← Settings generation
 │   ├── state.ts            ← State machine (already atomic ✓)
 │   ├── validate.ts         ← Validation (already has opencode.json ✓)
-│   ├── steps-fresh.ts      ← ⭐ NEW: 7-step fresh install
+│   ├── steps-fresh.ts      ← ⭐ NEW: 8-step fresh install
 │   ├── steps-migrate.ts    ← ⭐ NEW: 5-step migration
 │   ├── steps-update.ts     ← ⭐ NEW: 3-step update
 │   └── types.ts            ← Types (already has DEFAULT_VOICES ✓)
@@ -198,13 +207,13 @@ fi
 
 ### 4.2 Electron Main Process Flow
 
-```
+```text
 Electron Starts
     │
     └── detectInstallMode()
           │
           ├── "fresh" → loadURL('/flow/fresh')
-          │               └── 7-Step Fresh Install
+          │               └── 8-Step Fresh Install
           │
           ├── "migrate-v2" → loadURL('/flow/migrate')
           │                    └── 5-Step Migration
@@ -215,11 +224,26 @@ Electron Starts
           └── "current" → show "Already up to date"
 ```
 
+<details>
+<summary>Mermaid detail</summary>
+
+```mermaid
+flowchart TD
+    A["Electron Starts"] --> B["detectInstallMode()"]
+    B --> C{"Result?"}
+    C -->|fresh| D["loadURL('/flow/fresh')\n→ 8-Step Fresh Install"]
+    C -->|migrate-v2| E["loadURL('/flow/migrate')\n→ 5-Step Migration"]
+    C -->|update-v3| F["loadURL('/flow/update')\n→ 3-Step Update"]
+    C -->|current| G["Show 'Already up to date'"]
+```
+
+</details>
+
 ---
 
 ## 5. Step Definitions (Updated)
 
-### 5.1 Fresh Install (7 Steps)
+### 5.1 Fresh Install (8 Steps)
 
 | Step | UI Screen | Backend Action | Progress |
 |------|-----------|----------------|----------|
@@ -239,10 +263,10 @@ Electron Starts
 | 8 | Done | Show summary, launch command | 100% |
 
 **Step 4 — Provider Selection UI:**
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                                                         │
-│   Step 4 of 7: Choose Your AI Provider                  │
+│   Step 4 of 8: Choose Your AI Provider                  │
 │                                                         │
 │   💚 RECOMMENDED: OpenCode Zen (Start FREE)            │
 │   ┌──────────────────────────────────────┐             │
@@ -485,10 +509,10 @@ bun PAI-Install/cli/quick-install.ts --migrate --dry-run
 
 Don't overwhelm users. Each step asks ONE thing:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                                                         │
-│   Step 5 of 7                                           │
+│   Step 5 of 8                                           │
 │                                                         │
 │   What's your name?                                     │
 │                                                         │
@@ -511,8 +535,8 @@ Users must know:
 - How many steps total
 - What is happening (not just "Loading...")
 
-```
-Step 3 of 7: Building OpenCode Binary
+```text
+Step 3 of 8: Building OpenCode Binary
 ████████████████████░░░░  67%
 
 Current: Compiling TypeScript...
@@ -523,7 +547,7 @@ Estimated: 2 minutes remaining
 
 When asking for API keys or building binary, explain WHY:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                                                         │
 │   Why do you need an Anthropic API key?                 │
@@ -545,7 +569,7 @@ When asking for API keys or building binary, explain WHY:
 
 Building OpenCode takes 3-5 minutes. Allow skipping:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                                                         │
 │   ⚙  Building OpenCode                                  │
@@ -799,10 +823,10 @@ exec zsh
 - **OpenAI** — for GPT models
 
 **UI Design:**
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                                                         │
-│   Step 4 of 7: Choose Your AI Provider                  │
+│   Step 4 of 8: Choose Your AI Provider                  │
 │                                                         │
 │   💡 RECOMMENDED: OpenCode Zen (FREE)                  │
 │   ┌──────────────────────────────────────┐             │
@@ -957,7 +981,7 @@ jeremy() {
 alias {AI_NAME}="/usr/local/bin/{AI_NAME}-wrapper"
 
 # Wrapper script at /usr/local/bin/{AI_NAME}-wrapper:
-# - Checks custom binary at ~/.opencode/bin/opencode
+# - Checks custom binary at ~/.opencode/tools/opencode
 # - Compares version/hash
 # - Rebuilds if outdated
 # - Launches correct binary
@@ -980,7 +1004,7 @@ alias {AI_NAME}="/usr/local/bin/{AI_NAME}-wrapper"
 **Answer:** NO — Migration must be EXPLICIT with user confirmation
 
 **Migration Flow:**
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                                                         │
 │   ⚠️  Migration Required                                │

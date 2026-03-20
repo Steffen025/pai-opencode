@@ -486,11 +486,21 @@ function renderSummary(summary) {
   const p1 = document.createElement('p');
   p1.textContent = 'To activate PAI, open a terminal and run:';
   const code = document.createElement('code');
-  // Use activation command from backend, or derive from detected shell
-  const activationCommand = summary.activationCommand || 
-    (summary.userShell?.includes('bash') ? 'source ~/.bashrc && pai' : 
-     summary.userShell?.includes('fish') ? 'source ~/.config/fish/config.fish && pai' :
-     'source ~/.zshrc && pai');
+  // Use activation command from backend, or derive from detected shell/platform
+  let activationCommand;
+  if (summary.activationCommand) {
+    activationCommand = summary.activationCommand;
+  } else if (summary.userShell?.includes('bash')) {
+    activationCommand = 'source ~/.bashrc && pai';
+  } else if (summary.userShell?.includes('fish')) {
+    activationCommand = 'source ~/.config/fish/config.fish && pai';
+  } else if (navigator.platform?.includes('Win') || navigator.userAgent?.includes('Windows')) {
+    // Windows platform detected
+    activationCommand = 'Restart your terminal and type: pai';
+  } else {
+    // Default Unix/zsh
+    activationCommand = 'source ~/.zshrc && pai';
+  }
   code.textContent = activationCommand;
   const p2 = document.createElement('p');
   p2.className = 'summary-hint';
@@ -639,7 +649,7 @@ function createModeButton(label, description, mode, isPrimary) {
 function selectMode(mode) {
   installMode = mode;
   setStepsForMode(mode);
-  
+
   const overlay = document.getElementById('welcome-overlay');
   if (overlay) overlay.classList.add('hidden');
 
@@ -648,6 +658,8 @@ function selectMode(mode) {
     ws.send(JSON.stringify({ type: 'select_mode', mode: mode }));
   }
 }
+
+function scrollToBottom() {
   const chat = document.getElementById('chat-messages');
   if (chat) {
     // Double-RAF ensures DOM has fully rendered before scrolling

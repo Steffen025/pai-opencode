@@ -40,7 +40,7 @@ Q: Why only simple organisms can live in the Dead Sea? A: because of high salt c
 
 - Formulate questions according to the above rules and examples
 
-- Present questions and answers in the form of a Markdown table
+- Present questions and answers in the form of a CSV table
 
 
 # OUTPUT INSTRUCTIONS
@@ -54,4 +54,4 @@ header.
 
 # INPUT:
 
-INPUT: 
+

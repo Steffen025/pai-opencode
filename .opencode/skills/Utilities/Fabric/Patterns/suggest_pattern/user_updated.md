@@ -19,7 +19,7 @@ For creating custom patterns: `fabric --pattern create_pattern`
 
 - One possible place to store them is ~/.config/custom-fabric-patterns.
 - Then when you want to use them, simply copy them into ~/.config/fabric/patterns.
-`cp -a ~/.config/custom-fabric-patterns/* ~/.config/fabric/Patterns/`
+`cp -a ~/.config/custom-fabric-patterns/* ~/.config/fabric/patterns/`
 - Now you can run them with: `pbpaste | fabric -p your_custom_pattern`
 
 ## MOST IMPORTANT AND USED OPTIONS AND FEATURES

@@ -9,7 +9,7 @@
  *   bun Tools/db-archive.ts 180                # Archive sessions > 180 days
  *   bun Tools/db-archive.ts --dry-run          # Preview only
  *   bun Tools/db-archive.ts --vacuum          # VACUUM after archiving
- *   bun Tools/db-archive.ts --restore archive.db  # Restore from archive
+ *   bun Tools/db-archive.ts --restore archive.db  # Print manual restore instructions
  *
  * WARNING: --vacuum requires OpenCode to be stopped!
  */
@@ -23,7 +23,7 @@ import {
 	archiveSessions,
 	vacuumDb,
 	checkDbHealth,
-} from "../.opencode/plugins/lib/db-utils";
+} from "../.opencode/plugins/lib/db-utils.ts";
 
 const PAI_DIR = join(homedir(), ".opencode");
 const DB_PATH = join(PAI_DIR, "conversations.db");
@@ -39,17 +39,25 @@ interface Options {
 function parseArgs(): Options {
 	const args = process.argv.slice(2);
 	const daysArg = args.find((a) => /^\d+$/.test(a));
-	const restoreIdx = args.findIndex((a) => a === "--restore");
+	const restoreIdx = args.findIndex((a) => a === "--restore" || a.startsWith("--restore="));
 
 	// Validate --restore usage
 	let restore: string | null = null;
 	if (restoreIdx !== -1) {
 		// Check for --restore=/path form
 		if (args[restoreIdx].includes("=")) {
-			restore = args[restoreIdx].split("=")[1];
+			const extracted = args[restoreIdx].split("=")[1].trim();
+			if (!extracted) {
+				throw new Error("--restore requires a path argument. Usage: --restore=/path/to/archive.db or --restore /path/to/archive.db");
+			}
+			restore = extracted;
 		} else if (restoreIdx + 1 < args.length && !args[restoreIdx + 1].startsWith("-")) {
 			// Check for --restore /path form (next arg exists and is not a flag)
-			restore = args[restoreIdx + 1];
+			const candidate = args[restoreIdx + 1].trim();
+			if (!candidate) {
+				throw new Error("--restore requires a path argument. Usage: --restore=/path/to/archive.db or --restore /path/to/archive.db");
+			}
+			restore = candidate;
 		} else {
 			// --restore provided without a path
 			throw new Error("--restore requires a path argument. Usage: --restore=/path/to/archive.db or --restore /path/to/archive.db");
@@ -112,6 +120,10 @@ async function previewArchiving(days: number): Promise<void> {
 }
 
 async function performArchiving(days: number): Promise<void> {
+	// NOTE: getSessionsOlderThan + archiveSessions are two separate DB calls.
+	// For full atomicity, archiveSessions in db-utils.ts should wrap both the
+	// INSERT into the archive DB and the DELETE from the source DB in a single
+	// transaction. Run this tool only when OpenCode is quiesced to avoid races.
 	const sessions = await getSessionsOlderThan(days);
 
 	if (sessions.length === 0) {
@@ -142,8 +154,7 @@ async function performArchiving(days: number): Promise<void> {
 		const timestampFile = join(ARCHIVE_DIR, ".last-archive");
 		await Bun.write(timestampFile, new Date().toISOString());
 	} else {
-		log(`Archive incomplete: ${archived}/${sessions.length} sessions archived`, "error");
-		process.exit(1);
+		throw new Error(`Archive incomplete: ${archived}/${sessions.length} sessions archived`);
 	}
 }
 
@@ -158,11 +169,7 @@ async function performVacuum(): Promise<void> {
 		});
 		testDb.close();
 	} catch {
-		log(
-			"Database appears to be in use. Stop OpenCode before vacuuming.",
-			"error",
-		);
-		process.exit(1);
+		throw new Error("Database appears to be in use. Stop OpenCode before vacuuming.");
 	}
 
 	const beforeSize = await getDbSizeMB();
@@ -178,14 +185,16 @@ async function performVacuum(): Promise<void> {
 	}
 }
 
+// NOTE: performRestore prints manual restore instructions only — it does not
+// perform an automatic restore. Use the printed sqlite3 commands to merge
+// rows from the archive DB into the live DB manually.
 async function performRestore(archivePath: string): Promise<void> {
 	if (!existsSync(archivePath)) {
-		log(`Archive not found: ${archivePath}`, "error");
-		process.exit(1);
+		throw new Error(`Archive not found: ${archivePath}`);
 	}
 
-	log(`Restoring from ${archivePath}...`, "info");
-	log("Restore functionality requires manual SQL operations.", "warn");
+	log(`Restore instructions for ${archivePath}:`, "info");
+	log("Automatic restore is not implemented — use the steps below.", "warn");
 	log(
 		"Archive schema: conversations(id, created_at, updated_at, title, messages)",
 		"info",
@@ -252,7 +261,7 @@ async function main(): Promise<void> {
 // Run if main
 if (import.meta.main) {
 	main().catch((err) => {
-		log(`Error: ${err.message}`, "error");
+		log(`Error: ${err instanceof Error ? err.message : String(err)}`, "error");
 		process.exit(1);
 	});
 }

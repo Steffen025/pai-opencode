@@ -10,26 +10,26 @@ This file documents single-purpose CLI utilities that have been consolidated fro
 
 ## Inference.ts - Unified AI Inference Tool
 
-**Location:** `~/.claude/PAI/Tools/Inference.ts`
+**Location:** `~/.opencode/PAI/Tools/Inference.ts`
 
 Single inference tool with three run levels for different speed/capability trade-offs.
 
 **Usage:**
 ```bash
 # Fast (Haiku) - quick tasks, simple generation
-bun ~/.claude/PAI/Tools/Inference.ts --level fast "System prompt" "User prompt"
+bun ~/.opencode/PAI/Tools/Inference.ts --level fast "System prompt" "User prompt"
 
 # Standard (Sonnet) - balanced reasoning, typical analysis
-bun ~/.claude/PAI/Tools/Inference.ts --level standard "System prompt" "User prompt"
+bun ~/.opencode/PAI/Tools/Inference.ts --level standard "System prompt" "User prompt"
 
 # Smart (Opus) - deep reasoning, strategic decisions
-bun ~/.claude/PAI/Tools/Inference.ts --level smart "System prompt" "User prompt"
+bun ~/.opencode/PAI/Tools/Inference.ts --level smart "System prompt" "User prompt"
 
 # With JSON output
-bun ~/.claude/PAI/Tools/Inference.ts --json --level fast "Return JSON" "Input"
+bun ~/.opencode/PAI/Tools/Inference.ts --json --level fast "Return JSON" "Input"
 
 # Custom timeout
-bun ~/.claude/PAI/Tools/Inference.ts --level standard --timeout 60000 "Prompt" "Input"
+bun ~/.opencode/PAI/Tools/Inference.ts --level standard --timeout 60000 "Prompt" "Input"
 ```
 
 **Run Levels:**
@@ -64,7 +64,7 @@ if (result.success) {
 - Hooks use this for sentiment analysis, tab titles, work classification
 
 **Technical Details:**
-- Uses Claude CLI with subscription (not API key)
+- Uses OpenCode CLI with subscription (not API key)
 - Disables tools and hooks to prevent recursion
 - Returns latency metrics for monitoring
 
@@ -72,20 +72,20 @@ if (result.success) {
 
 ## RemoveBg.ts - Remove Image Backgrounds
 
-**Location:** `~/.claude/PAI/Tools/RemoveBg.ts`
+**Location:** `~/.opencode/PAI/Tools/RemoveBg.ts`
 
 Remove backgrounds from images using the remove.bg API.
 
 **Usage:**
 ```bash
 # Remove background from single image (overwrites original)
-bun ~/.claude/PAI/Tools/RemoveBg.ts /path/to/image.png
+bun ~/.opencode/PAI/Tools/RemoveBg.ts /path/to/image.png
 
 # Remove background and save to different path
-bun ~/.claude/PAI/Tools/RemoveBg.ts /path/to/input.png /path/to/output.png
+bun ~/.opencode/PAI/Tools/RemoveBg.ts /path/to/input.png /path/to/output.png
 
 # Process multiple images
-bun ~/.claude/PAI/Tools/RemoveBg.ts image1.png image2.png image3.png
+bun ~/.opencode/PAI/Tools/RemoveBg.ts image1.png image2.png image3.png
 ```
 
 **Environment Variables:**
@@ -100,17 +100,17 @@ bun ~/.claude/PAI/Tools/RemoveBg.ts image1.png image2.png image3.png
 
 ## AddBg.ts - Add Background Color
 
-**Location:** `~/.claude/PAI/Tools/AddBg.ts`
+**Location:** `~/.opencode/PAI/Tools/AddBg.ts`
 
 Add solid background color to transparent images.
 
 **Usage:**
 ```bash
 # Add specific background color
-bun ~/.claude/PAI/Tools/AddBg.ts /path/to/transparent.png "#EAE9DF" /path/to/output.png
+bun ~/.opencode/PAI/Tools/AddBg.ts /path/to/transparent.png "#EAE9DF" /path/to/output.png
 
 # Add brand background color
-bun ~/.claude/PAI/Tools/AddBg.ts /path/to/transparent.png --brand /path/to/output.png
+bun ~/.opencode/PAI/Tools/AddBg.ts /path/to/transparent.png --brand /path/to/output.png
 ```
 
 **When to Use:**
@@ -124,17 +124,17 @@ bun ~/.claude/PAI/Tools/AddBg.ts /path/to/transparent.png --brand /path/to/outpu
 
 ## GetTranscript.ts - Extract YouTube Transcripts
 
-**Location:** `~/.claude/PAI/Tools/GetTranscript.ts`
+**Location:** `~/.opencode/PAI/Tools/GetTranscript.ts`
 
 Extract transcripts from YouTube videos using yt-dlp (via fabric).
 
 **Usage:**
 ```bash
 # Extract transcript to stdout
-bun ~/.claude/PAI/Tools/GetTranscript.ts "https://www.youtube.com/watch?v=VIDEO_ID"
+bun ~/.opencode/PAI/Tools/GetTranscript.ts "https://www.youtube.com/watch?v=VIDEO_ID"
 
 # Save transcript to file
-bun ~/.claude/PAI/Tools/GetTranscript.ts "https://www.youtube.com/watch?v=VIDEO_ID" --save /path/to/transcript.txt
+bun ~/.opencode/PAI/Tools/GetTranscript.ts "https://www.youtube.com/watch?v=VIDEO_ID" --save /path/to/transcript.txt
 ```
 
 **Supported URL Formats:**
@@ -193,7 +193,7 @@ sleep 2
 - "perform this"
 
 **Technical Details:**
-- Voice server must be running (`~/.claude/skills/VoiceServer/`)
+- Voice server must be running (`~/.opencode/skills/VoiceServer/`)
 - Segments longer than 450 chars should be split
 - Natural 2-second pauses between segments for storytelling flow
 - Uses ElevenLabs API under the hood
@@ -202,14 +202,14 @@ sleep 2
 
 ## extract-transcript.py - Transcribe Audio/Video Files
 
-**Location:** `~/.claude/PAI/Tools/extract-transcript.py`
+**Location:** `~/.opencode/PAI/Tools/extract-transcript.py`
 
 Local transcription using faster-whisper (4x faster than OpenAI Whisper, 50% less memory). Self-contained UV script for offline transcription.
 
 **Usage:**
 ```bash
 # Transcribe single file (base.en model - recommended)
-cd ~/.claude/PAI/Tools/
+cd ~/.opencode/PAI/Tools/
 uv run extract-transcript.py /path/to/audio.m4a
 
 # Use different model
@@ -263,20 +263,20 @@ uv run extract-transcript.py /path/to/folder/ --batch --model base.en
 
 ## YouTubeApi.ts - YouTube Channel & Video Stats
 
-**Location:** `~/.claude/PAI/Tools/YouTubeApi.ts`
+**Location:** `~/.opencode/PAI/Tools/YouTubeApi.ts`
 
 Wrapper around YouTube Data API v3 for channel statistics and video metrics.
 
 **Usage:**
 ```bash
 # Get channel statistics
-bun ~/.claude/PAI/Tools/YouTubeApi.ts --channel-stats
+bun ~/.opencode/PAI/Tools/YouTubeApi.ts --channel-stats
 
 # Get video statistics
-bun ~/.claude/PAI/Tools/YouTubeApi.ts --video-stats VIDEO_ID
+bun ~/.opencode/PAI/Tools/YouTubeApi.ts --video-stats VIDEO_ID
 
 # Get latest uploads
-bun ~/.claude/PAI/Tools/YouTubeApi.ts --latest-videos
+bun ~/.opencode/PAI/Tools/YouTubeApi.ts --latest-videos
 ```
 
 **Environment Variables:**
@@ -376,12 +376,12 @@ brew install trufflehog
 
 When adding a new utility tool to this system:
 
-1. **Add tool file:** Place `.ts` or `.py` file directly in `~/.claude/PAI/Tools/`
+1. **Add tool file:** Place `.ts` or `.py` file directly in `~/.opencode/PAI/Tools/`
    - Use **Title Case** for filenames (e.g., `GetTranscript.ts`, not `get-transcript.ts`)
    - Keep the directory flat - NO subdirectories
 
 2. **Document here:** Add section to this file with:
-   - Tool location (e.g., `~/.claude/PAI/Tools/ToolName.ts`)
+   - Tool location (e.g., `~/.opencode/PAI/Tools/ToolName.ts`)
    - Usage examples
    - When to use triggers
    - Environment variables (if any)

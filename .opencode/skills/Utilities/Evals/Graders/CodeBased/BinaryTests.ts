@@ -30,7 +30,8 @@ export class BinaryTestsGrader extends BaseGrader {
         // Detect test command based on file extension
         const command = params.test_command ?? this.detectTestCommand(testFile);
 
-        const result = await $`cd ${workingDir} && timeout ${Math.ceil(timeout/1000)} ${command} ${testFile}`
+        const commandParts = command.split(/\s+/);
+        const result = await $`cd ${workingDir} && timeout ${Math.ceil(timeout/1000)} ${commandParts} ${testFile}`
           .quiet()
           .nothrow();
 
@@ -52,11 +53,11 @@ export class BinaryTestsGrader extends BaseGrader {
     }
 
     const passCount = results.filter(r => r.passed).length;
-    const score = passCount / params.test_files.length;
-    const passed = passCount === params.test_files.length;
+    const score = results.length ? passCount / results.length : 0;
+    const passed = results.length > 0 && passCount === results.length;
 
     return this.createResult(score, passed, performance.now() - start, {
-      reasoning: `${passCount}/${params.test_files.length} tests passed`,
+      reasoning: `${passCount}/${results.length} tests passed`,
       details: {
         results,
         working_dir: workingDir,

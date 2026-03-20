@@ -23,7 +23,7 @@ The Algorithm CLI executes the PAI Algorithm (Observe → Think → Plan → Bui
 # Run the Algorithm in autonomous loop mode
 bun ~/.opencode/PAI/Tools/algorithm.ts -m loop -p <PRD-path> -n 20
 
-# Run in interactive mode (launches a claude session with PRD context)
+# Run in interactive mode (launches an OpenCode session with PRD context)
 bun ~/.opencode/PAI/Tools/algorithm.ts -m interactive -p <PRD-path>
 
 # Check status of all PRDs
@@ -57,7 +57,7 @@ algorithm stop -p <PRD>                       Stop a loop
 Loop mode runs the Algorithm iteratively without human interaction. Each iteration:
 
 1. Reads the PRD and identifies failing Ideal State Criteria
-2. Spawns a `claude -p` session focused on the failing criteria
+2. Spawns an OpenCode session via Task tool focused on the failing criteria
 3. The session makes progress, updates the PRD checkboxes
 4. Re-reads the PRD to check progress
 5. Repeats until all criteria pass or max iterations reached
@@ -88,13 +88,13 @@ bun ~/.opencode/PAI/Tools/algorithm.ts -m loop -p PRD-20260213-auth.md -n 20 -a 
 
 #### Interactive Mode
 
-Interactive mode launches a full `claude` session with the PRD context pre-loaded. You work with Claude directly to make progress on criteria.
+Interactive mode launches a full OpenCode session with the PRD context pre-loaded. You work with OpenCode directly to make progress on criteria.
 
 ```bash
 bun ~/.opencode/PAI/Tools/algorithm.ts -m interactive -p PRD-20260213-feature.md
 ```
 
-This opens an interactive Claude session with:
+This opens an interactive OpenCode session with:
 - The PRD path and title
 - Current progress (passing/total)
 - List of failing criteria

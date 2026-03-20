@@ -15,8 +15,8 @@
  * - Path consistency
  */
 
-import { readdir, readFile, stat } from 'fs/promises';
-import { join } from 'path';
+import { readdir, readFile, stat, realpath } from 'fs/promises';
+import { join, relative, sep } from 'path';
 import { existsSync } from 'fs';
 
 const SKILLS_DIR = join(import.meta.dir, '..', '..', '..', 'skills');
@@ -48,7 +48,7 @@ async function validateSkillStructure(): Promise<ValidationResult> {
   let flatSkills = 0;
   let hierarchicalSkills = 0;
 
-  async function scanDirectory(dir: string, depth: number = 0): Promise<void> {
+  async function scanDirectory(dir: string, depth: number = 0, visitedPaths: Set<string> = new Set()): Promise<void> {
     try {
       const entries = await readdir(dir, { withFileTypes: true });
 
@@ -59,7 +59,17 @@ async function validateSkillStructure(): Promise<ValidationResult> {
           try {
             const stats = await stat(fullPath);
             if (!stats.isDirectory()) continue;
-            // Valid symlinked directory - will be processed below using stats
+            // Valid symlinked directory — check for cycles before recursing
+            const canonical = await realpath(fullPath);
+            if (visitedPaths.has(canonical)) {
+              issues.push({
+                type: 'error',
+                path: fullPath,
+                message: `Symlink cycle detected: ${fullPath} -> ${canonical}`,
+              });
+              continue;
+            }
+            // Will be processed below; canonical path added before recursion
           } catch (err) {
             // Report broken symlinks as structural errors
             issues.push({
@@ -86,8 +96,8 @@ async function validateSkillStructure(): Promise<ValidationResult> {
           
           if (existsSync(skillMdPath)) {
             // Found a skill
-            const relativePath = fullPath.replace(SKILLS_DIR, '').replace(/^\//, '');
-            const pathParts = relativePath.split('/');
+            const relativePath = relative(SKILLS_DIR, fullPath);
+            const pathParts = relativePath.split(sep);
             
             if (pathParts.length === 1) {
               // Flat skill: skills/SkillName/
@@ -122,13 +132,13 @@ async function validateSkillStructure(): Promise<ValidationResult> {
             // No SKILL.md - might be a category or invalid
             if (depth === 0) {
               // Could be a category (allowed at top level without SKILL.md if it has subdirs)
-              await scanDirectory(fullPath, depth + 1);
+              await scanDirectory(fullPath, depth + 1, visitedPaths);
               continue; // Prevent double recursion
             }
           }
 
           // Recurse for subdirectories (only if not already recursed above)
-          await scanDirectory(fullPath, depth + 1);
+          await scanDirectory(fullPath, depth + 1, visitedPaths);
         }
       }
     } catch (error) {
@@ -169,7 +179,7 @@ async function validateSkill(
     const content = await readFile(skillPath, 'utf-8');
     
     // Check frontmatter
-    const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+    const frontmatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
     if (!frontmatterMatch) {
       issues.push({
         type: 'error',
@@ -269,7 +279,7 @@ async function validateSkill(
     }
 
     // Check body content (excluding frontmatter)
-    const bodyContent = content.replace(/^---\n[\s\S]*?\n---\n?/, '').trim();
+    const bodyContent = content.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '').trim();
     if (bodyContent.length < 50) {
       issues.push({
         type: 'warning',

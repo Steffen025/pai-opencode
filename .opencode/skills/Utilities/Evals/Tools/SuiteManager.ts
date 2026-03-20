@@ -38,7 +38,19 @@ export function createSuite(
     tasks?: string[];
   }
 ): EvalSuite {
+  // Validate name: alphanumeric, hyphens, underscores only — prevents path traversal
+  if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
+    throw new Error(`Invalid suite name "${name}": only alphanumeric, hyphens, and underscores are allowed`);
+  }
+
   ensureDirs();
+
+  // Prevent accidental overwrites of existing suites
+  const dir = type === 'capability' ? 'Capability' : 'Regression';
+  const filePath = join(SUITES_DIR, dir, `${name}.yaml`);
+  if (existsSync(filePath)) {
+    throw new Error(`Suite "${name}" already exists in ${dir}. Use a different name or delete the existing suite first.`);
+  }
 
   const suite: EvalSuite = {
     name,
@@ -50,9 +62,6 @@ export function createSuite(
     saturation_threshold: options?.saturation_threshold ?? 0.95,
     created_at: new Date().toISOString(),
   };
-
-  const dir = type === 'capability' ? 'Capability' : 'Regression';
-  const filePath = join(SUITES_DIR, dir, `${name}.yaml`);
 
   writeFileSync(filePath, stringifyYaml(suite));
 

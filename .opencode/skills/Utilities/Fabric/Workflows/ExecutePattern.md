@@ -37,14 +37,14 @@ Read the pattern's system.md file:
 
 ```bash
 PATTERN_NAME="[selected_pattern]"
-PATTERN_PATH="$HOME/.opencode/skills/Fabric/Patterns/$PATTERN_NAME/system.md"
+PATTERN_PATH="$HOME/.opencode/skills/Utilities/Fabric/Patterns/$PATTERN_NAME/system.md"
 
 if [ -f "$PATTERN_PATH" ]; then
   cat "$PATTERN_PATH"
 else
   echo "Pattern not found: $PATTERN_NAME"
   echo "Available patterns:"
-  ls ~/.opencode/skills/Fabric/Patterns/ | head -20
+  ls ~/.opencode/skills/Utilities/Fabric/Patterns/ | head -20
 fi
 ```
 
@@ -60,7 +60,7 @@ The pattern's system.md contains instructions formatted as:
 Apply these instructions to the provided content directly. This is the AI reading and following the pattern instructions, not calling an external tool.
 
 **Example:**
-```
+```text
 [Content from user]
 ↓
 [Read Patterns/extract_wisdom/system.md]
@@ -89,7 +89,7 @@ Use when native URL fetching fails.
 Return the pattern's specified output format. Most patterns define structured sections like:
 
 **extract_wisdom example:**
-```
+```text
 ## SUMMARY
 [1-sentence summary]
 
@@ -129,7 +129,7 @@ Return the pattern's specified output format. Most patterns define structured se
 
 ## Pattern Selection Decision Tree
 
-```
+```text
 User Request
     │
     ├─ Contains "wisdom" or "insights"?
@@ -195,8 +195,8 @@ User Request
 ## Error Handling
 
 **Pattern not found:**
-```
-Pattern '[name]' not found in ~/.opencode/skills/Fabric/Patterns/
+```text
+Pattern '[name]' not found in ~/.opencode/skills/Utilities/Fabric/Patterns/
 
 Similar patterns:
 - [suggestion 1]
@@ -206,7 +206,7 @@ Run 'update fabric' to sync latest patterns.
 ```
 
 **No content provided:**
-```
+```text
 No content provided for pattern execution.
 Please provide:
 - Text directly

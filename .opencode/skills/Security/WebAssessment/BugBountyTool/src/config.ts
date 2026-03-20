@@ -1,5 +1,14 @@
 // Configuration for bug bounty tracker
 
+import { homedir } from 'os';
+
+/** Expand a leading '~' to the OS home directory so fs calls resolve correctly. */
+function expandPath(p: string): string {
+  return p.replace(/^~/, homedir());
+}
+
+const BASE = expandPath('~/.opencode/skills/Security/WebAssessment/BugBountyTool');
+
 export const CONFIG = {
   // GitHub repository
   repo: {
@@ -16,12 +25,12 @@ export const CONFIG = {
     yeswehack: 'data/yeswehack_data.json',
   },
 
-  // Local paths
+  // Local paths (tilde-expanded so Node fs calls resolve correctly)
   paths: {
-    root: '~/.opencode/skills/hacking/bug-bounties',
-    state: '~/.opencode/skills/hacking/bug-bounties/state.json',
-    cache: '~/.opencode/skills/hacking/bug-bounties/cache',
-    logs: '~/.opencode/skills/hacking/bug-bounties/logs',
+    root: BASE,
+    state: `${BASE}/state.json`,
+    cache: `${BASE}/cache`,
+    logs: `${BASE}/logs`,
   },
 
   // GitHub API

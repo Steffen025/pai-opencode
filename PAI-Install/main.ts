@@ -32,12 +32,12 @@ async function main() {
   } else {
     // Launch Electron GUI app
     const electronDir = join(ROOT, "electron");
-    const electronPkg = join(electronDir, "node_modules", ".package-lock.json");
+    const electronLock = join(electronDir, "bun.lock");
 
     // Install electron dependencies if needed
-    if (!existsSync(electronPkg)) {
+    if (!existsSync(electronLock)) {
       console.log("Installing GUI dependencies (first run only)...\n");
-      const install = spawnSync("npm", ["install"], {
+      const install = spawnSync("bun", ["install"], {
         cwd: electronDir,
         stdio: "inherit",
       });
@@ -60,9 +60,14 @@ async function main() {
     }
 
     console.log("Starting PAI Installer GUI...\n");
-    const child = spawn("npm", ["start"], {
+    const child = spawn("bunx", ["electron", "."], {
       cwd: electronDir,
       stdio: "inherit",
+    });
+
+    child.on("error", (err) => {
+      console.error("Failed to start GUI:", err);
+      process.exit(1);
     });
 
     child.on("exit", (code) => {

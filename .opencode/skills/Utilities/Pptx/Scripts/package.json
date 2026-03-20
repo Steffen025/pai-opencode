@@ -1,0 +1,10 @@
+{
+  "name": "html2pptx",
+  "version": "1.0.0",
+  "description": "Convert HTML slides to PPTX using Playwright and PptxGenJS",
+  "main": "html2pptx.js",
+  "dependencies": {
+    "playwright": "^1.40.0",
+    "sharp": "^0.33.0"
+  }
+}

@@ -32,22 +32,6 @@ let installationRunning = false;
 // Request timeout: 5 minutes (prevent memory leaks from abandoned requests)
 const REQUEST_TIMEOUT_MS = 5 * 60 * 1000;
 
-function setRequestTimeout(id: string): void {
-	const timeout = setTimeout(() => {
-		const pending = pendingRequests.get(id);
-		if (pending) {
-			pending.resolve(""); // Resolve empty on timeout
-			pendingRequests.delete(id);
-		}
-	}, REQUEST_TIMEOUT_MS);
-	
-	const existing = pendingRequests.get(id);
-	if (existing) {
-		clearTimeout(existing.timeout);
-	}
-	pendingRequests.set(id, { resolve: pendingRequests.get(id)?.resolve || (() => {}), timeout });
-}
-
 // ─── Broadcasting ────────────────────────────────────────────────
 
 function broadcast(msg: ServerMessage, originSocket?: any): void {
@@ -273,9 +257,10 @@ export function handleWsMessage(ws: any, raw: string): void {
         broadcast({ type: "error", message: "Installation already in progress" });
         break;
       }
-      if (!installState && selectedMode) {
+      const modeToUse = state.selectedMode;
+      if (!installState && modeToUse) {
         installationRunning = true;
-        startInstallation(selectedMode).finally(() => {
+        startInstallation(modeToUse).finally(() => {
           installationRunning = false;
         });
       }
@@ -372,4 +357,11 @@ export function removeClient(ws: any): void {
 
 export function getState(): InstallState | null {
   return installState;
+}
+
+// ─── Step Status Helper ───────────────────────────────────────────
+
+function getStepStatuses(state: InstallState | null): { id: string; status: string }[] {
+  if (!state?.completedSteps) return [];
+  return state.completedSteps.map((id: string) => ({ id, status: "completed" }));
 }

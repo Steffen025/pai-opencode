@@ -6,13 +6,9 @@
  * Preserves all user settings and customizations.
  */
 
-import { existsSync, readFileSync, writeFileSync, copyFileSync, mkdirSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
-import { exec } from "node:child_process";
-import { promisify } from "node:util";
-
-const execAsync = promisify(exec);
 
 // ═══════════════════════════════════════════════════════════
 // Configuration
@@ -59,25 +55,54 @@ function getCurrentVersion(): string {
 		}
 		return "unknown";
 	}
-	
-	return readFileSync(CURRENT_VERSION_FILE, "utf-8").trim();
+
+	try {
+		return readFileSync(CURRENT_VERSION_FILE, "utf-8").trim();
+	} catch (err) {
+		throw new Error(
+			`Could not read version file at ${CURRENT_VERSION_FILE}: ${err instanceof Error ? err.message : String(err)}`
+		);
+	}
 }
 
 function setCurrentVersion(version: string): void {
-	writeFileSync(CURRENT_VERSION_FILE, version, "utf-8");
+	try {
+		writeFileSync(CURRENT_VERSION_FILE, version, "utf-8");
+	} catch (err) {
+		throw new Error(
+			`Could not write version file at ${CURRENT_VERSION_FILE}: ${err instanceof Error ? err.message : String(err)}`
+		);
+	}
 }
 
 function compareVersions(v1: string, v2: string): number {
-	const parts1 = v1.split(".").map(Number);
-	const parts2 = v2.split(".").map(Number);
-	
+	const parts1 = v1.split(".");
+	const parts2 = v2.split(".");
+
 	for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
-		const p1 = parts1[i] || 0;
-		const p2 = parts2[i] || 0;
-		if (p1 < p2) return -1;
-		if (p1 > p2) return 1;
+		const s1 = parts1[i] ?? "0";
+		const s2 = parts2[i] ?? "0";
+		const n1 = parseInt(s1, 10);
+		const n2 = parseInt(s2, 10);
+		const num1 = isNaN(n1) ? null : n1;
+		const num2 = isNaN(n2) ? null : n2;
+
+		if (num1 !== null && num2 !== null) {
+			// Both numeric: compare numerically
+			if (num1 < num2) return -1;
+			if (num1 > num2) return 1;
+		} else if (num1 !== null) {
+			// Numeric beats non-numeric (e.g. "1" > "beta")
+			return 1;
+		} else if (num2 !== null) {
+			return -1;
+		} else {
+			// Both non-numeric: compare lexicographically
+			const cmp = s1.localeCompare(s2);
+			if (cmp !== 0) return cmp;
+		}
 	}
-	
+
 	return 0;
 }
 
@@ -87,26 +112,36 @@ function compareVersions(v1: string, v2: string): number {
 
 function detectChanges(currentVersion: string, targetVersion: string): string[] {
 	const changes: string[] = [];
-	
-	// Parse versions
-	const current = currentVersion.split(".").map(Number);
-	const target = targetVersion.split(".").map(Number);
-	
-	// Major version change (shouldn't happen within v3)
-	if (target[0] !== current[0]) {
+
+	// Parse only the numeric major.minor.patch prefix; pre-release tags are ignored
+	const parsePart = (v: string, idx: number): number => {
+		const seg = v.split(".")[idx];
+		const n = seg !== undefined ? parseInt(seg, 10) : 0;
+		return isNaN(n) ? 0 : n;
+	};
+
+	const curMajor = parsePart(currentVersion, 0);
+	const curMinor = parsePart(currentVersion, 1);
+	const curPatch = parsePart(currentVersion, 2);
+	const tgtMajor = parsePart(targetVersion, 0);
+	const tgtMinor = parsePart(targetVersion, 1);
+	const tgtPatch = parsePart(targetVersion, 2);
+
+	// Major version change
+	if (tgtMajor !== curMajor) {
 		changes.push("major-version-change");
 	}
-	
-	// Minor version change (new features)
-	if (target[1] > (current[1] || 0)) {
+
+	// Minor version change — only meaningful when major versions are equal
+	if (tgtMajor === curMajor && tgtMinor > curMinor) {
 		changes.push("new-features");
 	}
-	
-	// Patch version change (bug fixes)
-	if (target[2] > (current[2] || 0)) {
+
+	// Patch change — only when major and minor are both equal
+	if (tgtMajor === curMajor && tgtMinor === curMinor && tgtPatch > curPatch) {
 		changes.push("bug-fixes");
 	}
-	
+
 	return changes;
 }
 
@@ -117,7 +152,7 @@ function detectChanges(currentVersion: string, targetVersion: string): string[] 
 async function updateSkills(
 	sourceDir: string,
 	onProgress?: (message: string) => void
-): Promise<void> {
+): Promise<boolean> {
 	onProgress?.("Checking for skill updates...");
 	
 	// In a real implementation, this would:
@@ -126,21 +161,24 @@ async function updateSkills(
 	// 3. Add new skills
 	// 4. Preserve user customizations
 	
-	// For now, placeholder
+	// For now, placeholder - return true if changes were made
 	onProgress?.("Skills up to date");
+	return false;
 }
 
 async function updateCoreFiles(
 	sourceDir: string,
 	onProgress?: (message: string) => void
-): Promise<void> {
+): Promise<boolean> {
 	onProgress?.("Updating core files...");
 	
 	// Update PAI/ docs if needed
 	// Update plugins if needed
 	// Update hooks if needed
 	
+	// For now, placeholder - return true if changes were made
 	onProgress?.("Core files updated");
+	return false;
 }
 
 async function updateBinaryIfNeeded(
@@ -203,11 +241,11 @@ export async function updateV3(
 		
 		// 3. Update skills (10-40%)
 		await onProgress?.("Updating skills...", 20);
-		await updateSkills(PAI_DIR, (msg) => onProgress?.(msg, 30));
+		const skillsUpdated = await updateSkills(PAI_DIR, (msg) => onProgress?.(msg, 30));
 		
 		// 4. Update core files (40-70%)
 		await onProgress?.("Updating core files...", 50);
-		await updateCoreFiles(PAI_DIR, (msg) => onProgress?.(msg, 60));
+		const coreUpdated = await updateCoreFiles(PAI_DIR, (msg) => onProgress?.(msg, 60));
 		
 		// 5. Update binary if needed (70-90%)
 		let binaryUpdated = false;
@@ -219,10 +257,14 @@ export async function updateV3(
 		}
 		result.binaryUpdated = binaryUpdated;
 		
-		// 6. Update version marker (90%)
+		// 6. Update version marker only if changes were applied (90%)
 		await onProgress?.("Finalizing...", 90);
-		setCurrentVersion(TARGET_VERSION);
-		result.newVersion = TARGET_VERSION;
+		if (skillsUpdated || coreUpdated || binaryUpdated) {
+			setCurrentVersion(TARGET_VERSION);
+			result.newVersion = TARGET_VERSION;
+		} else {
+			result.newVersion = currentVersion;
+		}
 		
 		// Done (100%)
 		await onProgress?.("Update complete!", 100);
@@ -254,8 +296,18 @@ export function isUpdateNeeded(): {
 			reason: "No existing installation",
 		};
 	}
-	
-	const currentVersion = getCurrentVersion();
+
+	let currentVersion: string;
+	try {
+		currentVersion = getCurrentVersion();
+	} catch (err) {
+		return {
+			needed: true,
+			currentVersion: "unknown",
+			targetVersion: TARGET_VERSION,
+			reason: `Version read error: ${err instanceof Error ? err.message : String(err)}`,
+		};
+	}
 	
 	if (currentVersion === "unknown") {
 		return {

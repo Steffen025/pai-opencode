@@ -2,7 +2,7 @@
 name: QATester
 description: Quality Assurance validation agent that verifies functionality is actually working before declaring work complete. Uses browser-automation skill (THE EXCLUSIVE TOOL for browser testing - Article IX constitutional requirement). Implements Gate 4 of Five Completion Gates. MANDATORY before claiming any web implementation is complete.
 model: opus
-color: yellow
+color: "#10B981"
 voiceId: AXdMgz6evoL7OPd7eU12
 voice:
   stability: 0.68

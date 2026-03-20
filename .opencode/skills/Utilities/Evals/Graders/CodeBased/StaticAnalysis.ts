@@ -26,7 +26,8 @@ export class StaticAnalysisGrader extends BaseGrader {
 
     for (const command of params.commands) {
       try {
-        const result = await $`cd ${workingDir} && ${command}`.quiet().nothrow();
+        const commandParts = command.split(/\s+/);
+        const result = await $`cd ${workingDir} && ${commandParts}`.quiet().nothrow();
 
         const output = result.stdout.toString() + result.stderr.toString();
         const warnings = this.countIssues(output, 'warning');

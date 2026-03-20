@@ -15,7 +15,6 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-CYAN='\033[0;36m'
 NC='\033[0m'
 
 # ─── Helpers ───────────────────────────────────────────────
@@ -75,6 +74,8 @@ if [ "${1:-}" = "--cli" ]; then
 else
 	# GUI mode (default) - runs from electron subdirectory
 	cd "$INSTALLER_DIR/electron"
-	bun install --silent 2>/dev/null || true
+	if ! bun install 2>&1 | tee /tmp/pai-install-deps.log; then
+		echo "⚠️  Warning: bun install had issues. Check /tmp/pai-install-deps.log"
+	fi
 	exec bunx electron .
 fi

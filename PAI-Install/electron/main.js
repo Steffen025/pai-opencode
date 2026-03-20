@@ -56,8 +56,9 @@ async function waitForServer(port, timeout = 15000) {
             let data = '';
             res.on('data', chunk => data += chunk);
             res.on('end', () => {
-              // Check if response contains PAI Installer indicators
-              if (data.includes('PAI') || data.includes('Installer') || res.statusCode === 200) {
+              // Check if response contains PAI Installer markers (not just any 200)
+              const isPAIInstaller = data.includes('PAI') && data.includes('Installer');
+              if (res.statusCode === 200 && isPAIInstaller) {
                 resolve();
               } else {
                 setTimeout(tryConnect, 200);
@@ -160,9 +161,25 @@ app.whenReady().then(async () => {
   createWindow();
 });
 
+// ─── Server Process Cleanup (Cross-Platform) ──────────────────────
+
+function killServerProcess(proc) {
+  try {
+    if (process.platform === 'win32') {
+      proc.kill('SIGTERM');
+    } else {
+      // On Unix, kill the process group (negative PID) to catch child processes
+      process.kill(-proc.pid, 'SIGTERM');
+    }
+  } catch (e) {
+    // Fallback: kill the process directly
+    try { proc.kill('SIGTERM'); } catch (_) {}
+  }
+}
+
 app.on("window-all-closed", () => {
   if (serverProcess) {
-    serverProcess.kill();
+    killServerProcess(serverProcess);
     serverProcess = null;
   }
   app.quit();
@@ -170,7 +187,7 @@ app.on("window-all-closed", () => {
 
 app.on("before-quit", () => {
   if (serverProcess) {
-    serverProcess.kill();
+    killServerProcess(serverProcess);
     serverProcess = null;
   }
 });

@@ -27,7 +27,6 @@
 
 const { chromium } = require('playwright');
 const path = require('path');
-const sharp = require('sharp');
 
 const PT_PER_PX = 0.75;
 const PX_PER_IN = 96;
@@ -104,7 +103,8 @@ function validateTextBoxPosition(slideData, bodyDimensions) {
           if (Array.isArray(el.items)) return el.items.find(item => item.text)?.text || '';
           return '';
         };
-        const textPrefix = getText().substring(0, 50) + (getText().length > 50 ? '...' : '');
+        const rawText = getText();
+        const textPrefix = rawText.substring(0, 50) + (rawText.length > 50 ? '...' : '');
 
         errors.push(
           `Text box "${textPrefix}" ends too close to bottom edge ` +
@@ -118,7 +118,7 @@ function validateTextBoxPosition(slideData, bodyDimensions) {
 }
 
 // Helper: Add background to slide
-async function addBackground(slideData, targetSlide, tmpDir) {
+function addBackground(slideData, targetSlide) {
   if (slideData.background.type === 'image' && slideData.background.path) {
     let imagePath = slideData.background.path.startsWith('file://')
       ? slideData.background.path.replace('file://', '')
@@ -183,11 +183,10 @@ function addElements(slideData, targetSlide, pres) {
         paraSpaceAfter: el.style.paraSpaceAfter,
         margin: el.style.margin
       };
-      if (el.style.margin) listOptions.margin = el.style.margin;
       targetSlide.addText(el.items, listOptions);
     } else {
       // Check if text is single-line (height suggests one line)
-      const lineHeight = el.style.lineSpacing || el.style.fontSize * 1.2;
+      const lineHeight = el.style.lineSpacing ?? el.style.fontSize * 1.2;
       const isSingleLine = el.position.h <= lineHeight * 1.5;
 
       let adjustedX = el.position.x;
@@ -377,14 +376,21 @@ async function extractSlideData(page) {
       // Extract color first (rgba or rgb at start)
       const colorMatch = boxShadow.match(/rgba?\([^)]+\)/);
 
-      // Extract numeric values (handles both px and pt units)
+      // Extract numeric values with units (handles both px and pt)
       const parts = boxShadow.match(/([-\d.]+)(px|pt)/g);
 
       if (!parts || parts.length < 2) return null;
 
-      const offsetX = parseFloat(parts[0]);
-      const offsetY = parseFloat(parts[1]);
-      const blur = parts.length > 2 ? parseFloat(parts[2]) : 0;
+      // Convert each value to px, respecting its declared unit
+      const toPx = (part) => {
+        const unit = part.endsWith('pt') ? 'pt' : 'px';
+        const val = parseFloat(part);
+        return unit === 'pt' ? val / PT_PER_PX : val;
+      };
+
+      const offsetX = toPx(parts[0]);
+      const offsetY = toPx(parts[1]);
+      const blur = parts.length > 2 ? toPx(parts[2]) : 0;
 
       // Calculate angle from offsets (in degrees, 0 = right, 90 = down)
       let angle = 0;
@@ -396,12 +402,12 @@ async function extractSlideData(page) {
       // Calculate offset distance (hypotenuse)
       const offset = Math.sqrt(offsetX * offsetX + offsetY * offsetY) * PT_PER_PX;
 
-      // Extract opacity from rgba
+      // Extract opacity from rgba(...) only — rgb() has no alpha component
       let opacity = 0.5;
-      if (colorMatch) {
-        const opacityMatch = colorMatch[0].match(/[\d.]+\)$/);
-        if (opacityMatch) {
-          opacity = parseFloat(opacityMatch[0].replace(')', ''));
+      if (colorMatch && colorMatch[0].startsWith('rgba')) {
+        const rgbaMatch = colorMatch[0].match(/rgba\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*,\s*([\d.]+)\s*\)/);
+        if (rgbaMatch) {
+          opacity = parseFloat(rgbaMatch[1]);
         }
       }
 
@@ -415,8 +421,9 @@ async function extractSlideData(page) {
       };
     };
 
-    // Parse inline formatting tags (<b>, <i>, <u>, <strong>, <em>, <span>) into text runs
-    const parseInlineFormatting = (element, baseOptions = {}, runs = [], baseTextTransform = (x) => x) => {
+    // Parse inline formatting tags (<b>, <i>, <u>, <strong>, <em>, <span>) into text runs.
+    // Returns { runs, errors } — self-contained, does not reference any outer-scope errors variable.
+    const parseInlineFormatting = (element, baseOptions = {}, runs = [], baseTextTransform = (x) => x, inlineErrors = []) => {
       let prevNodeIsText = false;
 
       element.childNodes.forEach((node) => {
@@ -457,20 +464,21 @@ async function extractSlideData(page) {
 
             // Validate: Check for margins on inline elements
             if (computed.marginLeft && parseFloat(computed.marginLeft) > 0) {
-              errors.push(`Inline element <${node.tagName.toLowerCase()}> has margin-left which is not supported in PowerPoint. Remove margin from inline elements.`);
+              inlineErrors.push(`Inline element <${node.tagName.toLowerCase()}> has margin-left which is not supported in PowerPoint. Remove margin from inline elements.`);
             }
             if (computed.marginRight && parseFloat(computed.marginRight) > 0) {
-              errors.push(`Inline element <${node.tagName.toLowerCase()}> has margin-right which is not supported in PowerPoint. Remove margin from inline elements.`);
+              inlineErrors.push(`Inline element <${node.tagName.toLowerCase()}> has margin-right which is not supported in PowerPoint. Remove margin from inline elements.`);
             }
             if (computed.marginTop && parseFloat(computed.marginTop) > 0) {
-              errors.push(`Inline element <${node.tagName.toLowerCase()}> has margin-top which is not supported in PowerPoint. Remove margin from inline elements.`);
+              inlineErrors.push(`Inline element <${node.tagName.toLowerCase()}> has margin-top which is not supported in PowerPoint. Remove margin from inline elements.`);
             }
             if (computed.marginBottom && parseFloat(computed.marginBottom) > 0) {
-              errors.push(`Inline element <${node.tagName.toLowerCase()}> has margin-bottom which is not supported in PowerPoint. Remove margin from inline elements.`);
+              inlineErrors.push(`Inline element <${node.tagName.toLowerCase()}> has margin-bottom which is not supported in PowerPoint. Remove margin from inline elements.`);
             }
 
-            // Recursively process the child node. This will flatten nested spans into multiple runs.
-            parseInlineFormatting(node, options, runs, textTransform);
+            // Recursively process the child node — pass the same accumulator so nested
+            // inline elements contribute to the same inlineErrors list.
+            parseInlineFormatting(node, options, runs, textTransform, inlineErrors);
           }
         }
 
@@ -483,7 +491,7 @@ async function extractSlideData(page) {
         runs[runs.length - 1].text = runs[runs.length - 1].text.replace(/\s+$/, '');
       }
 
-      return runs.filter(r => r.text.length > 0);
+      return { runs: runs.filter(r => r.text.length > 0), errors: inlineErrors };
     };
 
     // Extract background from body (image or color)
@@ -555,7 +563,7 @@ async function extractSlideData(page) {
       }
 
       // Extract placeholder elements (for charts, etc.)
-      if (el.className && el.className.includes('placeholder')) {
+      if (el.classList && el.classList.contains('placeholder')) {
         const rect = el.getBoundingClientRect();
         if (rect.width === 0 || rect.height === 0) {
           errors.push(
@@ -594,7 +602,7 @@ async function extractSlideData(page) {
       }
 
       // Extract DIVs with backgrounds/borders as shapes
-      const isContainer = el.tagName === 'DIV' && !textTags.includes(el.tagName);
+      const isContainer = el.tagName === 'DIV';
       if (isContainer) {
         const computed = window.getComputedStyle(el);
         const hasBg = computed.backgroundColor && computed.backgroundColor !== 'rgba(0, 0, 0, 0)';
@@ -755,7 +763,8 @@ async function extractSlideData(page) {
 
         liElements.forEach((li, idx) => {
           const isLast = idx === liElements.length - 1;
-          const runs = parseInlineFormatting(li, { breakLine: false });
+          const { runs, errors: inlineErrors } = parseInlineFormatting(li, { breakLine: false });
+          errors.push(...inlineErrors);
           // Clean manual bullets from first run
           if (runs.length > 0) {
             runs[0].text = runs[0].text.replace(/^[•\-\*▪▸]\s*/, '');
@@ -823,7 +832,7 @@ async function extractSlideData(page) {
         fontFace: computed.fontFamily.split(',')[0].replace(/['"]/g, '').trim(),
         color: rgbToHex(computed.color),
         align: computed.textAlign === 'start' ? 'left' : computed.textAlign,
-        lineSpacing: pxToPoints(computed.lineHeight),
+        lineSpacing: computed.lineHeight && computed.lineHeight !== 'normal' ? pxToPoints(computed.lineHeight) : null,
         paraSpaceBefore: pxToPoints(computed.marginTop),
         paraSpaceAfter: pxToPoints(computed.marginBottom),
         // PptxGenJS margin array is [left, right, bottom, top] (not [top, right, bottom, left] as documented)
@@ -845,7 +854,8 @@ async function extractSlideData(page) {
       if (hasFormatting) {
         // Text with inline formatting
         const transformStr = computed.textTransform;
-        const runs = parseInlineFormatting(el, {}, [], (str) => applyTextTransform(str, transformStr));
+        const { runs, errors: inlineErrors } = parseInlineFormatting(el, {}, [], (str) => applyTextTransform(str, transformStr));
+        errors.push(...inlineErrors);
 
         // Adjust lineSpacing based on largest fontSize in runs
         const adjustedStyle = { ...baseStyle };
@@ -896,12 +906,13 @@ async function extractSlideData(page) {
 async function html2pptx(htmlFile, pres, options = {}) {
   const {
     tmpDir = process.env.TMPDIR || '/tmp',
-    slide = null
+    slide = null,
+    debug = false
   } = options;
 
   try {
     // Use Chrome on macOS, default Chromium on Unix
-    const launchOptions = { env: { TMPDIR: tmpDir } };
+    const launchOptions = { env: { ...process.env, TMPDIR: tmpDir } };
     if (process.platform === 'darwin') {
       launchOptions.channel = 'chrome';
     }
@@ -916,10 +927,11 @@ async function html2pptx(htmlFile, pres, options = {}) {
 
     try {
       const page = await browser.newPage();
-      page.on('console', (msg) => {
-        // Log the message text to your test runner's console
-        console.log(`Browser console: ${msg.text()}`);
-      });
+      if (debug) {
+        page.on('console', (msg) => {
+          console.log(`Browser console: ${msg.text()}`);
+        });
+      }
 
       await page.goto(`file://${filePath}`);
 
@@ -932,7 +944,9 @@ async function html2pptx(htmlFile, pres, options = {}) {
 
       slideData = await extractSlideData(page);
     } finally {
-      await browser.close();
+      await browser.close().catch((err) => {
+        console.error('browser.close() failed:', err);
+      });
     }
 
     // Collect all validation errors
@@ -964,7 +978,7 @@ async function html2pptx(htmlFile, pres, options = {}) {
 
     const targetSlide = slide || pres.addSlide();
 
-    await addBackground(slideData, targetSlide, tmpDir);
+    addBackground(slideData, targetSlide);
     addElements(slideData, targetSlide, pres);
 
     return { slide: targetSlide, placeholders: slideData.placeholders };

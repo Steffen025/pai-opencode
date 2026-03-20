@@ -17,7 +17,7 @@ This pattern generates a summary of an academic paper based on the provided text
 **Conclusion**
    
 
-# Example run in MacOS/Linux:
+# Example run in macOS/Linux:
 
 Copy the paper text to the clipboard and execute the following command:
 

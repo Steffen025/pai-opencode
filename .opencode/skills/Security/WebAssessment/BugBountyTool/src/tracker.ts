@@ -5,6 +5,8 @@ import { StateManager } from './state.js';
 import { CONFIG } from './config.js';
 import type { DiscoveryResult, ProgramMetadata, TrackerState } from './types.js';
 
+const PLATFORMS = ['hackerone', 'bugcrowd', 'intigriti', 'yeswehack'] as const;
+
 export class BugBountyTracker {
   private github = new GitHubClient();
   private state = new StateManager();
@@ -58,6 +60,8 @@ export class BugBountyTracker {
 
     const currentState = await this.state.loadState();
 
+    const PLATFORM_COUNT = PLATFORMS.length;
+
     if (!currentState.initialized) {
       console.log('⚠️  Tracker not initialized. Run initialization first.');
       await this.initialize();
@@ -83,7 +87,7 @@ export class BugBountyTracker {
         new_programs: [],
         scope_expansions: [],
         upgraded_programs: [],
-        total_checked: 5,
+        total_checked: PLATFORM_COUNT,
         check_duration_ms: Date.now() - startTime,
       };
     }
@@ -94,13 +98,16 @@ export class BugBountyTracker {
     console.log('🔬 TIER 2: Detailed analysis of platform changes');
     const results = await this.analyzeChanges(currentState);
 
-    // Update state with latest commits
+    // Update state with latest commits — only persist when commit is available
+    // to avoid hiding missed updates if getLatestCommit returns null.
     const latestDomains = await this.github.getLatestCommit(CONFIG.files.domains_txt);
     if (latestDomains) {
       currentState.tracked_commits.domains_txt = latestDomains.sha;
+      currentState.last_check = new Date().toISOString();
+      await this.state.saveState(currentState);
+    } else {
+      console.error('⚠️  Could not retrieve latest commit for domains.txt — state not updated');
     }
-    currentState.last_check = new Date().toISOString();
-    await this.state.saveState(currentState);
 
     // Save discoveries to recent changes
     const allChanges = [
@@ -125,6 +132,7 @@ export class BugBountyTracker {
 
     return {
       ...results,
+      total_checked: PLATFORM_COUNT,
       check_duration_ms: duration,
     };
   }
@@ -140,7 +148,7 @@ export class BugBountyTracker {
     const metadata = await this.state.loadMetadata();
 
     // Check each platform
-    const platforms = ['hackerone', 'bugcrowd', 'intigriti', 'yeswehack'] as const;
+    const platforms = PLATFORMS;
 
     for (const platform of platforms) {
       console.log(`  Checking ${platform}...`);
@@ -187,25 +195,29 @@ export class BugBountyTracker {
         } else {
           // Check for upgrades or scope changes
           if (!existing.offers_bounties && program.offers_bounties) {
+            // Spread program (not existing) so fresh fields like key_scopes,
+            // max_severity, name and url are captured in the cached snapshot.
             const meta: ProgramMetadata = {
-              ...existing,
-              offers_bounties: true,
+              ...program,
               discovered_at: new Date().toISOString(),
               change_type: 'upgraded_to_paid',
             };
 
             upgradedPrograms.push(meta);
             metadata.set(key, meta);
-          } else if (program.key_scopes.length > existing.key_scopes.length) {
-            const meta: ProgramMetadata = {
-              ...existing,
-              key_scopes: program.key_scopes,
-              discovered_at: new Date().toISOString(),
-              change_type: 'scope_expansion',
-            };
+          } else {
+            const existingScopes = new Set(existing.key_scopes);
+            if (program.key_scopes.some(s => !existingScopes.has(s))) {
+              const meta: ProgramMetadata = {
+                ...existing,
+                key_scopes: program.key_scopes,
+                discovered_at: new Date().toISOString(),
+                change_type: 'scope_expansion',
+              };
 
-            scopeExpansions.push(meta);
-            metadata.set(key, meta);
+              scopeExpansions.push(meta);
+              metadata.set(key, meta);
+            }
           }
         }
       }

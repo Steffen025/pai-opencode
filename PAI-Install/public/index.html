@@ -2,10 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=1280, initial-scale=1">
-  <title>PAI Installer v4.0</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PAI Installer</title>
   <link rel="stylesheet" href="/styles.css">
   <link rel="icon" href="/assets/pai-icon.png" type="image/png">
+  <script>
+    // Central version constant - update this for new releases
+    window.APP_VERSION = "v4.0.3";
+    document.addEventListener('DOMContentLoaded', function() {
+      document.title = 'PAI Installer ' + window.APP_VERSION;
+      document.getElementById('welcome-subtitle').textContent = 'Personal AI Infrastructure ' + window.APP_VERSION;
+      document.getElementById('header-version').textContent = window.APP_VERSION;
+    });
+  </script>
 </head>
 <body>
 
@@ -13,7 +22,7 @@
   <div id="welcome-overlay" class="welcome-overlay">
     <img src="/assets/pai-logo.png" alt="PAI" class="welcome-logo">
     <div class="welcome-title">PAI Installer</div>
-    <div class="welcome-subtitle">Personal AI Infrastructure v4.0</div>
+    <div id="welcome-subtitle" class="welcome-subtitle">Personal AI Infrastructure</div>
     <button class="welcome-start" onclick="startInstall()">Begin Installation</button>
   </div>
 
@@ -25,7 +34,7 @@
       <div class="header-brand">
         <img src="/assets/pai-icon.png" alt="PAI" class="header-logo">
         <span class="header-title">PAI Installer</span>
-        <span class="header-version">v4.0</span>
+        <span id="header-version" class="header-version"></span>
       </div>
       <div class="header-progress">
         <span id="progress-text">Step 0/8</span>
@@ -56,7 +65,7 @@
 
   </div>
 
-  <audio id="welcome-audio" src="/assets/welcome.mp3" autoplay preload="auto"></audio>
+  <audio id="welcome-audio" src="/assets/welcome.mp3" controls preload="auto"></audio>
   <script src="/app.js"></script>
 </body>
 </html>

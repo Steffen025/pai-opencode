@@ -5,15 +5,15 @@
  * Automatically migrates existing v2.x installations to v3.0 structure.
  *
  * Usage:
- *   bun tools/migration-v2-to-v3.ts              # Run migration
- *   bun tools/migration-v2-to-v3.ts --dry-run  # Preview only
- *   bun tools/migration-v2-to-v3.ts --force     # Skip version check
- *   bun tools/migration-v2-to-v3.ts --backup-dir /custom/path
+ *   bun Tools/migration-v2-to-v3.ts              # Run migration
+ *   bun Tools/migration-v2-to-v3.ts --dry-run  # Preview only
+ *   bun Tools/migration-v2-to-v3.ts --force     # Skip version check
+ *   bun Tools/migration-v2-to-v3.ts --backup-dir /custom/path
  */
 
 import { existsSync, statSync, copyFileSync, mkdirSync, renameSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { join, basename } from "node:path";
+import { join, basename, dirname, relative, isAbsolute } from "node:path";
 import { spawn } from "bun";
 
 // ═══════════════════════════════════════════════════════════
@@ -23,7 +23,8 @@ import { spawn } from "bun";
 const PAI_DIR = join(homedir(), ".opencode");
 const BACKUP_PREFIX = ".opencode-backup-";
 // Use timestamp with milliseconds for uniqueness (YYYYMMDD-HHMMSS-mmm)
-const TIMESTAMP = new Date().toISOString().replace(/[:.]/g, "-").replace("T", "-").slice(0, -5);
+// Remove only the trailing "Z" so the millisecond portion is preserved.
+const TIMESTAMP = new Date().toISOString().replace(/[:.]/g, "-").replace("T", "-").replace(/Z$/, "");
 
 // ═══════════════════════════════════════════════════════════
 // Types
@@ -56,9 +57,20 @@ function parseArgs(): Options {
 	const backupIndex = args.findIndex((a) => a === "--backup-dir" || a.startsWith("--backup-dir="));
 	if (backupIndex !== -1) {
 		if (args[backupIndex].includes("=")) {
-			backupDir = args[backupIndex].split("=")[1];
-		} else if (backupIndex + 1 < args.length) {
-			backupDir = args[backupIndex + 1];
+			const value = args[backupIndex].split("=")[1].trim();
+			if (!value) {
+				console.error("Error: --backup-dir requires a non-empty path (e.g. --backup-dir=/path)");
+				process.exit(1);
+			}
+			backupDir = value;
+		} else {
+			const next = args[backupIndex + 1];
+			const nextTrimmed = next ? next.trim() : "";
+			if (!nextTrimmed || next.startsWith("-")) {
+				console.error("Error: --backup-dir requires a path argument that is not a flag");
+				process.exit(1);
+			}
+			backupDir = nextTrimmed;
 		}
 	}
 
@@ -126,8 +138,8 @@ async function detectVersion(): Promise<string> {
 
 async function createBackup(backupPath: string, dryRun: boolean): Promise<void> {
 	// Validate backup path is not inside source directory
-	const relativePath = require("node:path").relative(PAI_DIR, backupPath);
-	if (!relativePath.startsWith("..") && !require("node:path").isAbsolute(relativePath)) {
+	const relativePath = relative(PAI_DIR, backupPath);
+	if (!relativePath.startsWith("..") && !isAbsolute(relativePath)) {
 		throw new Error(`Backup path cannot be inside source directory: ${backupPath}`);
 	}
 
@@ -203,13 +215,17 @@ async function migrateSkills(report: MigrationReport, dryRun: boolean): Promise<
 			log(`[DRY-RUN] Would migrate flat skill: ${skill.name}`, "info");
 			migratedCount++; // Count for dry-run reporting
 		} else {
-			// Check if already in hierarchical location (parent dir is Category name)
-			const parentDir = basename(skillPath);
-			const isAlreadyHierarchical = skillFiles.includes("Tools") || skillFiles.includes("Workflows");
-			const isInCategoryDir = parentDir !== skill.name && parentDir !== "skills";
+			// Check if already in a category subdirectory.
+			// skillPath = <skillsDir>/<entry> so basename(dirname(skillPath)) === "skills"
+			// for a top-level skill. If it were under a category it would be
+			// <skillsDir>/<Category>/<SkillName>, but that structure is not what
+			// flatSkills iterates — flatSkills is one level below skillsDir.
+			// So the correct indicator is: does skillPath already have a same-named
+			// subdirectory containing SKILL.md? If so it's already nested.
+			const alreadyNested = existsSync(join(skillPath, skill.name, "SKILL.md"));
 			
-			if (isAlreadyHierarchical || isInCategoryDir) {
-				// Already in correct location, just updateMinimalBootstrap
+			if (alreadyNested) {
+				// Already in correct location
 				log(`Skill already in hierarchical location: ${skill.name}`, "info");
 				alreadyHierarchical++;
 			} else {
@@ -365,8 +381,9 @@ async function main(): Promise<void> {
     console.log("  3. If issues: restore from backup at", backupPath);
 
   } catch (error) {
-    log(`Migration failed: ${error.message}`, "error");
-    report.errors.push(error.message);
+    const errMsg = error instanceof Error ? error.message : String(error);
+    log(`Migration failed: ${errMsg}`, "error");
+    report.errors.push(errMsg);
     process.exit(1);
   }
 }

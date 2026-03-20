@@ -4,19 +4,28 @@
  * Serves static files and handles WebSocket communication.
  */
 
-// Prevent unhandled errors from crashing the server
+// Prevent unhandled errors from crashing silently — log then exit cleanly
 process.on("uncaughtException", (err) => {
   console.error("[PAI Installer] Uncaught exception:", err.message);
+  process.exit(1);
 });
 process.on("unhandledRejection", (err: any) => {
   console.error("[PAI Installer] Unhandled rejection:", err?.message || err);
+  process.exit(1);
 });
 
-import { existsSync, readFileSync } from "fs";
 import { resolve, relative, join, extname } from "path";
 import { handleWsMessage, addClient, removeClient } from "./routes";
 
-const PORT = parseInt(process.env.PAI_INSTALL_PORT || "1337");
+const _rawPort = parseInt(process.env.PAI_INSTALL_PORT ?? "", 10);
+const PORT = Number.isInteger(_rawPort) && _rawPort >= 1 && _rawPort <= 65535
+  ? _rawPort
+  : (() => {
+      if (process.env.PAI_INSTALL_PORT !== undefined) {
+        console.warn(`[PAI Installer] Invalid PAI_INSTALL_PORT "${process.env.PAI_INSTALL_PORT}", falling back to 1337`);
+      }
+      return 1337;
+    })();
 const PUBLIC_DIR = join(import.meta.dir, "..", "public");
 
 // ─── MIME Types ──────────────────────────────────────────────────
@@ -55,7 +64,7 @@ const server = Bun.serve({
   port: PORT,
   hostname: "127.0.0.1", // Localhost only — never expose to network
 
-  fetch(req, server) {
+  async fetch(req, server) {
     resetInactivity();
 
     const url = new URL(req.url);
@@ -87,11 +96,17 @@ const server = Bun.serve({
       return new Response("Forbidden", { status: 403 });
     }
 
-    if (existsSync(fullPath)) {
+    // Async file serving using Bun-native APIs
+    const file = Bun.file(fullPath);
+    if (await file.exists()) {
+      // Don't serve directories (check via size - directories have size 0 in Bun)
+      const stat = await file.stat();
+      if (stat && stat.isDirectory()) {
+        return new Response("Not Found", { status: 404 });
+      }
       const ext = extname(fullPath);
       const mime = MIME_TYPES[ext] || "application/octet-stream";
-      const content = readFileSync(fullPath);
-      return new Response(content, {
+      return new Response(file, {
         headers: {
           "content-type": mime,
           "cache-control": "no-cache, no-store, must-revalidate",
@@ -99,12 +114,20 @@ const server = Bun.serve({
       });
     }
 
-    // Fallback to index.html for SPA routing
-    const indexPath = join(PUBLIC_DIR, "index.html");
-    if (existsSync(indexPath)) {
-      return new Response(readFileSync(indexPath), {
-        headers: { "content-type": "text/html", "cache-control": "no-cache" },
-      });
+    // SPA fallback: only for HTML navigation requests with no file extension.
+    // Paths like /missing.js or /app.css have extensions → return 404.
+    // Paths like /dashboard or / have no extension → serve index.html for SPA routing.
+    const pathname = url.pathname;
+    const hasExtension = extname(pathname) !== "";
+    const acceptsHtml = req.method === "GET" && (req.headers.get("accept") ?? "").includes("text/html");
+    if (acceptsHtml && !hasExtension) {
+      const indexPath = join(PUBLIC_DIR, "index.html");
+      const indexFile = Bun.file(indexPath);
+      if (await indexFile.exists()) {
+        return new Response(indexFile, {
+          headers: { "content-type": "text/html", "cache-control": "no-cache" },
+        });
+      }
     }
 
     return new Response("Not Found", { status: 404 });

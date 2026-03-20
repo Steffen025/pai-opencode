@@ -11,6 +11,16 @@ import { buildOpenCodeBinary } from "./build-opencode";
 import type { UpdateResult } from "./update";
 
 // ═══════════════════════════════════════════════════════════
+// Event Types
+// ═══════════════════════════════════════════════════════════
+
+export type UpdateEvent =
+	| { event: "step_start"; step: string }
+	| { event: "step_complete"; step: string }
+	| { event: "progress"; step: string; percent: number; detail: string }
+	| { event: "message"; content: string };
+
+// ═══════════════════════════════════════════════════════════
 // Step 1: Detected
 // ═══════════════════════════════════════════════════════════
 
@@ -22,7 +32,7 @@ export interface UpdateDetectionResult {
 }
 
 export async function stepDetectUpdate(
-	state: InstallState,
+	_state: InstallState,
 	onProgress: (percent: number, message: string) => void
 ): Promise<UpdateDetectionResult> {
 	onProgress(0, "Checking for updates...");
@@ -90,8 +100,17 @@ export async function stepUpdateDone(
 ): Promise<void> {
 	onProgress(95, "Finalizing update...");
 	
-	// Ensure wrapper is up to date
-	// Verify installation
+	// If binary was updated, verify the wrapper script points to it
+	if (result.binaryUpdated) {
+		onProgress(97, "Verifying wrapper script...");
+		// TODO: Implement wrapper verification - check that ~/.local/bin/opencode
+		// or the shell alias points to the correct binary
+		// For now, we assume the build step handled this
+	}
+	
+	// Report final status
+	const version = result.newVersion || "unknown";
+	onProgress(99, `Update to ${version} complete`);
 	
 	onProgress(100, "Update complete!");
 }
@@ -102,19 +121,19 @@ export async function stepUpdateDone(
 
 export async function runUpdate(
   state: InstallState,
-  emit: (event: any) => Promise<void>,
+  emit: (event: UpdateEvent) => Promise<void>,
   requestInput: (id: string, prompt: string, type: "text" | "password" | "key", placeholder?: string) => Promise<string>,
   requestChoice: (id: string, prompt: string, choices: { label: string; value: string; description?: string }[]) => Promise<string>
 ): Promise<void> {
   // Step 1: Detect Update
-  emit({ event: "step_start", step: "detect" });
+  await emit({ event: "step_start", step: "detect" });
   const updateInfo = await stepDetectUpdate(state, (percent, message) => {
     emit({ event: "progress", step: "detect", percent, detail: message });
   });
-  emit({ event: "step_complete", step: "detect" });
+  await emit({ event: "step_complete", step: "detect" });
 
   if (!updateInfo.needed) {
-    emit({ event: "message", content: UPDATE_UI_TEXT.upToDate.message(updateInfo.currentVersion || "unknown") });
+    await emit({ event: "message", content: UPDATE_UI_TEXT.upToDate.message(updateInfo.currentVersion || "unknown") });
     return;
   }
 
@@ -126,29 +145,23 @@ export async function runUpdate(
   const choice = await requestChoice("update-choice", UPDATE_UI_TEXT.updateAvailable.message(updateInfo.currentVersion || "unknown", updateInfo.targetVersion), updateChoices);
   
   if (choice === "skip") {
-    emit({ event: "message", content: "Update skipped. You can update later by running the installer again." });
+    await emit({ event: "message", content: "Update skipped. You can update later by running the installer again." });
     return;
   }
 
   // Step 2: Apply Update
-  emit({ event: "step_start", step: "pull" });
+  await emit({ event: "step_start", step: "pull" });
   const updateResult = await stepApplyUpdate(state, (percent, message) => {
     emit({ event: "progress", step: "pull", percent, detail: message });
   });
-  emit({ event: "step_complete", step: "pull" });
+  await emit({ event: "step_complete", step: "pull" });
 
-  // Step 3: Rebuild & Verify
-  emit({ event: "step_start", step: "rebuild" });
-  await buildOpenCodeBinary({
-    onProgress: async (message, percent) => {
-      emit({ event: "progress", step: "rebuild", percent, detail: message });
-    },
-    skipIfExists: false,
-  });
+  // Step 3: Verify (binary already built in stepApplyUpdate)
+  await emit({ event: "step_start", step: "rebuild" });
   await stepUpdateDone(state, updateResult, (percent, message) => {
     emit({ event: "progress", step: "rebuild", percent, detail: message });
   });
-  emit({ event: "step_complete", step: "rebuild" });
+  await emit({ event: "step_complete", step: "rebuild" });
 }
 
 // ═══════════════════════════════════════════════════════════

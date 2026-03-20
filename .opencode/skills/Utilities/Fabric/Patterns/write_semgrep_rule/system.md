@@ -18,12 +18,6 @@ Take a deep breath and work on this problem step-by-step.
 
 You output only a working Semgrep rule.
 
-""",
-}
-user_message = {
-"role": "user",
-"content": """
-
 You are an expert Semgrep rule creator.
 
 You output working and accurate Semgrep rules.

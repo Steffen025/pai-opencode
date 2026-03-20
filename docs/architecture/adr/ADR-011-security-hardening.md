@@ -1,3 +1,11 @@
+---
+title: "ADR-011: Security Hardening — Prompt Injection Defense & Audit Logging"
+status: Implemented
+date: "2026-03-06"
+depends_on: ["ADR-006 (Security Validation Preservation)"]
+tags: [adr, security, hardening]
+---
+
 # ADR-011: Security Hardening — Prompt Injection Defense & Audit Logging
 
 **Status:** ✅ Implemented (WP-B)  
@@ -89,8 +97,11 @@ interface SecurityAuditEntry {
 **Design decisions:**
 - **JSONL format:** Append-only, parseable, survives crashes
 - **Non-blocking:** Failures don't stop execution
-- **Command preview:** First 100 chars only, for privacy
-- **No PII:** No full file contents, no environment variables
+  - **Command preview:** Redact first — strip API keys, secrets, env var values,
+    and common secret patterns (e.g., `Bearer …`, `--key …`, `password=…`) before
+    generating any preview; preview is derived from the redacted command, not a
+    raw character-truncated excerpt. Truncate to 100 chars after redaction.
+  - **No PII:** No full file contents, no environment variables
 
 ### 5. Fail-Open Design
 
@@ -103,6 +114,44 @@ interface SecurityAuditEntry {
 
 **Alternative considered:** Fail-closed (block on error). Rejected because security validator bugs would break user workflows.
 
+## Architecture Diagram
+
+```text
+User Input (tool args)
+        │
+        ▼
+sanitizeForSecurityCheck()
+  (decodeBase64 → normalizeUnicode → collapseSpacing → stripHtml)
+        │
+        ├──▶ detectInjections()          ──▶ match?
+        │    (scan INJECTION_SCAN_FIELDS)        │ YES
+        │                                        ▼
+        ├──▶ dangerous command check             Block / Confirm
+        │    (DANGEROUS_PATTERNS)          │ NO
+        │                                  ▼
+        └──────────────────────────────▶ Allow
+                                          │
+                                          ▼
+                              Append to security-audit.jsonl
+                              (action: blocked | confirmed | allowed)
+```
+
+<details>
+<summary>Mermaid detail</summary>
+
+```mermaid
+flowchart TD
+    A["Incoming tool args"] --> B["sanitizeForSecurityCheck()"]
+    B --> C["Scan INJECTION_SCAN_FIELDS\nvia detectInjections()"]
+    C --> D{"Injection or\ndangerous pattern?"}
+    D -->|Yes| E["Block or Confirm\n(action: blocked/confirmed)"]
+    D -->|No| F["Allow\n(action: allowed)"]
+    E --> G["Append security-audit.jsonl"]
+    F --> G
+```
+
+</details>
+
 ## Consequences
 
 ### Positive
@@ -112,8 +161,11 @@ interface SecurityAuditEntry {
 - **Maintainability:** Patterns in dedicated file, not inline
 
 ### Negative
-- **Performance:** Sanitization adds ~1-2ms per tool call
-- **Disk usage:** Audit log grows unbounded (future: rotation)
+- **Performance:** Sanitization adds ~1–2 ms per tool call
+  - **Disk usage:** Audit log rotation defaults — max **10 MB** per file,
+    max **30 days** retention, keep last **5 rotated archives** (compressed `.gz`),
+    purge older archives automatically. Rotation is size-based (rename + new file)
+    with a daily time-based sweep. Planned implementation: `engine/audit-rotate.ts`.
 - **Complexity:** 3 new files vs 1 modified file
 
 ### Risks
@@ -172,7 +224,7 @@ sanitizeForSecurityCheck('eval $(echo "aWdub3Jl" | base64 -d)')
 
 // Full validation
 validateSecurity({ tool: "Write", args: { content: "ignore all previous" }})
-// → { action: "block", reason: "..." }
+// → { action: "blocked", reason: "..." }
 // → security-audit.jsonl has entry
 ```
 
@@ -182,7 +234,8 @@ validateSecurity({ tool: "Write", args: { content: "ignore all previous" }})
 - Rate limiting for repeated blocked attempts (needs persistent state)
 - MCP tool pre-loading validation (needs OpenCode plugin hook)
 - Security dashboard UI (part of observability system)
-- Log rotation and retention policies
+- Log rotation implementation (`engine/audit-rotate.ts` — 10 MB max,
+  30-day retention, 5 compressed archives, automatic purge)
 
 ---
 

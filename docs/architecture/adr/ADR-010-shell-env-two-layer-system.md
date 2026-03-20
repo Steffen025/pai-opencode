@@ -22,8 +22,13 @@ runtime context) reach Bash child processes reliably?
 
 Two separate systems need to cooperate:
 
-1. **`.opencode/.env`** — Static secrets (API keys, credentials)
-2. **`shell.env` plugin hook** — Dynamic runtime context per bash call
+| | `.opencode/.env` | `shell.env` plugin hook |
+|---|---|---|
+| **Purpose** | Static secrets, API keys, credentials | Dynamic runtime context per bash call |
+| **Lifetime** | Entire OpenCode process | Single bash invocation only |
+| **Examples** | `GOOGLE_API_KEY`, `ZEN_API_KEY`, `TTS_PROVIDER` | `PAI_SESSION_ID`, `PAI_WORK_DIR`, `PAI_VERSION` |
+| **Security posture** | Stored in `.opencode/.env`, access-controlled | Ephemeral, least-privilege |
+| **Typical consumers** | TypeScript plugin code (`process.env.KEY`) | Bash scripts, Python child processes |
 
 ### The Problem Without This Design
 
@@ -32,7 +37,7 @@ Two separate systems need to cooperate:
 const key = process.env.GOOGLE_API_KEY;  // ✅ Available
 
 // Bash child process — might NOT inherit all vars
-Bash({ command: "python3 transcribe.py --key $GOOGLE_API_KEY" })
+bash({ command: "python3 transcribe.py --key $GOOGLE_API_KEY" })
 // ⚠️ GOOGLE_API_KEY may be undefined in child process
 ```
 
@@ -49,7 +54,7 @@ Bash({ command: "python3 transcribe.py --key $GOOGLE_API_KEY" })
 **Available to:** All TypeScript plugin code via `process.env.KEY`  
 **Persists:** For entire OpenCode process lifetime
 
-```
+```text
 .opencode/.env
       │
       │ Bun auto-loads at startup
@@ -104,7 +109,7 @@ process.env (entire OpenCode process)
 
 ## Architecture Diagram
 
-```
+```text
 STARTUP:
 .opencode/.env ──Bun──> process.env (full OpenCode process)
                               │
@@ -115,6 +120,19 @@ STARTUP:
                     │                            │
             process.env.KEY ✅         shell.env Hook ──> output.env
 ```
+
+<details>
+<summary>Mermaid detail</summary>
+
+```mermaid
+flowchart TD
+    A[".opencode/.env"] -->|Bun auto-loads at startup| B["process.env (OpenCode process)"]
+    B --> C["Plugin TypeScript\n(process.env.KEY ✅)"]
+    B --> D["shell.env hook\n(runs before each bash call)"]
+    D --> E["output.env\n(injected into bash child process)"]
+```
+
+</details>
 
 ---
 

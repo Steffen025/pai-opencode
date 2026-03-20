@@ -271,6 +271,13 @@ export async function migrateV2ToV3(
 		// 5. Validate (90%)
 		await onProgress?.("Validating migration...", 90);
 		
+		// Skip filesystem validation in dry-run mode
+		if (dryRun) {
+			result.success = true;
+			await onProgress?.("Migration complete! (dry-run)", 100);
+			return result;
+		}
+		
 		const remainingFlat = detectFlatSkills(skillsDir);
 		if (remainingFlat.length > 0) {
 			result.errors.push(

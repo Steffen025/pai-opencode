@@ -21,12 +21,12 @@ interface AgentContext {
 }
 
 export class AgentContextLoader {
-  private claudeHome: string;
+  private opencodeHome: string;
   private agentsDir: string;
 
   constructor() {
-    this.claudeHome = join(homedir(), ".opencode");
-    this.agentsDir = join(this.claudeHome, "Skills", "Agents");
+    this.opencodeHome = join(homedir(), ".opencode");
+    this.agentsDir = join(this.opencodeHome, "skills", "Agents");
   }
 
   /**

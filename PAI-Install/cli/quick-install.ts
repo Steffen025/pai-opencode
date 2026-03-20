@@ -56,6 +56,15 @@ const { values } = parseArgs({
 });
 
 // ═══════════════════════════════════════════════════════════
+// Version
+// ═══════════════════════════════════════════════════════════
+
+if (values.version) {
+	console.log("PAI-Install v3.0.0");
+	process.exit(0);
+}
+
+// ═══════════════════════════════════════════════════════════
 // Help
 // ═══════════════════════════════════════════════════════════
 
@@ -201,9 +210,22 @@ async function runFreshInstall(): Promise<void> {
 	await stepInstallPAI(state, onProgress);
 	
 	onProgress(100, "✅ Installation complete!");
+
+	// Detect current shell for reload instructions
+	const currentShell = process.env.SHELL || "/bin/zsh";
+	const shellName = currentShell.split("/").pop() || "zsh";
+	let reloadCmd: string;
+	if (shellName === "fish") {
+		reloadCmd = "source ~/.config/fish/config.fish";
+	} else if (shellName === "bash") {
+		reloadCmd = "source ~/.bashrc";
+	} else {
+		reloadCmd = "source ~/.zshrc";
+	}
+
 	console.log("\nNext steps:");
-	console.log(`  1. Add to .zshrc: alias ${state.collected.aiName?.toLowerCase() || "pai"}="/usr/local/bin/${state.collected.aiName?.toLowerCase() || "pai"}-wrapper"`);
-	console.log(`  2. Restart terminal or run: source ~/.zshrc`);
+	console.log(`  1. Add to shell config: alias ${state.collected.aiName?.toLowerCase() || "pai"}="/usr/local/bin/${state.collected.aiName?.toLowerCase() || "pai"}-wrapper"`);
+	console.log(`  2. Restart terminal or run: ${reloadCmd}`);
 	console.log(`  3. Launch with: ${state.collected.aiName?.toLowerCase() || "pai"}`);
 }
 

@@ -36,11 +36,13 @@ Feedback Loops and Dynamics: Consider how feedback loops within the system might
 
 Conclusion: Summarize your analysis by considering how the internal dynamics of the system, its external influences, and adjacent systems together create a complex network of interactions. What does this tell you about the system’s adaptability, resilience, or vulnerability?
 
-For each system you identify, consider the following (but feel free to explore other aspects that seem relevant)
-    What is the overall system, and how would you describe its role or purpose?
-    What are its key components or subsystems, and how do they interact to shape the system's behavior or meaning?
-    How might this system interact with larger or external systems?
-    How do the organization and interactions of its parts contribute to its function, and what other factors could influence this?
+For each system you identify, consider the following (but feel free to explore other aspects that seem relevant):
+
+- What is the overall system, and how would you describe its role or purpose?
+- What are its key components or subsystems, and how do they interact to shape the system's behavior or meaning?
+- How might this system interact with larger or external systems?
+- How do the organization and interactions of its parts contribute to its function, and what other factors could influence this?
+
 ---
 
 
@@ -62,7 +64,7 @@ Additionally, reflect on:
 - How zooming in or out on different aspects might change our understanding of the project
 - Any potential reorganizations of these systems that could lead to different outcomes or meanings
 
-Remember to consider both the explicit systems mentioned in the brief and implicit systems that might be relevant to the project's success.](<# Understanding DSRP Distinctions
+Remember to consider both the explicit systems mentioned in the brief and implicit systems that might be relevant to the project's success.
 
 
 ---

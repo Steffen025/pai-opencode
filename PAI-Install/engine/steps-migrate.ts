@@ -5,10 +5,11 @@
  * 5-step migration flow with explicit user consent and backup.
  */
 
-import { existsSync } from "node:fs";
+import { existsSync, cpSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import type { InstallState } from "./types";
+import { PAI_VERSION } from "./types";
 import { migrateV2ToV3, isMigrationNeeded } from "./migrate";
 import { buildOpenCodeBinary } from "./build-opencode";
 import type { MigrationResult } from "./migrate";
@@ -57,6 +58,8 @@ export async function stepCreateBackup(
 ): Promise<{ success: boolean; backupPath: string; error?: string }> {
 	onProgress(10, "Creating backup...");
 	
+	const paiDir = join(homedir(), ".opencode");
+	
 	// Check if backup already exists
 	const finalBackupDir = backupDir || join(
 		homedir(),
@@ -69,6 +72,35 @@ export async function stepCreateBackup(
 			backupPath: finalBackupDir,
 			error: `Backup already exists at ${finalBackupDir}`,
 		};
+	}
+	
+	// Create the backup directory
+	onProgress(30, "Creating backup directory...");
+	try {
+		mkdirSync(finalBackupDir, { recursive: true });
+	} catch (err) {
+		return {
+			success: false,
+			backupPath: finalBackupDir,
+			error: `Failed to create backup directory: ${err instanceof Error ? err.message : String(err)}`,
+		};
+	}
+	
+	// Copy the entire .opencode directory to backup
+	if (existsSync(paiDir)) {
+		onProgress(50, "Copying files to backup location...");
+		try {
+			cpSync(paiDir, finalBackupDir, { recursive: true });
+			onProgress(80, "Backup created successfully");
+		} catch (err) {
+			return {
+				success: false,
+				backupPath: finalBackupDir,
+				error: `Failed to copy files to backup: ${err instanceof Error ? err.message : String(err)}`,
+			};
+		}
+	} else {
+		onProgress(80, "No existing installation to backup");
 	}
 	
 	// Store backup path in state
@@ -148,11 +180,66 @@ export async function stepMigrationDone(
 	result: MigrationResult,
 	onProgress: (percent: number, message: string) => void
 ): Promise<void> {
+	const paiDir = join(homedir(), ".opencode");
+	
 	onProgress(95, "Finalizing migration...");
 	
-	// Update version marker
-	// Ensure wrapper is installed
-	// Update .zshrc if needed
+	// 1. Write/update version marker
+	onProgress(96, "Writing version marker...");
+	const versionFile = join(paiDir, ".version");
+	try {
+		writeFileSync(versionFile, `${PAI_VERSION}\n`, "utf-8");
+	} catch (err) {
+		// Non-fatal - version can be detected from settings.json
+		console.warn("Could not write version file:", err);
+	}
+	
+	// 2. Install CLI wrapper
+	onProgress(97, "Installing CLI wrapper...");
+	const wrapperDir = join(homedir(), ".local", "bin");
+	const wrapperPath = join(wrapperDir, "pai");
+	const wrapperContent = `#!/bin/bash
+# PAI-OpenCode CLI Wrapper
+exec bun "${join(paiDir, "PAI", "Tools", "pai.ts")}" "$@"
+`;
+	try {
+		mkdirSync(wrapperDir, { recursive: true });
+		writeFileSync(wrapperPath, wrapperContent, { mode: 0o755 });
+	} catch (err) {
+		// Non-fatal - shell alias will still work
+		console.warn("Could not install CLI wrapper:", err);
+	}
+	
+	// 3. Update shell rc file with alias/PATH
+	onProgress(98, "Updating shell configuration...");
+	const userShell = process.env.SHELL || "/bin/zsh";
+	const isFish = userShell.includes("fish");
+	const rcFile = userShell.includes("bash") ? ".bashrc" : isFish ? ".config/fish/config.fish" : ".zshrc";
+	const rcPath = join(homedir(), rcFile);
+	// Escape internal single quotes using POSIX '\'' technique.
+	// escapedPath is used directly inside a single-quoted string in aliasLine —
+	// the outer single quotes come from aliasLine itself, NOT from escapedPath.
+	const rawPath = join(paiDir, "PAI", "Tools", "pai.ts");
+	const escapedPath = rawPath.replace(/'/g, "'\\''");
+	const aliasLine = isFish
+		? `alias pai 'bun ${escapedPath}'`
+		: `alias pai='bun ${escapedPath}'`;
+	const marker = "# PAI alias (v3)";
+	
+	try {
+		let content = "";
+		if (existsSync(rcPath)) {
+			content = require("fs").readFileSync(rcPath, "utf-8");
+			// Remove old PAI aliases
+			content = content.replace(/^#\s*(?:PAI|CORE)\s*alias.*\n.*alias pai=.*\n?/gm, "");
+			content = content.replace(/^alias pai=.*\n?/gm, "");
+			content = content.replace(/^alias pai\s+.*\n?/gm, "");
+		}
+		content = content.trimEnd() + `\n\n${marker}\n${aliasLine}\n`;
+		writeFileSync(rcPath, content);
+	} catch (err) {
+		console.warn("Could not update shell rc file:", err);
+	}
 	
 	onProgress(100, "Migration complete!");
 }
@@ -168,15 +255,20 @@ export async function runMigration(
   requestChoice: (id: string, prompt: string, choices: { label: string; value: string; description?: string }[]) => Promise<string>
 ): Promise<void> {
   // Step 1: Detect Migration
-  emit({ event: "step_start", step: "detect" });
+  await emit({ event: "step_start", step: "detect" });
   const detection = await stepDetectMigration(state, (percent, message) => {
-    emit({ event: "progress", step: "detect", percent, detail: message });
+    void emit({ event: "progress", step: "detect", percent, detail: message }).catch(() => {});
   });
-  emit({ event: "step_complete", step: "detect" });
+  await emit({ event: "step_complete", step: "detect" });
 
-  // Step 2: Create Backup (with explicit consent)
-  emit({ event: "step_start", step: "backup" });
-  emit({ 
+  // Early return if no migration is needed
+  if (!detection.needed || (detection.flatSkills || []).length === 0) {
+    await emit({ event: "message", content: "No migration needed — installation is already up to date." });
+    return;
+  }
+
+  // Step 2: Consent — prompt BEFORE opening the backup step so cancel leaves no open step
+  await emit({ 
     event: "message", 
     content: MIGRATION_CONSENT_TEXT.title + "\n" + 
              MIGRATION_CONSENT_TEXT.description((detection.flatSkills || []).length)
@@ -189,38 +281,66 @@ export async function runMigration(
   const consent = await requestChoice("migration-consent", MIGRATION_CONSENT_TEXT.warning, consentChoices);
   
   if (consent !== "proceed") {
-    throw new Error("Migration cancelled by user");
+    await emit({ event: "message", content: "Migration cancelled by user." });
+    return;
   }
-  
-  const backupResult = await stepCreateBackup(state, "", (percent, message) => {
-    emit({ event: "progress", step: "backup", percent, detail: message });
-  });
-  emit({ event: "step_complete", step: "backup" });
+
+  // Open the backup step only after consent is confirmed
+  await emit({ event: "step_start", step: "backup" });
+
+  let backupResult: { success: boolean; backupPath: string; error?: string };
+  try {
+    backupResult = await stepCreateBackup(state, "", (percent, message) => {
+      void emit({ event: "progress", step: "backup", percent, detail: message }).catch(() => {});
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    await emit({ event: "message", content: `Backup failed unexpectedly: ${msg}` });
+    throw err;
+  }
+
+  if (!backupResult.success) {
+    await emit({ event: "message", content: `Backup failed: ${backupResult.error || "Unknown error"}` });
+    throw new Error(`Backup failed: ${backupResult.error || "Unknown error"}`);
+  }
+  await emit({ event: "step_complete", step: "backup" });
 
   // Step 3: Migrate Configuration
-  emit({ event: "step_start", step: "migrate-config" });
-  const migrationResult = await stepMigrate(state, (percent, message) => {
-    emit({ event: "progress", step: "migrate-config", percent, detail: message });
-  }, false);
-  emit({ event: "step_complete", step: "migrate-config" });
+  await emit({ event: "step_start", step: "migrate-config" });
+  let migrationResult: MigrationResult;
+  try {
+    migrationResult = await stepMigrate(state, (percent, message) => {
+      void emit({ event: "progress", step: "migrate-config", percent, detail: message }).catch(() => {});
+    }, false);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    await emit({ event: "message", content: `Migration failed unexpectedly: ${msg}` });
+    throw err;
+  }
+
+  if (!migrationResult.success) {
+    await emit({ event: "message", content: `Migration failed: ${migrationResult.error || "Unknown error"}` });
+    throw new Error(`Migration failed: ${migrationResult.error || "Unknown error"}`);
+  }
+  await emit({ event: "step_complete", step: "migrate-config" });
 
   // Step 4: Build Binary
-  emit({ event: "step_start", step: "build" });
-  const { buildOpenCodeBinary } = await import("./build-opencode");
-  await buildOpenCodeBinary({
-    onProgress: async (message, percent) => {
-      emit({ event: "progress", step: "build", percent, detail: message });
-    },
-    skipIfExists: false,
-  });
-  emit({ event: "step_complete", step: "build" });
+  await emit({ event: "step_start", step: "build" });
+  const binaryResult = await stepBinaryUpdate(state, (percent, message) => {
+    void emit({ event: "progress", step: "build", percent, detail: message }).catch(() => {});
+  }, false);
+  
+  if (!binaryResult.success) {
+    throw new Error(`Binary build failed: ${binaryResult.error || "Unknown error"}`);
+  }
+  await emit({ event: "step_complete", step: "build" });
 
   // Step 5: Verify Migration
-  emit({ event: "step_start", step: "verify" });
+  await emit({ event: "step_start", step: "verify" });
   await stepMigrationDone(state, migrationResult, (percent, message) => {
-    emit({ event: "progress", step: "verify", percent, detail: message });
+    void emit({ event: "progress", step: "verify", percent, detail: message }).catch(() => {});
   });
-  emit({ event: "step_complete", step: "verify" });
+  await emit({ event: "step_complete", step: "verify" });
 }
 
 // ═══════════════════════════════════════════════════════════

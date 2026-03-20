@@ -6,7 +6,7 @@
 import { BaseGrader, registerGrader, type GraderContext } from '../Base.ts';
 import type { GraderConfig, GraderResult, StateCheckParams } from '../../Types/index.ts';
 import { existsSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 
 export class StateCheckGrader extends BaseGrader {
   type = 'state_check' as const;
@@ -35,7 +35,17 @@ export class StateCheckGrader extends BaseGrader {
     // Check file contents
     if (params.check_files) {
       for (const fileCheck of params.check_files) {
-        const filePath = join(workingDir, fileCheck.path);
+        const filePath = resolve(workingDir, fileCheck.path);
+        // Prevent path traversal: ensure resolved path stays within workingDir
+        if (!filePath.startsWith(resolve(workingDir) + '/') && filePath !== resolve(workingDir)) {
+          checks.push({
+            check: `file.${fileCheck.path}`,
+            passed: false,
+            expected: 'file within working directory',
+            actual: 'path traversal rejected',
+          });
+          continue;
+        }
 
         if (!existsSync(filePath)) {
           checks.push({
@@ -81,11 +91,12 @@ export class StateCheckGrader extends BaseGrader {
     if (params.check_env) {
       for (const [key, expected] of Object.entries(params.check_env)) {
         const actual = process.env[key];
+        const passed = actual === expected;
         checks.push({
           check: `env.${key}`,
-          passed: actual === expected,
-          expected,
-          actual,
+          passed,
+          expected: '***',   // never expose expected secret value in results
+          actual: passed ? '*** (matches)' : '*** (mismatch)',
         });
       }
     }

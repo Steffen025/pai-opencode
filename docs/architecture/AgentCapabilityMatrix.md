@@ -167,7 +167,7 @@ All agents inherit the session's tool permissions from `opencode.json`. The curr
 | Web search | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ |
 | Web fetch | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ |
 | Task (spawn subagent) | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Custom tools (PAI) | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Custom tools (PAI) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `doom_loop` | ask | ask | ask | ask | ask | ask |
 | `external_directory` | ask | ask | ask | ask | ask | ask |
 

@@ -2,7 +2,7 @@
 name: BrowserAgent
 description: Parallel headless browser automation agent using Playwright CLI. Navigates pages, interacts with elements, extracts data, and captures screenshots. Designed for parallel execution — each instance gets its own isolated named session. Use for web scraping, form filling, data extraction, page interaction, and any browser task that benefits from parallelism.
 model: sonnet
-color: cyan
+color: "#00FFFF"
 skills:
   - Browser
 permissions:
