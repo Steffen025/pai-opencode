@@ -23,9 +23,9 @@
           "heading": "## Skill System Architecture",
           "dependents": ["SKILLSYSTEM.md"]
         },
-        "hook-system": {
-          "heading": "## Hook System Architecture",
-          "dependents": ["THEHOOKSYSTEM.md"]
+        "plugin-system": {
+          "heading": "## Plugin System Architecture",
+          "dependents": ["THEPLUGINSYSTEM.md"]
         },
         "memory-system": {
           "heading": "## Memory System Architecture",
@@ -91,12 +91,6 @@
 
     "MEMORYSYSTEM.md": {
       "description": "Memory system detailed documentation",
-      "tier": 2,
-      "upstream": "PAISYSTEMARCHITECTURE.md"
-    },
-
-    "THEHOOKSYSTEM.md": {
-      "description": "Hook system detailed documentation",
       "tier": 2,
       "upstream": "PAISYSTEMARCHITECTURE.md"
     },

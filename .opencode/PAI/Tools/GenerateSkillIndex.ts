@@ -360,7 +360,9 @@ async function main() {
   const avgMinimalTokens = 25;
   const currentTokens = index.totalSkills * avgFullTokens;
   const newTokens = (index.alwaysLoadedCount * avgFullTokens) + (index.deferredCount * avgMinimalTokens);
-  const savings = ((currentTokens - newTokens) / currentTokens * 100).toFixed(1);
+  const savings = currentTokens > 0
+    ? ((currentTokens - newTokens) / currentTokens * 100).toFixed(1)
+    : "0.0";
 
   console.log(`\n💰 Estimated token impact:`);
   console.log(`   Current: ~${currentTokens.toLocaleString()} tokens`);
