@@ -130,8 +130,11 @@ info "Installing plugin to $PLUGIN_DIR ..."
 
 mkdir -p "$PLUGIN_DIR"
 cp "$SCRIPT_DIR/plugins/anthropic-max-bridge.js" "$PLUGIN_DIR/anthropic-max-bridge.js"
+cp "$SCRIPT_DIR/plugins/anthropic-token-bridge.js" "$PLUGIN_DIR/anthropic-token-bridge.js"
 
-ok "Plugin installed: $PLUGIN_DIR/anthropic-max-bridge.js"
+ok "Plugins installed:"
+ok "  $PLUGIN_DIR/anthropic-max-bridge.js"
+ok "  $PLUGIN_DIR/anthropic-token-bridge.js"
 
 # ── Step 4: Write token to auth.json ─────────────────────────
 
@@ -213,8 +216,8 @@ echo "     (or any other claude-* model)"
 echo ""
 echo "Token refresh:"
 echo "  Tokens expire after ~8-12 hours."
-echo "  When expired, run:  bash refresh-token.sh"
-echo "  (Claude Code auto-refreshes its own token in the background)"
+echo "  The token-bridge plugin refreshes automatically every 5 messages."
+echo "  If needed, you can also refresh manually:  bash refresh-token.sh"
 echo ""
 echo -e "${YELLOW}Note:${RESET} This uses your Max subscription quota."
 echo "      All models show \$0 cost in the UI (already paid for)."
