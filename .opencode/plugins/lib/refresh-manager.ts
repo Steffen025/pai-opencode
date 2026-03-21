@@ -74,17 +74,23 @@ async function extractFromKeychain(): Promise<KeychainTokens | null> {
 		}
 
 		const credentials = JSON.parse(stdout.trim()) as {
-			// Keychain stores camelCase (Claude Code CLI format)
+			claudeAiOauth?: {
+				accessToken?: string;
+				refreshToken?: string;
+				expiresAt?: number;
+			};
+			// Legacy fallback for direct storage (rare)
 			accessToken?: string;
 			refreshToken?: string;
-			// Fallback for snake_case (older format)
 			access_token?: string;
 			refresh_token?: string;
 		};
 
-		// pragma: allowlist secret — runtime extraction from macOS Keychain, not hardcoded values
-		const accessToken = credentials.accessToken ?? credentials.access_token;
-		const refreshToken = credentials.refreshToken ?? credentials.refresh_token;
+		// Extract from nested claudeAiOauth structure (standard Claude Code format)
+		const oauth = credentials.claudeAiOauth;
+		// pragma: allowlist secret — runtime extraction from macOS Keychain
+		const accessToken = oauth?.accessToken ?? credentials.accessToken ?? credentials.access_token;
+		const refreshToken = oauth?.refreshToken ?? credentials.refreshToken ?? credentials.refresh_token;
 
 		if (!accessToken || !refreshToken) {
 			error("Invalid credentials format from Keychain", {

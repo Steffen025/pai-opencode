@@ -196,9 +196,10 @@ async function extractFromKeychain() {
       return null;
     }
     const credentials = JSON.parse(stdout.trim());
-    // pragma: allowlist secret — runtime extraction from macOS Keychain, not hardcoded values
-    const accessToken = credentials.accessToken ?? credentials.access_token;
-    const refreshToken = credentials.refreshToken ?? credentials.refresh_token;
+    const oauth = credentials.claudeAiOauth;
+    // pragma: allowlist secret — runtime extraction from macOS Keychain
+    const accessToken = oauth?.accessToken ?? credentials.accessToken ?? credentials.access_token;
+    const refreshToken = oauth?.refreshToken ?? credentials.refreshToken ?? credentials.refresh_token;
     if (!accessToken || !refreshToken) {
       error("Invalid credentials format from Keychain", {
         hasAccess: !!accessToken,
