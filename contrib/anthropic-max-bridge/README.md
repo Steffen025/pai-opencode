@@ -63,7 +63,7 @@ bash install.sh
 
 That's it. The script will:
 1. Extract your OAuth token from the macOS Keychain
-2. Copy the plugin to `~/.opencode/plugins/anthropic-max-bridge.js`
+2. Copy both plugins to `~/.opencode/plugins/`
 3. Write the token into `~/.local/share/opencode/auth.json`
 4. Tell you how long the token is valid for
 
@@ -85,7 +85,9 @@ You'll see **$0 input / $0 output** cost because it uses your subscription.
 
 Anthropic OAuth tokens expire after **8–12 hours**.
 
-When you get an auth error, run:
+**Auto-refresh (default):** The `anthropic-token-bridge` plugin checks your token every 5 messages and refreshes it automatically from the macOS Keychain — no action needed.
+
+**Manual refresh (fallback):** If auto-refresh fails for any reason, run:
 ```bash
 bash refresh-token.sh
 ```
@@ -94,8 +96,7 @@ Then restart OpenCode.
 
 > [!tip]
 > Claude Code silently refreshes its own token in the background whenever you use it.
-> So if you use the `claude` CLI regularly, your token in the Keychain is usually fresh.
-> Just re-run `refresh-token.sh` to pull it into OpenCode.
+> So the Keychain always has a fresh token after any `claude` use — which is what the auto-refresh plugin pulls from.
 
 ---
 
@@ -105,10 +106,11 @@ Then restart OpenCode.
 contrib/anthropic-max-bridge/
 ├── README.md              ← You are here
 ├── install.sh             ← One-time setup (run this first)
-├── refresh-token.sh       ← Run when token expires
+├── refresh-token.sh       ← Manual fallback token refresh
 ├── TECHNICAL.md           ← Deep dive: how the API fix works
 └── plugins/
-    └── anthropic-max-bridge.js   ← The OpenCode plugin
+    ├── anthropic-max-bridge.js   ← API fix plugin (3 OAuth fixes)
+    └── anthropic-token-bridge.js ← Auto-refresh plugin (every 5 messages)
 ```
 
 ---
@@ -127,7 +129,9 @@ install.sh / refresh-token.sh
 
 OpenCode
     └─ reads auth.json on startup
-    └─ plugin applies 3 API fixes on every request
+    └─ anthropic-max-bridge:   3 API fixes on every request
+    └─ anthropic-token-bridge: checks token every 5 messages,
+                               auto-refreshes from Keychain if expiring
     └─ Anthropic API accepts → response streams back
 ```
 
@@ -152,7 +156,7 @@ Send them this folder and have them follow **Quick Start** above.
 → Run `claude` (to refresh Claude Code's own token), then `bash refresh-token.sh`.
 
 ### HTTP 401 in OpenCode
-→ Token expired. Run `bash refresh-token.sh`, then restart OpenCode.
+→ Token expired and auto-refresh failed. Run `bash refresh-token.sh`, then restart OpenCode.
 
 ### HTTP 400 in OpenCode
 → Plugin not loaded. Check that `~/.opencode/plugins/anthropic-max-bridge.js` exists.

@@ -165,9 +165,13 @@ The gonzalosr Gist and other community approaches added all of these. None of th
 ## Token lifetime
 
 - Access tokens expire after **~8–12 hours**
-- Refresh tokens are longer-lived but not currently used (would require hitting the Anthropic token endpoint)
-- The simplest refresh path: re-run `refresh-token.sh` after using `claude` CLI
-  (Claude Code silently refreshes its own token, so the Keychain always has a fresh one after any `claude` use)
+- The `anthropic-token-bridge` plugin handles refresh automatically:
+  - Checks token status every 5 user messages
+  - Triggers async refresh when <2 hours remaining
+  - 3 strategies in order: Keychain → `claude setup-token` → setup token exchange API
+  - 5-minute cooldown between refresh attempts
+  - All log output goes to `/tmp/pai-opencode-debug.log` (TUI-safe)
+- Manual fallback: re-run `refresh-token.sh` if auto-refresh fails, then restart OpenCode
 
 ---
 

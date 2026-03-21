@@ -75,3 +75,27 @@ export function clearLog(): void {
 		// Silent fail
 	}
 }
+
+/**
+ * Info level wrapper
+ */
+export function info(message: string, meta?: Record<string, unknown>): void {
+	const metaStr = meta ? ` ${JSON.stringify(meta)}` : "";
+	fileLog(`${message}${metaStr}`, "info");
+}
+
+/**
+ * Warn level wrapper
+ */
+export function warn(message: string, meta?: Record<string, unknown>): void {
+	const metaStr = meta ? ` ${JSON.stringify(meta)}` : "";
+	fileLog(`${message}${metaStr}`, "warn");
+}
+
+/**
+ * Error level wrapper
+ */
+export function error(message: string, meta?: Record<string, unknown>): void {
+	const metaStr = meta ? ` ${JSON.stringify(meta)}` : "";
+	fileLog(`${message}${metaStr}`, "error");
+}
