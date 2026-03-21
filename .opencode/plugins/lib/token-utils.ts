@@ -38,7 +38,7 @@ function readAuthFile(): AuthFile | null {
 
 function writeAuthFile(authData: AuthFile): boolean {
 	try {
-		fs.writeFileSync(AUTH_FILE, JSON.stringify(authData, null, 2) + "\n");
+		fs.writeFileSync(AUTH_FILE, JSON.stringify(authData, null, 2) + "\n", { mode: 0o600 });
 		return true;
 	} catch (err) {
 		error("Failed to write auth.json", { error: String(err) });
@@ -73,8 +73,30 @@ export function checkAnthropicToken(): TokenStatus {
 		};
 	}
 
+	// Validate required fields before using them
+	if (!anthropic.access) {
+		return {
+			valid: false,
+			exists: true,
+			expiresSoon: false,
+			timeRemainingMs: 0,
+			reason: "missing_access_token",
+		};
+	}
+
+	if (typeof anthropic.expires !== "number" || !Number.isFinite(anthropic.expires)) {
+		return {
+			valid: false,
+			exists: true,
+			expiresSoon: false,
+			timeRemainingMs: 0,
+			reason: "invalid_expires",
+			maskedAccess: maskToken(anthropic.access),
+		};
+	}
+
 	const now = Date.now();
-	const expires = anthropic.expires ?? 0;
+	const expires = anthropic.expires;
 	const timeRemainingMs = expires - now;
 
 	if (timeRemainingMs <= 0) {

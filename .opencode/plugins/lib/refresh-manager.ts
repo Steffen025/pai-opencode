@@ -57,6 +57,7 @@ function execCommand(command: string, args: string[]): Promise<ExecResult> {
 interface KeychainTokens {
 	accessToken: string;
 	refreshToken: string;
+	expiresAt?: number;
 }
 
 async function extractFromKeychain(): Promise<KeychainTokens | null> {
@@ -100,7 +101,8 @@ async function extractFromKeychain(): Promise<KeychainTokens | null> {
 			return null;
 		}
 
-		return { accessToken, refreshToken };
+		const expiresAt = oauth?.expiresAt;
+		return { accessToken, refreshToken, expiresAt };
 	} catch (err) {
 		error("Exception extracting from Keychain", { error: String(err) });
 		return null;
@@ -205,10 +207,15 @@ export async function refreshAnthropicToken(): Promise<boolean> {
 		const keychainTokens = await extractFromKeychain();
 		if (keychainTokens) {
 			info("Found tokens in Keychain, updating auth.json");
+			// Use actual Keychain expiry when available; fall back to 8h default
+			const expiresInSeconds =
+				keychainTokens.expiresAt && keychainTokens.expiresAt > Date.now()
+					? Math.round((keychainTokens.expiresAt - Date.now()) / 1000)
+					: 28800;
 			const success = updateAnthropicTokens(
 				keychainTokens.accessToken,
 				keychainTokens.refreshToken,
-				28800,
+				expiresInSeconds,
 			);
 			if (success) {
 				info("Token refresh successful via Keychain");

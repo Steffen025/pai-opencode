@@ -102,7 +102,7 @@ Then restart OpenCode.
 
 ## File Reference
 
-```
+```text
 contrib/anthropic-max-bridge/
 ├── README.md              ← You are here
 ├── install.sh             ← One-time setup (run this first)

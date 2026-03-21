@@ -21,8 +21,8 @@ async function AnthropicTokenBridge() {
 				fileLog(`Checking token status (message #${messageCount})`, "debug");
 				const status = checkAnthropicToken();
 
-				if (!status.exists) {
-					fileLog("No Anthropic OAuth token configured", "debug");
+				if (!status.exists && status.reason === "auth_file_not_readable") {
+					fileLog("auth.json not readable, skipping", "debug");
 					return;
 				}
 
@@ -31,7 +31,7 @@ async function AnthropicTokenBridge() {
 					return;
 				}
 
-				if (status.expiresSoon || !status.valid) {
+				if (!status.exists || status.expiresSoon || !status.valid) {
 					const hoursRemaining = Math.floor(status.timeRemainingMs / (60 * 60 * 1000));
 					fileLog(`Token expires in ${hoursRemaining}h, triggering refresh`, "warn");
 
@@ -64,12 +64,12 @@ async function AnthropicTokenBridge() {
 				fileLog("Session started, checking initial token status", "info");
 				const status = checkAnthropicToken();
 
-				if (!status.exists) {
-					fileLog("No Anthropic token configured at session start", "debug");
+				if (!status.exists && status.reason === "auth_file_not_readable") {
+					fileLog("auth.json not readable at session start", "debug");
 					return;
 				}
 
-				if (status.expiresSoon || !status.valid) {
+				if (!status.exists || status.expiresSoon || !status.valid) {
 					fileLog("Token expires soon at session start, scheduling refresh", "warn");
 					setTimeout(() => {
 						if (!isRefreshInProgress()) {

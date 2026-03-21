@@ -240,6 +240,12 @@ async function installAnthropicMaxBridge(
 	mkdirSync(pluginsDir, { recursive: true });
 	copyFileSync(pluginSrc, pluginDst);
 
+	// Also copy the auto-refresh token bridge plugin
+	const tokenBridgeSrc = join(repoRoot, ".opencode", "plugins", "anthropic-token-bridge.js");
+	if (existsSync(tokenBridgeSrc)) {
+		copyFileSync(tokenBridgeSrc, join(pluginsDir, "anthropic-token-bridge.js"));
+	}
+
 	// ── 2. Extract token from macOS Keychain ─────────────────
 	onProgress(95, "Extracting OAuth token from macOS Keychain...");
 

@@ -52,8 +52,10 @@ function searchSkills(query: string, index: SkillIndex): SearchResult[] {
     let score = 0;
     const matchedTriggers: string[] = [];
 
-    // Check skill name
-    if (key.includes(query.toLowerCase()) || skill.name.toLowerCase().includes(query.toLowerCase())) {
+    // Check skill name (also normalize PascalCase → spaced form for natural queries)
+    const queryLower = query.toLowerCase();
+    const nameNormalized = skill.name.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
+    if (key.includes(queryLower) || skill.name.toLowerCase().includes(queryLower) || nameNormalized.includes(queryLower)) {
       score += 10;
     }
 

@@ -48,7 +48,7 @@ function readAuthFile() {
 }
 function writeAuthFile(authData) {
   try {
-    fs.writeFileSync(AUTH_FILE, JSON.stringify(authData, null, 2) + "\n");
+    fs.writeFileSync(AUTH_FILE, JSON.stringify(authData, null, 2) + "\n", { mode: 0o600 });
     return true;
   } catch (err) {
     error("Failed to write auth.json", { error: String(err) });
@@ -74,8 +74,27 @@ function checkAnthropicToken() {
       maskedAccess: maskToken(anthropic.access)
     };
   }
+  if (!anthropic.access) {
+    return {
+      valid: false,
+      exists: true,
+      expiresSoon: false,
+      timeRemainingMs: 0,
+      reason: "missing_access_token"
+    };
+  }
+  if (typeof anthropic.expires !== "number" || !Number.isFinite(anthropic.expires)) {
+    return {
+      valid: false,
+      exists: true,
+      expiresSoon: false,
+      timeRemainingMs: 0,
+      reason: "invalid_expires",
+      maskedAccess: maskToken(anthropic.access)
+    };
+  }
   const now = Date.now();
-  const expires = anthropic.expires ?? 0;
+  const expires = anthropic.expires;
   const timeRemainingMs = expires - now;
   if (timeRemainingMs <= 0) {
     warn("Anthropic token expired", {
@@ -207,7 +226,8 @@ async function extractFromKeychain() {
       });
       return null;
     }
-    return { accessToken, refreshToken };
+    const expiresAt = oauth?.expiresAt;
+    return { accessToken, refreshToken, expiresAt };
   } catch (err) {
     error("Exception extracting from Keychain", { error: String(err) });
     return null;
@@ -287,7 +307,8 @@ async function refreshAnthropicToken() {
     const keychainTokens = await extractFromKeychain();
     if (keychainTokens) {
       info("Found tokens in Keychain, updating auth.json");
-      const success2 = updateAnthropicTokens(keychainTokens.accessToken, keychainTokens.refreshToken, 28800);
+      const expiresInSeconds = keychainTokens.expiresAt && keychainTokens.expiresAt > Date.now() ? Math.round((keychainTokens.expiresAt - Date.now()) / 1000) : 28800;
+      const success2 = updateAnthropicTokens(keychainTokens.accessToken, keychainTokens.refreshToken, expiresInSeconds);
       if (success2) {
         info("Token refresh successful via Keychain");
         return true;
@@ -332,15 +353,15 @@ async function AnthropicTokenBridge() {
       try {
         fileLog(`Checking token status (message #${messageCount})`, "debug");
         const status = checkAnthropicToken();
-        if (!status.exists) {
-          fileLog("No Anthropic OAuth token configured", "debug");
+        if (!status.exists && status.reason === "auth_file_not_readable") {
+          fileLog("auth.json not readable, skipping", "debug");
           return;
         }
         if (status.valid && !status.expiresSoon) {
           fileLog("Token valid, no refresh needed", "debug");
           return;
         }
-        if (status.expiresSoon || !status.valid) {
+        if (!status.exists || status.expiresSoon || !status.valid) {
           const hoursRemaining = Math.floor(status.timeRemainingMs / (60 * 60 * 1000));
           fileLog(`Token expires in ${hoursRemaining}h, triggering refresh`, "warn");
           if (isRefreshInProgress()) {
@@ -366,11 +387,11 @@ async function AnthropicTokenBridge() {
       try {
         fileLog("Session started, checking initial token status", "info");
         const status = checkAnthropicToken();
-        if (!status.exists) {
-          fileLog("No Anthropic token configured at session start", "debug");
+        if (!status.exists && status.reason === "auth_file_not_readable") {
+          fileLog("auth.json not readable at session start", "debug");
           return;
         }
-        if (status.expiresSoon || !status.valid) {
+        if (!status.exists || status.expiresSoon || !status.valid) {
           fileLog("Token expires soon at session start, scheduling refresh", "warn");
           setTimeout(() => {
             if (!isRefreshInProgress()) {

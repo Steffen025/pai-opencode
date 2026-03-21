@@ -24,13 +24,13 @@ OpenCode (and most SDKs) send it as a string. The plugin transforms it before ea
 
 Without this header, the API returns `401 "OAuth authentication is currently not supported"`:
 
-```
+```http
 anthropic-beta: oauth-2025-04-20
 ```
 
 ### Difference 3: Bearer token vs. API key
 
-```
+```http
 # API key (wrong for OAuth)
 x-api-key: sk-ant-api03-...
 

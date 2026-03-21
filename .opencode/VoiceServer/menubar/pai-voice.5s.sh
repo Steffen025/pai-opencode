@@ -16,7 +16,7 @@ if curl -s -f http://localhost:8888/health > /dev/null 2>&1; then
 
     # Check for ElevenLabs
     if [ -f ~/.env ] && grep -q "ELEVENLABS_API_KEY=" ~/.env 2>/dev/null; then
-        API_KEY=$(grep "ELEVENLABS_API_KEY=" ~/.env | cut -d'=' -f2)
+        API_KEY=$(grep "ELEVENLABS_API_KEY=" ~/.env | sed 's/^[^=]*=//')
         if [ "$API_KEY" != "your_api_key_here" ] && [ -n "$API_KEY" ]; then
             echo "Voice: ElevenLabs AI"
         else

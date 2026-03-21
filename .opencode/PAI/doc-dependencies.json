@@ -119,11 +119,6 @@
       "upstream": "PAISYSTEMARCHITECTURE.md"
     },
 
-    "FEEDSYSTEM.md": {
-      "description": "Feed/intelligence system documentation",
-      "tier": 2
-    },
-
     "DOCUMENTATIONINDEX.md": {
       "description": "Meta-index of all documentation - must be updated when docs added/removed",
       "tier": 2,

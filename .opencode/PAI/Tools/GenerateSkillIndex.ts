@@ -102,7 +102,7 @@ async function findSkillFiles(dir: string, visited: Set<string> = new Set()): Pr
 }
 
 function parseFrontmatter(content: string): { name: string; description: string } | null {
-  const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+  const frontmatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!frontmatterMatch) return null;
 
   const frontmatter = frontmatterMatch[1];

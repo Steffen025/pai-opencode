@@ -68,6 +68,12 @@ if ! [[ "$EXPIRES_AT" =~ ^[0-9]+$ ]] || [[ "$EXPIRES_AT" -le 0 ]]; then
   die "Invalid expiry timestamp ($EXPIRES_AT). Run 'claude' to re-authenticate."
 fi
 
+# Fail if the Keychain token is already expired
+NOW_CHECK_MS=$(python3 -c "import time; print(int(time.time()*1000))")
+if [[ "$EXPIRES_AT" -le "$NOW_CHECK_MS" ]]; then
+  die "Keychain token is already expired. Run 'claude' once to re-authenticate, then retry."
+fi
+
 # Read existing auth.json
 if [[ ! -f "$AUTH_FILE" ]]; then
   die "auth.json not found at $AUTH_FILE. Run install.sh first."
@@ -101,6 +107,9 @@ with open(auth_file, "w") as f:
     json.dump(data, f, indent=2)
     f.write("\n")
 PYEOF
+
+# Restore secure file permissions
+chmod 600 "$AUTH_FILE"
 
 # Clean up exported vars — they are no longer needed
 unset PAI_ACCESS_TOKEN PAI_REFRESH_TOKEN PAI_EXPIRES_AT PAI_AUTH_FILE

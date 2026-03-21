@@ -12,12 +12,17 @@ NC='\033[0m'
 echo -e "${YELLOW}> Restarting Voice Server...${NC}"
 
 # Stop the server
-"$SCRIPT_DIR/stop.sh"
+if ! "$SCRIPT_DIR/stop.sh"; then
+    echo -e "${YELLOW}Warning: stop.sh returned an error${NC}"
+fi
 
 # Wait a moment
 sleep 2
 
 # Start the server
-"$SCRIPT_DIR/start.sh"
+if ! "$SCRIPT_DIR/start.sh"; then
+    echo -e "\033[0;31m[ERROR] start.sh failed${NC}"
+    exit 1
+fi
 
 echo -e "${GREEN}OK Voice server restarted${NC}"

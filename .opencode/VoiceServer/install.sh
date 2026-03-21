@@ -52,7 +52,7 @@ fi
 # Check for ElevenLabs configuration
 echo -e "${YELLOW}> Checking ElevenLabs configuration...${NC}"
 if [ -f "$ENV_FILE" ] && grep -q "ELEVENLABS_API_KEY=" "$ENV_FILE"; then
-    API_KEY=$(grep "ELEVENLABS_API_KEY=" "$ENV_FILE" | cut -d'=' -f2)
+    API_KEY=$(grep "ELEVENLABS_API_KEY=" "$ENV_FILE" | sed 's/^[^=]*=//')
     if [ "$API_KEY" != "your_api_key_here" ] && [ -n "$API_KEY" ]; then
         echo -e "${GREEN}OK ElevenLabs API key configured${NC}"
         ELEVENLABS_CONFIGURED=true

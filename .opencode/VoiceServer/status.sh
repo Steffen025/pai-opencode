@@ -3,7 +3,6 @@
 # Check status of Voice Server
 
 SERVICE_NAME="com.pai.voice-server"
-PLIST_PATH="$HOME/Library/LaunchAgents/${SERVICE_NAME}.plist"
 LOG_PATH="$HOME/Library/Logs/pai-voice-server.log"
 ENV_FILE="$HOME/.env"
 
@@ -60,11 +59,11 @@ fi
 echo
 echo -e "${BLUE}Voice Configuration:${NC}"
 if [ -f "$ENV_FILE" ] && grep -q "ELEVENLABS_API_KEY=" "$ENV_FILE"; then
-    API_KEY=$(grep "ELEVENLABS_API_KEY=" "$ENV_FILE" | cut -d'=' -f2)
+    API_KEY=$(grep "ELEVENLABS_API_KEY=" "$ENV_FILE" | sed 's/^[^=]*=//')
     if [ "$API_KEY" != "your_api_key_here" ] && [ -n "$API_KEY" ]; then
         echo -e "  ${GREEN}OK ElevenLabs API configured${NC}"
         if grep -q "ELEVENLABS_VOICE_ID=" "$ENV_FILE"; then
-            VOICE_ID=$(grep "ELEVENLABS_VOICE_ID=" "$ENV_FILE" | cut -d'=' -f2)
+            VOICE_ID=$(grep "ELEVENLABS_VOICE_ID=" "$ENV_FILE" | sed 's/^[^=]*=//')
             echo "  Voice ID: $VOICE_ID"
         fi
     else

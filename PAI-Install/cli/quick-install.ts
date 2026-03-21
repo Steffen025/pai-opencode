@@ -184,6 +184,10 @@ async function runFreshInstall(): Promise<void> {
 	}
 
 	if (provider === "anthropic-max") {
+		if (process.platform !== "darwin") {
+			console.error("❌ --preset anthropic-max is only supported on macOS (requires Keychain access).");
+			process.exit(1);
+		}
 		console.log("ℹ️  Anthropic Max/Pro preset — no API key needed.");
 		console.log("   Token will be extracted from macOS Keychain during install.");
 		console.log("   Make sure Claude Code CLI is installed and authenticated.\n");
