@@ -1,8 +1,9 @@
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import { error, info, warn } from "./file-logger.ts";
 
-const AUTH_FILE = path.join(process.env.HOME || "~", ".local", "share", "opencode", "auth.json");
+const AUTH_FILE = path.join(os.homedir(), ".local", "share", "opencode", "auth.json");
 const REFRESH_THRESHOLD_MS = 2 * 60 * 60 * 1000; // 2 hours
 
 export interface TokenStatus {

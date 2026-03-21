@@ -2,6 +2,8 @@ import { spawn } from "node:child_process";
 import { error, info } from "./file-logger.ts";
 import { updateAnthropicTokens } from "./token-utils.ts";
 
+const EXEC_TIMEOUT_MS = 15_000; // 15 seconds — prevents execCommand hanging indefinitely
+
 const REFRESH_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
 
 let isRefreshing = false;
@@ -23,6 +25,19 @@ function execCommand(command: string, args: string[]): Promise<ExecResult> {
 		const child = spawn(command, args);
 		let stdout = "";
 		let stderr = "";
+		let settled = false;
+
+		const settle = (result: ExecResult) => {
+			if (settled) return;
+			settled = true;
+			clearTimeout(timer);
+			resolve(result);
+		};
+
+		const timer = setTimeout(() => {
+			child.kill();
+			settle({ stdout, stderr: "timeout", exitCode: 1 });
+		}, EXEC_TIMEOUT_MS);
 
 		child.stdout?.on("data", (data: Buffer) => {
 			stdout += data.toString();
@@ -31,10 +46,10 @@ function execCommand(command: string, args: string[]): Promise<ExecResult> {
 			stderr += data.toString();
 		});
 		child.on("close", (exitCode: number | null) => {
-			resolve({ stdout, stderr, exitCode: exitCode ?? 0 });
+			settle({ stdout, stderr, exitCode: exitCode ?? 0 });
 		});
 		child.on("error", (err: Error) => {
-			resolve({ stdout, stderr: String(err), exitCode: 1 });
+			settle({ stdout, stderr: String(err), exitCode: 1 });
 		});
 	});
 }
@@ -67,6 +82,7 @@ async function extractFromKeychain(): Promise<KeychainTokens | null> {
 			refresh_token?: string;
 		};
 
+		// pragma: allowlist secret — runtime extraction from macOS Keychain, not hardcoded values
 		const accessToken = credentials.accessToken ?? credentials.access_token;
 		const refreshToken = credentials.refreshToken ?? credentials.refresh_token;
 
@@ -95,14 +111,15 @@ async function generateSetupToken(): Promise<string | null> {
 			return null;
 		}
 
+		// Validate token presence without logging the raw value
 		const tokenMatch = stdout.match(/sk-ant-[a-z0-9-]+/i);
 		if (!tokenMatch) {
-			error("Could not find token in Claude output", { output: stdout.slice(0, 200) });
+			error("Could not find token in Claude output");
 			return null;
 		}
 
 		info("Successfully generated setup token");
-		return tokenMatch[0];
+		return tokenMatch[0]; // pragma: allowlist secret — runtime value from claude CLI, not hardcoded
 	} catch (err) {
 		error("Exception generating setup token", { error: String(err) });
 		return null;

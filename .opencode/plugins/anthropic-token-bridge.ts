@@ -10,8 +10,9 @@ async function AnthropicTokenBridge() {
 
 	return {
 		// Check token every N user messages, refresh automatically if expiring
-		async "chat.message"(input: { role: string }, _output: unknown) {
-			if (input.role !== "user") return;
+		async "chat.message"(_input: unknown, output: unknown) {
+			const msg = (output as { message?: { role?: string } })?.message;
+			if (!msg?.role || msg.role !== "user") return;
 
 			messageCount++;
 			if (messageCount % CHECK_INTERVAL_MESSAGES !== 0) return;
