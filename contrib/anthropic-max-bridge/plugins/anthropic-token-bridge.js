@@ -422,16 +422,21 @@ async function AnthropicTokenBridge() {
           return;
         }
         if (!status.exists || status.expiresSoon || !status.valid) {
-          fileLog("Token expires soon at session start, scheduling refresh", "warn");
-          setTimeout(() => {
+          fileLog("Token expired or expiring soon at session start, refreshing immediately", "warn");
+          try {
             if (!isRefreshInProgress()) {
-              refreshAnthropicToken().then((success) => {
-                if (success) fileLog("Session-start refresh successful", "info");
-              }).catch((err) => {
-                fileLogError("Session-start refresh error", err);
-              });
+              fileLog("Starting immediate synchronous token refresh", "info");
+              const success = await refreshAnthropicToken();
+              if (success) {
+                fileLog("Session-start token refresh successful", "info");
+              } else {
+                fileLog("Session-start token refresh failed - will retry async", "error");
+                setTimeout(() => refreshAnthropicToken(), 3e4);
+              }
             }
-          }, 5000);
+          } catch (err) {
+            fileLogError("Error during immediate token refresh", err);
+          }
         } else {
           const hoursRemaining = Math.floor(status.timeRemainingMs / (60 * 60 * 1000));
           fileLog(`Token valid for ${hoursRemaining}h at session start`, "info");
