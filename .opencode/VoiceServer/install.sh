@@ -58,7 +58,12 @@ fi
 # Check for ElevenLabs configuration
 echo -e "${YELLOW}> Checking ElevenLabs configuration...${NC}"
 if [ -f "$ENV_FILE" ] && grep -q "ELEVENLABS_API_KEY=" "$ENV_FILE"; then
-    API_KEY=$(grep "ELEVENLABS_API_KEY=" "$ENV_FILE" | sed 's/^[^=]*=//')
+    # Robust extraction: capture value after '=', strip surrounding quotes, remove inline comments, trim whitespace
+    API_KEY=$(grep "ELEVENLABS_API_KEY=" "$ENV_FILE" \
+        | sed 's/^[^=]*=//' \
+        | sed "s/^['\"]//;s/['\"]$//" \
+        | sed 's/[[:space:]]*#.*//' \
+        | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
     if [ "$API_KEY" != "your_api_key_here" ] && [ -n "$API_KEY" ]; then
         echo -e "${GREEN}OK ElevenLabs API key configured${NC}"
         ELEVENLABS_CONFIGURED=true
@@ -81,9 +86,28 @@ if [ "$ELEVENLABS_CONFIGURED" = false ]; then
     echo
 fi
 
+# Create runtime wrapper script so Bun is resolved at launch time, not install time
+WRAPPER_PATH="${SCRIPT_DIR}/run-server.sh"
+cat > "$WRAPPER_PATH" << 'WRAPPER_EOF'
+#!/bin/bash
+# Runtime wrapper: resolves Bun from PATH at launch time so moves/upgrades don't break the service
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+BUN="$(which bun 2>/dev/null || echo "${HOME}/.bun/bin/bun")"
+exec "$BUN" run "${SCRIPT_DIR}/server.ts" "$@"
+WRAPPER_EOF
+chmod +x "$WRAPPER_PATH"
+
 # Create LaunchAgent plist
 echo -e "${YELLOW}> Creating LaunchAgent configuration...${NC}"
 mkdir -p "$HOME/Library/LaunchAgents"
+
+# Build ELEVENLABS_API_KEY plist entry only when the key is non-empty
+if [ -n "${API_KEY:-}" ]; then
+    ELEVENLABS_PLIST_ENTRY="        <key>ELEVENLABS_API_KEY</key>
+        <string>${API_KEY}</string>"
+else
+    ELEVENLABS_PLIST_ENTRY=""
+fi
 
 cat > "$PLIST_PATH" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -95,9 +119,7 @@ cat > "$PLIST_PATH" << EOF
 
     <key>ProgramArguments</key>
     <array>
-        <string>$(which bun)</string>
-        <string>run</string>
-        <string>${SCRIPT_DIR}/server.ts</string>
+        <string>${WRAPPER_PATH}</string>
     </array>
 
     <key>WorkingDirectory</key>
@@ -124,8 +146,7 @@ cat > "$PLIST_PATH" << EOF
         <string>${HOME}</string>
         <key>PATH</key>
         <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${HOME}/.bun/bin</string>
-        <key>ELEVENLABS_API_KEY</key>
-        <string>${API_KEY:-}</string>
+${ELEVENLABS_PLIST_ENTRY}
     </dict>
 </dict>
 </plist>
@@ -141,28 +162,39 @@ launchctl load "$PLIST_PATH" 2>/dev/null || {
     exit 1
 }
 
-# Wait for server to start
-sleep 2
-
-# Test the server
-echo -e "${YELLOW}> Testing voice server...${NC}"
-if curl -s -f -X GET http://localhost:8888/health > /dev/null 2>&1; then
-    echo -e "${GREEN}OK Voice server is running${NC}"
-
-    # Send test notification
-    echo -e "${YELLOW}> Sending test notification...${NC}"
-    if curl -s -f -X POST http://localhost:8888/notify \
-        -H "Content-Type: application/json" \
-        -d '{"message": "Voice server installed successfully"}' > /dev/null 2>&1; then
-        echo -e "${GREEN}OK Test notification sent${NC}"
-    else
-        echo -e "${YELLOW}! Test notification failed (server running but notification endpoint error)${NC}"
+# Poll until server is ready (or timeout)
+echo -e "${YELLOW}> Waiting for voice server to start...${NC}"
+HEALTH_TIMEOUT=60
+HEALTH_INTERVAL=1
+HEALTH_ELAPSED=0
+SERVER_READY=false
+while [ "$HEALTH_ELAPSED" -lt "$HEALTH_TIMEOUT" ]; do
+    if curl -s -f -X GET http://localhost:8888/health > /dev/null 2>&1; then
+        SERVER_READY=true
+        break
     fi
-else
-    echo -e "${RED}X Voice server is not responding${NC}"
+    sleep "$HEALTH_INTERVAL"
+    HEALTH_ELAPSED=$(( HEALTH_ELAPSED + HEALTH_INTERVAL ))
+done
+
+if [ "$SERVER_READY" != "true" ]; then
+    echo -e "${RED}X Voice server did not respond within ${HEALTH_TIMEOUT}s${NC}"
     echo "  Check logs at: $LOG_PATH"
     echo "  Try running manually: bun run $SCRIPT_DIR/server.ts"
     exit 1
+fi
+
+# Server is ready (confirmed by polling loop above)
+echo -e "${GREEN}OK Voice server is running${NC}"
+
+# Send test notification
+echo -e "${YELLOW}> Sending test notification...${NC}"
+if curl -s -f -X POST http://localhost:8888/notify \
+    -H "Content-Type: application/json" \
+    -d '{"message": "Voice server installed successfully"}' > /dev/null 2>&1; then
+    echo -e "${GREEN}OK Test notification sent${NC}"
+else
+    echo -e "${YELLOW}! Test notification failed (server running but notification endpoint error)${NC}"
 fi
 
 # Show summary

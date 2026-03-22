@@ -296,11 +296,11 @@ async function main() {
     if (skill) {
       const key = skill.name.toLowerCase();
       
-      // Check for duplicates - don't overwrite existing entries
+      // Duplicate skill names are a build error — fail fast so the issue is visible
       if (index.skills[key]) {
-        console.warn(`⚠️  Duplicate skill name "${skill.name}" found at ${skill.path} (existing: ${index.skills[key].path})`);
-        // Skip adding duplicate
-        continue;
+        throw new Error(
+          `Duplicate skill name '${skill.name}' found at ${skill.path} (existing: ${index.skills[key].path})`
+        );
       }
       
       index.skills[key] = skill;

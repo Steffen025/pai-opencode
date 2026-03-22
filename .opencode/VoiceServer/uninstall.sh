@@ -56,15 +56,20 @@ else
     echo -e "${YELLOW}  LaunchAgent file not found${NC}"
 fi
 
-# Kill any remaining VoiceServer processes (check process name before killing)
-if lsof -i :8888 > /dev/null 2>&1; then
+# Kill any remaining VoiceServer processes — use lsof -t for PID-only output
+# (avoids accidentally matching the "PID" header line from tabular lsof output)
+if lsof -ti :8888 > /dev/null 2>&1; then
     echo -e "${YELLOW}> Cleaning up VoiceServer processes on port 8888...${NC}"
-    # Get PIDs with their commands, filter for VoiceServer/bun, then kill
-    lsof -i :8888 | grep -E '(VoiceServer|bun|server\.ts)' | awk '{print $2}' | while read -r pid; do
-        if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
-            kill -9 "$pid" 2>/dev/null
+    while IFS= read -r pid; do
+        [ -z "$pid" ] && continue
+        # Verify the process command matches VoiceServer, bun, or server.ts before killing
+        cmd=$(ps -p "$pid" -o comm= 2>/dev/null || true)
+        if echo "$cmd" | grep -qE '(bun|server\.ts|VoiceServer)'; then
+            if kill -0 "$pid" 2>/dev/null; then
+                kill -9 "$pid" 2>/dev/null
+            fi
         fi
-    done
+    done < <(lsof -ti :8888 2>/dev/null)
     echo -e "${GREEN}OK Port 8888 cleared${NC}"
 fi
 
@@ -85,9 +90,12 @@ echo -e "${GREEN}     Uninstall Complete${NC}"
 echo -e "${GREEN}=====================================================${NC}"
 echo
 echo -e "${BLUE}Notes:${NC}"
-echo "  - Your server files are still in: $(dirname "${BASH_SOURCE[0]}")"
+# Resolve actual script directory, following symlinks
+_SCRIPT_REAL="$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || realpath "${BASH_SOURCE[0]}" 2>/dev/null || echo "${BASH_SOURCE[0]}")"
+_SCRIPT_DIR="$(dirname "$_SCRIPT_REAL")"
+echo "  - Your server files are still in: ${_SCRIPT_DIR}"
 echo "  - Your ~/.env configuration is preserved"
 echo "  - To reinstall, run: ./install.sh"
 echo
 echo "To completely remove all files:"
-echo "  rm -rf $(dirname "${BASH_SOURCE[0]}")"
+echo "  rm -rf ${_SCRIPT_DIR}"
