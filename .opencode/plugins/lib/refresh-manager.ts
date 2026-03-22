@@ -60,7 +60,7 @@ interface KeychainTokens {
 	expiresAt?: number;
 }
 
-async function extractFromKeychain(): Promise<KeychainTokens | null> {
+export async function extractFromKeychain(): Promise<KeychainTokens | null> {
 	try {
 		const { stdout, exitCode } = await execCommand("security", [
 			"find-generic-password",
