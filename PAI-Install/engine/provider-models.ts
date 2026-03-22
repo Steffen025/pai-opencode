@@ -7,7 +7,7 @@
  * To add a new provider: add an entry below and handle it in steps-fresh.ts.
  */
 
-export type ProviderName = "anthropic" | "zen" | "openrouter" | "openai";
+export type ProviderName = "anthropic" | "anthropic-max" | "zen" | "openrouter" | "openai";
 
 export interface ModelTierMap {
 	quick: string;
@@ -23,6 +23,14 @@ export const PROVIDER_MODELS: Record<ProviderName, ModelTierMap> = {
 	anthropic: {
 		quick: "anthropic/claude-haiku-4-5",
 		standard: "anthropic/claude-sonnet-4-5",
+		advanced: "anthropic/claude-opus-4-6",
+	},
+	// Anthropic Max/Pro OAuth — uses existing $20-200/month subscription.
+	// No API key required. Token is extracted from macOS Keychain via Claude Code CLI.
+	// The installer copies the anthropic-max-bridge plugin which handles auth automatically.
+	"anthropic-max": {
+		quick: "anthropic/claude-haiku-4-5",
+		standard: "anthropic/claude-sonnet-4-6",
 		advanced: "anthropic/claude-opus-4-6",
 	},
 	zen: {
@@ -50,6 +58,10 @@ export const PROVIDER_LABELS: Record<ProviderName, { label: string; description:
 	anthropic: {
 		label: "Anthropic (Claude)",
 		description: "Premium quality — requires Anthropic API key",
+	},
+	"anthropic-max": {
+		label: "Anthropic Max/Pro (OAuth)",
+		description: "Use your existing Max/Pro subscription — no API key needed, requires Claude Code CLI",
 	},
 	zen: {
 		label: "OpenCode Zen (recommended)",

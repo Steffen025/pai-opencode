@@ -67,7 +67,7 @@ See `SKILLSYSTEM.md` for complete documentation.
 - Voice notifications → VoiceServer (system alerts, agent feedback)
 
 **Configuration & Systems:**
-- `THEHOOKSYSTEM.md` - Hook configuration | Triggers: "hooks configuration", "create custom hooks"
+- `THEPLUGINSYSTEM.md` - Plugin system configuration | Triggers: "plugin system", "event handlers", "create custom plugins"
 - `MEMORYSYSTEM.md` - Memory documentation | Triggers: "memory system", "capture system", "work tracking", "session history"
 - `TERMINALTABS.md` - Terminal tab state system (colors + suffixes for working/completed/awaiting/error states) | Triggers: "tab colors", "tab state", "kitty tabs"
 
