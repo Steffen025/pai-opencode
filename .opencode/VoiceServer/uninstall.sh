@@ -2,6 +2,12 @@
 
 # Uninstall Voice Server
 
+# Platform guard - macOS only
+if [[ "$(uname -s)" != "Darwin" ]]; then
+    echo "Error: This uninstaller only supports macOS" >&2
+    exit 1
+fi
+
 SERVICE_NAME="com.pai.voice-server"
 PLIST_PATH="$HOME/Library/LaunchAgents/${SERVICE_NAME}.plist"
 LOG_PATH="$HOME/Library/Logs/pai-voice-server.log"
@@ -50,10 +56,15 @@ else
     echo -e "${YELLOW}  LaunchAgent file not found${NC}"
 fi
 
-# Kill any remaining processes
+# Kill any remaining VoiceServer processes (check process name before killing)
 if lsof -i :8888 > /dev/null 2>&1; then
-    echo -e "${YELLOW}> Cleaning up port 8888...${NC}"
-    lsof -ti :8888 | xargs kill -9 2>/dev/null
+    echo -e "${YELLOW}> Cleaning up VoiceServer processes on port 8888...${NC}"
+    # Get PIDs with their commands, filter for VoiceServer/bun, then kill
+    lsof -i :8888 | grep -E '(VoiceServer|bun|server\.ts)' | awk '{print $2}' | while read -r pid; do
+        if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+            kill -9 "$pid" 2>/dev/null
+        fi
+    done
     echo -e "${GREEN}OK Port 8888 cleared${NC}"
 fi
 

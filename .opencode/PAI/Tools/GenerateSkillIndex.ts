@@ -49,6 +49,9 @@ const ALWAYS_LOADED_SKILLS = [
   'Art',
 ];
 
+// Case-insensitive lookup set for classification
+const ALWAYS_LOADED_SKILLS_LOWER = new Set(ALWAYS_LOADED_SKILLS.map(s => s.toLowerCase()));
+
 async function findSkillFiles(dir: string, visited: Set<string> = new Set()): Promise<string[]> {
   const skillFiles: string[] = [];
 
@@ -231,7 +234,7 @@ async function parseSkillFile(filePath: string): Promise<SkillEntry | null> {
 
     const triggers = extractTriggers(frontmatter.description);
     const workflows = extractWorkflows(content);
-    const tier = ALWAYS_LOADED_SKILLS.includes(frontmatter.name) ? 'always' : 'deferred';
+    const tier = ALWAYS_LOADED_SKILLS_LOWER.has(frontmatter.name.toLowerCase()) ? 'always' : 'deferred';
 
     // Determine category from path (cross-platform using path.relative and path.sep)
     const relPath = relative(SKILLS_DIR, filePath);

@@ -49,6 +49,10 @@ function readAuthFile() {
 function writeAuthFile(authData) {
   try {
     fs.writeFileSync(AUTH_FILE, JSON.stringify(authData, null, 2) + "\n", { mode: 0o600 });
+    // Explicitly set permissions on existing files (mode only applies on creation)
+    try {
+      fs.chmodSync(AUTH_FILE, 0o600);
+    } catch {}
     return true;
   } catch (err) {
     error("Failed to write auth.json", { error: String(err) });
@@ -257,6 +261,11 @@ async function generateSetupToken() {
 async function exchangeSetupToken(setupToken) {
   try {
     info("Exchanging setup token for OAuth credentials");
+    
+    // AbortController timeout to prevent hanging
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
     const response = await fetch("https://api.anthropic.com/v1/oauth/setup_token/exchange", {
       method: "POST",
       headers: {
@@ -264,8 +273,12 @@ async function exchangeSetupToken(setupToken) {
         Authorization: `Bearer ${setupToken}`,
         "anthropic-version": "2023-06-01"
       },
-      body: JSON.stringify({ grant_type: "setup_token" })
+      body: JSON.stringify({ grant_type: "setup_token" }),
+      signal: controller.signal
     });
+    
+    clearTimeout(timeout);
+
     if (!response.ok) {
       error("Token exchange failed", { status: response.status });
       return null;
@@ -307,11 +320,28 @@ async function refreshAnthropicToken() {
     const keychainTokens = await extractFromKeychain();
     if (keychainTokens) {
       info("Found tokens in Keychain, updating auth.json");
-      const expiresInSeconds = keychainTokens.expiresAt && keychainTokens.expiresAt > Date.now() ? Math.round((keychainTokens.expiresAt - Date.now()) / 1000) : 28800;
-      const success2 = updateAnthropicTokens(keychainTokens.accessToken, keychainTokens.refreshToken, expiresInSeconds);
-      if (success2) {
-        info("Token refresh successful via Keychain");
-        return true;
+      
+      // Calculate expiresInSeconds - only use Keychain expiry if it's valid and in the future
+      let expiresInSeconds;
+      if (keychainTokens.expiresAt === undefined || keychainTokens.expiresAt === null) {
+        // Legacy: no expiry in Keychain, use 8h default
+        expiresInSeconds = 28800;
+      } else if (keychainTokens.expiresAt > Date.now()) {
+        // Valid future expiry
+        expiresInSeconds = Math.round((keychainTokens.expiresAt - Date.now()) / 1000);
+      } else {
+        // Expired - don't use this token, fall through to setup-token refresh
+        info("Keychain token is expired, falling through to setup-token exchange");
+        expiresInSeconds = 0; // Will cause validation to fail, forcing setup-token path
+      }
+      
+      // Only update if we have a valid expiry (not expired)
+      if (expiresInSeconds > 0) {
+        const success2 = updateAnthropicTokens(keychainTokens.accessToken, keychainTokens.refreshToken, expiresInSeconds);
+        if (success2) {
+          info("Token refresh successful via Keychain");
+          return true;
+        }
       }
     }
     info("Keychain extraction failed, generating new setup token");

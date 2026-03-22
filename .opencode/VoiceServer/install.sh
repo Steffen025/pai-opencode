@@ -5,6 +5,12 @@
 
 set -e
 
+# Platform guard - macOS only
+if [[ "$(uname -s)" != "Darwin" ]]; then
+    echo "Error: This installer only supports macOS" >&2
+    exit 1
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -118,6 +124,8 @@ cat > "$PLIST_PATH" << EOF
         <string>${HOME}</string>
         <key>PATH</key>
         <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${HOME}/.bun/bin</string>
+        <key>ELEVENLABS_API_KEY</key>
+        <string>${API_KEY:-}</string>
     </dict>
 </dict>
 </plist>
@@ -143,10 +151,13 @@ if curl -s -f -X GET http://localhost:8888/health > /dev/null 2>&1; then
 
     # Send test notification
     echo -e "${YELLOW}> Sending test notification...${NC}"
-    curl -s -X POST http://localhost:8888/notify \
+    if curl -s -f -X POST http://localhost:8888/notify \
         -H "Content-Type: application/json" \
-        -d '{"message": "Voice server installed successfully"}' > /dev/null
-    echo -e "${GREEN}OK Test notification sent${NC}"
+        -d '{"message": "Voice server installed successfully"}' > /dev/null 2>&1; then
+        echo -e "${GREEN}OK Test notification sent${NC}"
+    else
+        echo -e "${YELLOW}! Test notification failed (server running but notification endpoint error)${NC}"
+    fi
 else
     echo -e "${RED}X Voice server is not responding${NC}"
     echo "  Check logs at: $LOG_PATH"
