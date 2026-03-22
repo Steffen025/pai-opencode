@@ -208,14 +208,14 @@ function execCommand(command, args) {
 }
 async function extractFromKeychain() {
   try {
-    const { stdout, exitCode } = await execCommand("security", [
+    const { stdout, stderr, exitCode } = await execCommand("security", [
       "find-generic-password",
       "-s",
       "Claude Code-credentials",
       "-w"
     ]);
     if (exitCode !== 0) {
-      error("Failed to extract from Keychain", { exitCode, stderr: stdout });
+      error("Failed to extract from Keychain", { exitCode, stderr });
       return null;
     }
     const credentials = JSON.parse(stdout.trim());

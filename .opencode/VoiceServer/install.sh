@@ -23,7 +23,8 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SERVICE_NAME="com.pai.voice-server"
 PLIST_PATH="$HOME/Library/LaunchAgents/${SERVICE_NAME}.plist"
 LOG_PATH="$HOME/Library/Logs/pai-voice-server.log"
-ENV_FILE="$HOME/.env"
+# Match the server's env path: $OPENCODE_DIR/.env → $PAI_DIR/.env → ~/.opencode/.env
+ENV_FILE="${OPENCODE_DIR:-${PAI_DIR:-$HOME/.opencode}}/.env"
 
 echo -e "${BLUE}=====================================================${NC}"
 echo -e "${BLUE}     PAI Voice Server Installation${NC}"
@@ -58,11 +59,14 @@ fi
 # Check for ElevenLabs configuration
 echo -e "${YELLOW}> Checking ElevenLabs configuration...${NC}"
 if [ -f "$ENV_FILE" ] && grep -q "ELEVENLABS_API_KEY=" "$ENV_FILE"; then
-    # Robust extraction: capture value after '=', strip surrounding quotes, remove inline comments, trim whitespace
-    API_KEY=$(grep "ELEVENLABS_API_KEY=" "$ENV_FILE" \
+    # Use grep -m1 to take only the first match (avoids concatenating multiple lines).
+    # Strip the key name, remove surrounding quotes, trim whitespace.
+    # Inline-comment stripping only removes a trailing ' #...' that sits outside quotes
+    # (matches [space]#[^"']* at end-of-line) so '#' inside a value is preserved.
+    API_KEY=$(grep -m1 "ELEVENLABS_API_KEY=" "$ENV_FILE" \
         | sed 's/^[^=]*=//' \
         | sed "s/^['\"]//;s/['\"]$//" \
-        | sed 's/[[:space:]]*#.*//' \
+        | sed "s/[[:space:]]*#[^\"']*$//" \
         | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
     if [ "$API_KEY" != "your_api_key_here" ] && [ -n "$API_KEY" ]; then
         echo -e "${GREEN}OK ElevenLabs API key configured${NC}"

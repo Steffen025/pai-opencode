@@ -62,7 +62,7 @@ interface KeychainTokens {
 
 export async function extractFromKeychain(): Promise<KeychainTokens | null> {
 	try {
-		const { stdout, exitCode } = await execCommand("security", [
+		const { stdout, stderr, exitCode } = await execCommand("security", [
 			"find-generic-password",
 			"-s",
 			"Claude Code-credentials",
@@ -70,7 +70,7 @@ export async function extractFromKeychain(): Promise<KeychainTokens | null> {
 		]);
 
 		if (exitCode !== 0) {
-			error("Failed to extract from Keychain", { exitCode, stderr: stdout });
+			error("Failed to extract from Keychain", { exitCode, stderr });
 			return null;
 		}
 
