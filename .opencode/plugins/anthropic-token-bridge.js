@@ -1,3 +1,6 @@
+import { createRequire } from "node:module";
+var __require = /* @__PURE__ */ createRequire(import.meta.url);
+
 // .opencode/plugins/lib/file-logger.ts
 import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
@@ -55,18 +58,12 @@ function readAuthFile() {
   }
 }
 function writeAuthFile(authData) {
-  const tmpFile = `${AUTH_FILE}.tmp.${process.pid}.${Date.now()}`;
   try {
-    const content = JSON.stringify(authData, null, 2) + `
-`;
-    fs.writeFileSync(tmpFile, content, { mode: 384 });
-    fs.renameSync(tmpFile, AUTH_FILE);
+    fs.writeFileSync(AUTH_FILE, JSON.stringify(authData, null, 2) + `
+`, { mode: 384 });
     return true;
   } catch (err) {
     error("Failed to write auth.json", { error: String(err) });
-    try {
-      fs.unlinkSync(tmpFile);
-    } catch {}
     return false;
   }
 }
@@ -179,9 +176,9 @@ function updateAnthropicTokens(accessToken, refreshToken, expiresInSeconds) {
 }
 
 // .opencode/plugins/lib/refresh-manager.ts
+var AUTH_FILE2 = path2.join(os2.homedir(), ".local", "share", "opencode", "auth.json");
 var EXEC_TIMEOUT_MS = 15000;
 var REFRESH_COOLDOWN_MS = 5 * 60 * 1000;
-var AUTH_FILE2 = path2.join(os2.homedir(), ".local", "share", "opencode", "auth.json");
 var isRefreshing = false;
 var lastRefreshAttempt = 0;
 function getExistingRefreshToken() {
@@ -234,14 +231,14 @@ function execCommand(command, args) {
 }
 async function extractFromKeychain() {
   try {
-    const { stdout, exitCode } = await execCommand("security", [
+    const { stdout, stderr, exitCode } = await execCommand("security", [
       "find-generic-password",
       "-s",
       "Claude Code-credentials",
       "-w"
     ]);
     if (exitCode !== 0) {
-      error("Failed to extract from Keychain", { exitCode, stderr: stdout });
+      error("Failed to extract from Keychain", { exitCode, stderr });
       return null;
     }
     const credentials = JSON.parse(stdout.trim());
@@ -284,7 +281,7 @@ async function generateSetupToken() {
 }
 var ANTHROPIC_OAUTH_CLIENT_ID = "9d1c250a-e61b-44d9-88ed-5944d1962f5e";
 var ANTHROPIC_TOKEN_ENDPOINT = "https://console.anthropic.com/v1/oauth/token";
-async function refreshWithOAuthToken(oauthToken, attempt = 1) {
+async function refreshWithOAuthToken(existingRefreshToken, attempt = 1) {
   const MAX_RETRIES = 3;
   const BASE_DELAY_MS = 2000;
   try {
@@ -293,7 +290,7 @@ async function refreshWithOAuthToken(oauthToken, attempt = 1) {
     const timeout = setTimeout(() => controller.abort(), 1e4);
     const params = new URLSearchParams({
       grant_type: "refresh_token",
-      refresh_token: oauthToken,
+      refresh_token: existingRefreshToken,
       client_id: ANTHROPIC_OAUTH_CLIENT_ID
     });
     const response = await fetch(ANTHROPIC_TOKEN_ENDPOINT, {
@@ -317,7 +314,7 @@ async function refreshWithOAuthToken(oauthToken, attempt = 1) {
         const delayMs = BASE_DELAY_MS * Math.pow(2, attempt - 1);
         warn(`OAuth refresh rate limited (429), retrying in ${delayMs}ms (attempt ${attempt}/${MAX_RETRIES})`);
         await new Promise((resolve) => setTimeout(resolve, delayMs));
-        return refreshWithOAuthToken(oauthToken, attempt + 1);
+        return refreshWithOAuthToken(existingRefreshToken, attempt + 1);
       }
       if (errorData.error?.type === "invalid_grant") {
         error("OAuth refresh failed - refresh token invalid or revoked", { status: response.status, error: errorText });
@@ -345,7 +342,7 @@ async function refreshWithOAuthToken(oauthToken, attempt = 1) {
       const delayMs = BASE_DELAY_MS * Math.pow(2, attempt - 1);
       warn(`OAuth refresh network error, retrying in ${delayMs}ms (attempt ${attempt}/${MAX_RETRIES})`, { error: String(err) });
       await new Promise((resolve) => setTimeout(resolve, delayMs));
-      return refreshWithOAuthToken(oauthToken, attempt + 1);
+      return refreshWithOAuthToken(existingRefreshToken, attempt + 1);
     }
     error("Exception during OAuth refresh (max retries exceeded)", { error: String(err) });
     return null;
@@ -354,6 +351,8 @@ async function refreshWithOAuthToken(oauthToken, attempt = 1) {
 async function exchangeSetupToken(setupToken) {
   try {
     info("Exchanging setup token for OAuth credentials");
+    const controller = new AbortController;
+    const timeout = setTimeout(() => controller.abort(), 1e4);
     const response = await fetch("https://api.anthropic.com/v1/oauth/setup_token/exchange", {
       method: "POST",
       headers: {
@@ -361,8 +360,10 @@ async function exchangeSetupToken(setupToken) {
         Authorization: `Bearer ${setupToken}`,
         "anthropic-version": "2023-06-01"
       },
-      body: JSON.stringify({ grant_type: "setup_token" })
+      body: JSON.stringify({ grant_type: "setup_token" }),
+      signal: controller.signal
     });
+    clearTimeout(timeout);
     if (!response.ok) {
       error("Token exchange failed", { status: response.status });
       return null;
@@ -401,10 +402,10 @@ async function refreshAnthropicToken() {
   lastRefreshAttempt = Date.now();
   try {
     info("Starting token refresh process");
-    const oauthRefreshValue = getExistingRefreshToken();
-    if (oauthRefreshValue) {
-      info("Attempting OAuth refresh with stored refresh_token");
-      const refreshedTokens = await refreshWithOAuthToken(oauthRefreshValue);
+    const existingRefreshToken = getExistingRefreshToken();
+    if (existingRefreshToken) {
+      info("Attempting OAuth refresh with existing refresh_token");
+      const refreshedTokens = await refreshWithOAuthToken(existingRefreshToken);
       if (refreshedTokens) {
         const success2 = updateAnthropicTokens(refreshedTokens.accessToken, refreshedTokens.refreshToken, refreshedTokens.expiresIn);
         if (success2) {
@@ -414,21 +415,26 @@ async function refreshAnthropicToken() {
       }
       info("OAuth refresh failed, falling back to Keychain");
     } else {
-      info("No refresh_token found in auth.json, skipping OAuth refresh");
+      info("No existing refresh_token found, skipping OAuth refresh");
     }
     const keychainTokens = await extractFromKeychain();
     if (keychainTokens) {
       info("Found tokens in Keychain, updating auth.json");
-      let keychainExpiresIn;
-      if (keychainTokens.expiresAt && keychainTokens.expiresAt > Date.now()) {
-        keychainExpiresIn = Math.floor((keychainTokens.expiresAt - Date.now()) / 1000);
+      let expiresInSeconds;
+      if (keychainTokens.expiresAt === undefined || keychainTokens.expiresAt === null) {
+        expiresInSeconds = 28800;
+      } else if (keychainTokens.expiresAt > Date.now()) {
+        expiresInSeconds = Math.round((keychainTokens.expiresAt - Date.now()) / 1000);
       } else {
-        keychainExpiresIn = 28800;
+        info("Keychain token is expired, falling through to setup-token exchange");
+        expiresInSeconds = 0;
       }
-      const success2 = updateAnthropicTokens(keychainTokens.accessToken, keychainTokens.refreshToken, keychainExpiresIn);
-      if (success2) {
-        info("Token refresh successful via Keychain");
-        return true;
+      if (expiresInSeconds > 0) {
+        const success2 = updateAnthropicTokens(keychainTokens.accessToken, keychainTokens.refreshToken, expiresInSeconds);
+        if (success2) {
+          info("Token refresh successful via Keychain");
+          return true;
+        }
       }
     }
     info("Keychain extraction failed, generating new setup token");
@@ -469,8 +475,13 @@ async function keepAlivePing() {
       fileLog("Keep-alive: No valid token, skipping ping", "debug");
       return;
     }
-    const auth = readAuthFile();
-    const accessToken = auth?.anthropic?.access;
+    const fs3 = await import("node:fs");
+    const path3 = await import("node:path");
+    const os3 = await import("node:os");
+    const authFile = path3.join(os3.homedir(), ".local", "share", "opencode", "auth.json");
+    const content = fs3.readFileSync(authFile, "utf8");
+    const auth = JSON.parse(content);
+    const accessToken = auth.anthropic?.access;
     if (!accessToken) {
       fileLog("Keep-alive: No access token found", "debug");
       return;
@@ -508,7 +519,7 @@ function startKeepAlive() {
   setTimeout(() => {
     keepAlivePing();
     keepaliveTimer = setInterval(keepAlivePing, KEEPALIVE_INTERVAL_MS);
-  }, 5 * 60 * 1000);
+  }, 300000);
 }
 async function AnthropicTokenBridge() {
   fileLog("AnthropicTokenBridge plugin loaded", "info");
@@ -522,22 +533,19 @@ async function AnthropicTokenBridge() {
           startKeepAlive();
           return;
         }
-        const minutesRemaining = Math.floor(status.timeRemainingMs / (60 * 1000));
+        const minutesRemaining = Math.floor(status.timeRemainingMs / 60000);
         fileLog(`Config hook: Token has ${minutesRemaining} minutes remaining`, "info");
-        if (!status.valid || status.expiresSoon) {
+        if (!status.valid || status.expiresSoon || status.timeRemainingMs < PROACTIVE_REFRESH_THRESHOLD_MS) {
           fileLog(`Config hook: Token needs refresh (${minutesRemaining}m left), attempting early refresh`, "warn");
           if (!isRefreshInProgress()) {
-            refreshAnthropicToken().then((success) => {
-              if (success) {
-                fileLog("Config hook: Early token refresh successful - browser popup should be avoided", "info");
-              } else {
-                fileLog("Config hook: Early refresh failed - OpenCode may open browser", "error");
-              }
-            }).catch((err) => {
-              fileLogError("Config hook: Unexpected error during refresh", err);
-            });
+            const success = await refreshAnthropicToken();
+            if (success) {
+              fileLog("Config hook: Early token refresh successful - browser popup should be avoided", "info");
+            } else {
+              fileLog("Config hook: Early refresh failed - OpenCode may open browser", "error");
+            }
           } else {
-            fileLog("Config hook: Refresh already in progress, skipping", "info");
+            fileLog("Config hook: Refresh already in progress, waiting", "info");
           }
         } else {
           fileLog(`Config hook: Token valid for ${minutesRemaining}m, no early refresh needed`, "info");
@@ -561,8 +569,8 @@ async function AnthropicTokenBridge() {
           fileLog("auth.json not readable, skipping", "debug");
           return;
         }
-        const minutesRemaining = Math.floor(status.timeRemainingMs / (60 * 1000));
-        const needsRefresh = !status.valid || status.expiresSoon;
+        const minutesRemaining = Math.floor(status.timeRemainingMs / 60000);
+        const needsRefresh = !status.valid || status.expiresSoon || status.timeRemainingMs < PROACTIVE_REFRESH_THRESHOLD_MS;
         if (!needsRefresh) {
           fileLog(`Token valid for ${minutesRemaining}m, no refresh needed`, "debug");
           return;
@@ -591,8 +599,8 @@ async function AnthropicTokenBridge() {
         fileLog("Session started, syncing token from Keychain", "info");
         const quickCheck = checkAnthropicToken();
         if (quickCheck.valid && !quickCheck.expiresSoon) {
-          const hoursRemaining = Math.floor(quickCheck.timeRemainingMs / (60 * 60 * 1000));
-          fileLog(`Token valid for ${hoursRemaining}h at session start (fast-path, no Keychain sync needed)`, "info");
+          const hoursRemaining = Math.floor(quickCheck.timeRemainingMs / 3600000);
+          fileLog(`Token valid for ${hoursRemaining}h at session start (after fallback check)`, "info");
           return;
         }
         fileLog("Token expired or expiring soon, attempting Keychain sync", "warn");
@@ -656,7 +664,7 @@ async function AnthropicTokenBridge() {
             fileLogError("Error during immediate token refresh", err);
           }
         } else {
-          const hoursRemaining = Math.floor(status.timeRemainingMs / (60 * 60 * 1000));
+          const hoursRemaining = Math.floor(status.timeRemainingMs / 3600000);
           fileLog(`Token valid for ${hoursRemaining}h at session start (after fallback check)`, "info");
         }
       } catch (err) {
