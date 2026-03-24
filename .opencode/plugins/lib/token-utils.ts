@@ -4,7 +4,7 @@ import * as path from "node:path";
 import { error, info, warn } from "./file-logger.ts";
 
 const AUTH_FILE = path.join(os.homedir(), ".local", "share", "opencode", "auth.json");
-const REFRESH_THRESHOLD_MS = 2 * 60 * 60 * 1000; // 2 hours
+const REFRESH_THRESHOLD_MS = 60 * 60 * 1000; // 1 hour - refresh when < 60 min remaining (proactive)
 
 export interface TokenStatus {
 	valid: boolean;

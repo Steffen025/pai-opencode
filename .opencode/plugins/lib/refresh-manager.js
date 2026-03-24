@@ -1,5 +1,8 @@
-import { createRequire } from "node:module";
-var __require = /* @__PURE__ */ createRequire(import.meta.url);
+// .opencode/plugins/lib/refresh-manager.ts
+import { spawn } from "node:child_process";
+import * as fs2 from "node:fs";
+import * as os2 from "node:os";
+import * as path2 from "node:path";
 
 // .opencode/plugins/lib/file-logger.ts
 import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
@@ -18,11 +21,6 @@ function fileLog(message, level = "info") {
     appendFileSync(LOG_PATH, logLine);
   } catch {}
 }
-function fileLogError(message, error) {
-  const errorMessage = error instanceof Error ? `${error.message}
-${error.stack || ""}` : String(error);
-  fileLog(`${message}: ${errorMessage}`, "error");
-}
 function info(message, meta) {
   const metaStr = meta ? ` ${JSON.stringify(meta)}` : "";
   fileLog(`${message}${metaStr}`, "info");
@@ -35,12 +33,6 @@ function error(message, meta) {
   const metaStr = meta ? ` ${JSON.stringify(meta)}` : "";
   fileLog(`${message}${metaStr}`, "error");
 }
-
-// .opencode/plugins/lib/refresh-manager.ts
-import { spawn } from "node:child_process";
-import * as fs2 from "node:fs";
-import * as os2 from "node:os";
-import * as path2 from "node:path";
 
 // .opencode/plugins/lib/token-utils.ts
 import * as fs from "node:fs";
@@ -71,86 +63,6 @@ function maskToken(token) {
   if (!token || token.length < 20)
     return "***";
   return `${token.slice(0, 8)}...${token.slice(-4)}`;
-}
-function checkAnthropicToken() {
-  const auth = readAuthFile();
-  if (!auth) {
-    return { valid: false, exists: false, expiresSoon: false, timeRemainingMs: 0, reason: "auth_file_not_readable" };
-  }
-  const anthropic = auth.anthropic;
-  if (!anthropic) {
-    return { valid: false, exists: false, expiresSoon: false, timeRemainingMs: 0, reason: "no_anthropic_config" };
-  }
-  if (anthropic.type !== "oauth") {
-    return {
-      valid: false,
-      exists: true,
-      expiresSoon: false,
-      timeRemainingMs: 0,
-      reason: "not_oauth_type",
-      maskedAccess: maskToken(anthropic.access)
-    };
-  }
-  if (!anthropic.access) {
-    return {
-      valid: false,
-      exists: true,
-      expiresSoon: false,
-      timeRemainingMs: 0,
-      reason: "missing_access_token"
-    };
-  }
-  if (typeof anthropic.expires !== "number" || !Number.isFinite(anthropic.expires)) {
-    return {
-      valid: false,
-      exists: true,
-      expiresSoon: false,
-      timeRemainingMs: 0,
-      reason: "invalid_expires",
-      maskedAccess: maskToken(anthropic.access)
-    };
-  }
-  const now = Date.now();
-  const expires = anthropic.expires;
-  const timeRemainingMs = expires - now;
-  if (timeRemainingMs <= 0) {
-    warn("Anthropic token expired", {
-      expiredAt: new Date(expires).toISOString(),
-      maskedAccess: maskToken(anthropic.access)
-    });
-    return {
-      valid: false,
-      exists: true,
-      expiresSoon: true,
-      timeRemainingMs: 0,
-      expiresAt: new Date(expires),
-      maskedAccess: maskToken(anthropic.access),
-      reason: "token_expired"
-    };
-  }
-  const expiresSoon = timeRemainingMs < REFRESH_THRESHOLD_MS;
-  const hoursRemaining = Math.floor(timeRemainingMs / (60 * 60 * 1000));
-  if (expiresSoon) {
-    warn("Anthropic token expires soon", {
-      hoursRemaining,
-      expiresAt: new Date(expires).toISOString(),
-      maskedAccess: maskToken(anthropic.access)
-    });
-  } else {
-    info("Anthropic token valid", {
-      hoursRemaining,
-      expiresAt: new Date(expires).toISOString()
-    });
-  }
-  return {
-    valid: true,
-    exists: true,
-    expiresSoon,
-    timeRemainingMs,
-    expiresAt: new Date(expires),
-    maskedAccess: maskToken(anthropic.access),
-    reason: expiresSoon ? "expires_soon" : "valid"
-  };
 }
 function updateAnthropicTokens(accessToken, refreshToken, expiresInSeconds) {
   const auth = readAuthFile();
@@ -458,219 +370,8 @@ async function refreshAnthropicToken() {
     isRefreshing = false;
   }
 }
-
-// .opencode/plugins/anthropic-token-bridge.ts
-var CHECK_INTERVAL_MESSAGES = 5;
-var PROACTIVE_REFRESH_THRESHOLD_MS = 60 * 60 * 1000;
-var KEEPALIVE_INTERVAL_MS = 30 * 60 * 1000;
-var messageCount = 0;
-var keepaliveTimer = null;
-async function keepAlivePing() {
-  try {
-    const status = checkAnthropicToken();
-    if (!status.exists || !status.valid) {
-      fileLog("Keep-alive: No valid token, skipping ping", "debug");
-      return;
-    }
-    const fs3 = await import("node:fs");
-    const path3 = await import("node:path");
-    const os3 = await import("node:os");
-    const authFile = path3.join(os3.homedir(), ".local", "share", "opencode", "auth.json");
-    const content = fs3.readFileSync(authFile, "utf8");
-    const auth = JSON.parse(content);
-    const accessToken = auth.anthropic?.access;
-    if (!accessToken) {
-      fileLog("Keep-alive: No access token found", "debug");
-      return;
-    }
-    fileLog("Keep-alive: Pinging Anthropic usage endpoint", "info");
-    const controller = new AbortController;
-    const timeout = setTimeout(() => controller.abort(), 1e4);
-    const response = await fetch("https://api.anthropic.com/api/oauth/usage", {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "anthropic-version": "2023-06-01",
-        "User-Agent": "claude-cli/2.0 (OpenCode Token Bridge)"
-      },
-      signal: controller.signal
-    });
-    clearTimeout(timeout);
-    if (response.ok) {
-      const data = await response.json();
-      fileLog(`Keep-alive: Ping successful (5h usage: ${data.five_hour?.utilization ?? "unknown"}%)`, "info");
-    } else if (response.status === 429) {
-      fileLog("Keep-alive: Rate limited on usage endpoint (non-critical)", "warn");
-    } else {
-      fileLog(`Keep-alive: Usage endpoint returned ${response.status}`, "warn");
-    }
-  } catch (err) {
-    fileLogError("Keep-alive: Error during ping", err);
-  }
-}
-function startKeepAlive() {
-  if (keepaliveTimer) {
-    clearInterval(keepaliveTimer);
-  }
-  fileLog(`Starting keep-alive timer (interval: ${KEEPALIVE_INTERVAL_MS / 60000} minutes)`, "info");
-  setTimeout(() => {
-    keepAlivePing();
-    keepaliveTimer = setInterval(keepAlivePing, KEEPALIVE_INTERVAL_MS);
-  }, 300000);
-}
-async function AnthropicTokenBridge() {
-  fileLog("AnthropicTokenBridge plugin loaded", "info");
-  return {
-    async config(_config) {
-      try {
-        fileLog("Plugin config hook running - early token refresh opportunity", "info");
-        const status = checkAnthropicToken();
-        if (!status.exists) {
-          fileLog("No Anthropic token found during config hook, skipping early refresh", "info");
-          startKeepAlive();
-          return;
-        }
-        const minutesRemaining = Math.floor(status.timeRemainingMs / 60000);
-        fileLog(`Config hook: Token has ${minutesRemaining} minutes remaining`, "info");
-        if (!status.valid || status.expiresSoon || status.timeRemainingMs < PROACTIVE_REFRESH_THRESHOLD_MS) {
-          fileLog(`Config hook: Token needs refresh (${minutesRemaining}m left), attempting early refresh`, "warn");
-          if (!isRefreshInProgress()) {
-            const success = await refreshAnthropicToken();
-            if (success) {
-              fileLog("Config hook: Early token refresh successful - browser popup should be avoided", "info");
-            } else {
-              fileLog("Config hook: Early refresh failed - OpenCode may open browser", "error");
-            }
-          } else {
-            fileLog("Config hook: Refresh already in progress, waiting", "info");
-          }
-        } else {
-          fileLog(`Config hook: Token valid for ${minutesRemaining}m, no early refresh needed`, "info");
-        }
-        startKeepAlive();
-      } catch (err) {
-        fileLogError("Error in config hook", err);
-      }
-    },
-    async "chat.message"(_input, output) {
-      const msg = output?.message;
-      if (!msg?.role || msg.role !== "user")
-        return;
-      messageCount++;
-      if (messageCount % CHECK_INTERVAL_MESSAGES !== 0)
-        return;
-      try {
-        fileLog(`Checking token status (message #${messageCount})`, "debug");
-        const status = checkAnthropicToken();
-        if (!status.exists && status.reason === "auth_file_not_readable") {
-          fileLog("auth.json not readable, skipping", "debug");
-          return;
-        }
-        const minutesRemaining = Math.floor(status.timeRemainingMs / 60000);
-        const needsRefresh = !status.valid || status.expiresSoon || status.timeRemainingMs < PROACTIVE_REFRESH_THRESHOLD_MS;
-        if (!needsRefresh) {
-          fileLog(`Token valid for ${minutesRemaining}m, no refresh needed`, "debug");
-          return;
-        }
-        fileLog(`Token expires in ${minutesRemaining}m, triggering refresh`, "warn");
-        if (isRefreshInProgress()) {
-          fileLog("Refresh already in progress, skipping", "info");
-          return;
-        }
-        fileLog("Starting async token refresh", "info");
-        refreshAnthropicToken().then((success) => {
-          if (success) {
-            fileLog("Token refresh completed successfully", "info");
-          } else {
-            fileLog("Token refresh failed - will retry on next check", "error");
-          }
-        }).catch((err) => {
-          fileLogError("Unexpected error during refresh", err);
-        });
-      } catch (err) {
-        fileLogError("Error in chat.message handler", err);
-      }
-    },
-    async "experimental.chat.system.transform"(_input, _output) {
-      try {
-        fileLog("Session started, syncing token from Keychain", "info");
-        const quickCheck = checkAnthropicToken();
-        if (quickCheck.valid && !quickCheck.expiresSoon) {
-          const hoursRemaining = Math.floor(quickCheck.timeRemainingMs / 3600000);
-          fileLog(`Token valid for ${hoursRemaining}h at session start (after fallback check)`, "info");
-          return;
-        }
-        fileLog("Token expired or expiring soon, attempting Keychain sync", "warn");
-        try {
-          const keychainTokens = await extractFromKeychain();
-          if (keychainTokens) {
-            const { accessToken, refreshToken, expiresAt } = keychainTokens;
-            const currentStatus = checkAnthropicToken();
-            const currentAccess = currentStatus.maskedAccess;
-            const keychainMasked = `${accessToken.slice(0, 8)}...${accessToken.slice(-4)}`;
-            if (currentAccess !== keychainMasked) {
-              fileLog(`Keychain token differs from auth.json — syncing (auth:${currentAccess} keychain:${keychainMasked})`, "warn");
-            } else {
-              fileLog("Keychain token matches auth.json", "debug");
-            }
-            let expiresInSeconds;
-            if (expiresAt === undefined || expiresAt === null) {
-              expiresInSeconds = 28800;
-            } else if (expiresAt > Date.now()) {
-              expiresInSeconds = Math.round((expiresAt - Date.now()) / 1000);
-            } else {
-              expiresInSeconds = 0;
-            }
-            if (expiresInSeconds > 0) {
-              const synced = updateAnthropicTokens(accessToken, refreshToken, expiresInSeconds);
-              if (synced) {
-                const hoursRemaining = Math.floor(expiresInSeconds / 3600);
-                fileLog(`Keychain→auth.json sync successful, token valid for ${hoursRemaining}h`, "info");
-                return;
-              } else {
-                fileLog("Keychain→auth.json sync failed (write error), falling back to refresh", "error");
-              }
-            } else {
-              fileLog("Keychain token is also expired, triggering full refresh", "warn");
-            }
-          } else {
-            fileLog("Could not read Keychain, falling back to auth.json check", "warn");
-          }
-        } catch (keychainErr) {
-          fileLogError("Error during Keychain sync at session start", keychainErr);
-        }
-        const status = checkAnthropicToken();
-        if (!status.exists && status.reason === "auth_file_not_readable") {
-          fileLog("auth.json not readable at session start", "debug");
-          return;
-        }
-        if (!status.exists || status.expiresSoon || !status.valid) {
-          fileLog("Token expired or expiring soon, triggering full refresh", "warn");
-          try {
-            if (!isRefreshInProgress()) {
-              fileLog("Starting immediate synchronous token refresh", "info");
-              const success = await refreshAnthropicToken();
-              if (success) {
-                fileLog("Session-start token refresh successful", "info");
-              } else {
-                fileLog("Session-start token refresh failed - will retry async", "error");
-                setTimeout(() => refreshAnthropicToken(), 30000);
-              }
-            }
-          } catch (err) {
-            fileLogError("Error during immediate token refresh", err);
-          }
-        } else {
-          const hoursRemaining = Math.floor(status.timeRemainingMs / 3600000);
-          fileLog(`Token valid for ${hoursRemaining}h at session start (after fallback check)`, "info");
-        }
-      } catch (err) {
-        fileLogError("Error in system.transform handler", err);
-      }
-    }
-  };
-}
-var anthropic_token_bridge_default = AnthropicTokenBridge;
 export {
-  anthropic_token_bridge_default as default
+  refreshAnthropicToken,
+  isRefreshInProgress,
+  extractFromKeychain
 };

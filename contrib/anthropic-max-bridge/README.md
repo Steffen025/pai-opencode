@@ -85,9 +85,13 @@ You'll see **$0 input / $0 output** cost because it uses your subscription.
 
 Anthropic OAuth tokens expire after **8–12 hours**.
 
-**Auto-refresh (default):** The `anthropic-token-bridge` plugin checks your token every 5 messages and refreshes it automatically from the macOS Keychain — no action needed.
+**Auto-refresh (fully silent):** The `anthropic-token-bridge` plugin refreshes your token automatically — no browser, no manual steps required.
 
-**Manual refresh (fallback):** If auto-refresh fails for any reason, run:
+- At **startup**: refreshes using the stored `refresh_token` (OAuth2 flow) before OpenCode checks auth
+- Every **30 minutes**: keep-alive ping keeps the token from expiring due to inactivity
+- Every **5 messages**: proactively refreshes when <1 hour remaining
+
+**Manual refresh (fallback):** If auto-refresh fails for any reason (e.g. refresh token revoked), run:
 ```bash
 bash refresh-token.sh
 ```
@@ -95,8 +99,8 @@ bash refresh-token.sh
 Then restart OpenCode.
 
 > [!tip]
-> Claude Code silently refreshes its own token in the background whenever you use it.
-> So the Keychain always has a fresh token after any `claude` use — which is what the auto-refresh plugin pulls from.
+> The plugin uses the OAuth2 `refresh_token` flow directly — it does **not** require Claude Code to be running
+> and does **not** open a browser. Silent background refresh, just like Claude Code itself does.
 
 ---
 
