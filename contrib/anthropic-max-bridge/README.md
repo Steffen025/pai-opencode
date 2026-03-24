@@ -106,6 +106,7 @@ Then restart OpenCode.
 > 2. If OpenCode is already running, run `bash refresh-token.sh` and restart it
 >
 > The auto-refresh plugin handles this silently if you use `claude` regularly.
+
 > [!tip]
 > Claude Code silently refreshes its own token in the background whenever you use it.
 > So the Keychain always has a fresh token after any `claude` use — which is what the auto-refresh plugin pulls from.

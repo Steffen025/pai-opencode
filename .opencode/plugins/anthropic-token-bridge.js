@@ -38,9 +38,6 @@ function error(message, meta) {
 
 // .opencode/plugins/lib/refresh-manager.ts
 import { spawn } from "node:child_process";
-import * as fs2 from "node:fs";
-import * as os2 from "node:os";
-import * as path2 from "node:path";
 
 // .opencode/plugins/lib/token-utils.ts
 import * as fs from "node:fs";
@@ -181,22 +178,17 @@ function updateAnthropicTokens(accessToken, refreshToken, expiresInSeconds) {
 }
 
 // .opencode/plugins/lib/refresh-manager.ts
-var AUTH_FILE2 = path2.join(os2.homedir(), ".local", "share", "opencode", "auth.json");
 var EXEC_TIMEOUT_MS = 15000;
 var REFRESH_COOLDOWN_MS = 5 * 60 * 1000;
 var isRefreshing = false;
 var lastRefreshAttempt = 0;
 function getExistingRefreshToken() {
-  try {
-    const content = fs2.readFileSync(AUTH_FILE2, "utf8");
-    const auth = JSON.parse(content);
-    if (auth.anthropic?.type === "oauth" && auth.anthropic.refresh) {
-      return auth.anthropic.refresh;
-    }
-    return null;
-  } catch {
-    return null;
+  // Reuse the shared readAuthFile() helper to avoid duplicate file-read logic
+  const auth = readAuthFile();
+  if (auth?.anthropic?.type === "oauth" && auth.anthropic.refresh) {
+    return auth.anthropic.refresh;
   }
+  return null;
 }
 function isRefreshInProgress() {
   if (isRefreshing)
@@ -236,14 +228,14 @@ function execCommand(command, args) {
 }
 async function extractFromKeychain() {
   try {
-    const { stdout, stderr, exitCode } = await execCommand("security", [
+    const { stdout, stderr: keychainStderr, exitCode } = await execCommand("security", [
       "find-generic-password",
       "-s",
       "Claude Code-credentials",
       "-w"
     ]);
     if (exitCode !== 0) {
-      error("Failed to extract from Keychain", { exitCode, stderr });
+      error("Failed to extract from Keychain", { exitCode, stderr: keychainStderr });
       return null;
     }
     const credentials = JSON.parse(stdout.trim());
@@ -489,13 +481,8 @@ async function keepAlivePing() {
       fileLog("Keep-alive: No valid token, skipping ping", "debug");
       return;
     }
-    const fs3 = await import("node:fs");
-    const path3 = await import("node:path");
-    const os3 = await import("node:os");
-    const authFile = path3.join(os3.homedir(), ".local", "share", "opencode", "auth.json");
-    const content = fs3.readFileSync(authFile, "utf8");
-    const auth = JSON.parse(content);
-    const accessToken = auth.anthropic?.access;
+    const auth = readAuthFile();
+    const accessToken = auth?.anthropic?.access;
     if (!accessToken) {
       fileLog("Keep-alive: No access token found", "debug");
       return;
@@ -561,7 +548,7 @@ async function AnthropicTokenBridge() {
         }
         const minutesRemaining = Math.floor(status.timeRemainingMs / 60000);
         fileLog(`Config hook: Token has ${minutesRemaining} minutes remaining`, "info");
-        if (!status.valid || status.expiresSoon || status.timeRemainingMs < PROACTIVE_REFRESH_THRESHOLD_MS) {
+        if (!status.valid || status.expiresSoon) {
           fileLog(`Config hook: Token needs refresh (${minutesRemaining}m left), starting background refresh`, "warn");
           if (!isRefreshInProgress()) {
             // Fire-and-forget — do not await so plugin startup is not blocked
@@ -600,7 +587,7 @@ async function AnthropicTokenBridge() {
           return;
         }
         const minutesRemaining = Math.floor(status.timeRemainingMs / 60000);
-        const needsRefresh = !status.valid || status.expiresSoon || status.timeRemainingMs < PROACTIVE_REFRESH_THRESHOLD_MS;
+        const needsRefresh = !status.valid || status.expiresSoon;
         if (!needsRefresh) {
           fileLog(`Token valid for ${minutesRemaining}m, no refresh needed`, "debug");
           return;

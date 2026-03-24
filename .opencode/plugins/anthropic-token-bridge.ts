@@ -7,6 +7,7 @@ const PROACTIVE_REFRESH_THRESHOLD_MS = 60 * 60 * 1000; // Refresh when < 60 minu
 const KEEPALIVE_INTERVAL_MS = 30 * 60 * 1000; // Ping every 30 minutes to keep token alive
 let messageCount = 0;
 let keepaliveTimer: ReturnType<typeof setInterval> | null = null;
+let keepaliveInitialTimeout: ReturnType<typeof setTimeout> | null = null;
 
 // Keep-alive ping to prevent token expiration
 // Uses the /api/oauth/usage endpoint which is lightweight and doesn't consume tokens
@@ -61,14 +62,22 @@ async function keepAlivePing() {
 
 // Start the keep-alive timer
 function startKeepAlive() {
+	// Clear both the pending initial timeout and any running interval so
+	// repeated startKeepAlive() calls don't stack timeouts or intervals.
+	if (keepaliveInitialTimeout) {
+		clearTimeout(keepaliveInitialTimeout);
+		keepaliveInitialTimeout = null;
+	}
 	if (keepaliveTimer) {
 		clearInterval(keepaliveTimer);
+		keepaliveTimer = null;
 	}
 
 	fileLog(`Starting keep-alive timer (interval: ${KEEPALIVE_INTERVAL_MS / 60000} minutes)`, "info");
 
 	// First ping after 5 minutes (to let everything settle after startup)
-	setTimeout(() => {
+	keepaliveInitialTimeout = setTimeout(() => {
+		keepaliveInitialTimeout = null;
 		keepAlivePing();
 		// Then ping every 30 minutes
 		keepaliveTimer = setInterval(keepAlivePing, KEEPALIVE_INTERVAL_MS);

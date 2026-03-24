@@ -1,32 +1,21 @@
 import { spawn } from "node:child_process";
-import * as fs from "node:fs";
-import * as os from "node:os";
-import * as path from "node:path";
 import { error, info, warn } from "./file-logger.ts";
-import { updateAnthropicTokens } from "./token-utils.ts";
+import { readAuthFile, updateAnthropicTokens } from "./token-utils.ts";
 
 const EXEC_TIMEOUT_MS = 15_000; // 15 seconds — prevents execCommand hanging indefinitely
 
 const REFRESH_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
 
-const AUTH_FILE = path.join(os.homedir(), ".local", "share", "opencode", "auth.json");
-
 let isRefreshing = false;
 let lastRefreshAttempt = 0;
 
 function getExistingRefreshToken(): string | null {
-	try {
-		const content = fs.readFileSync(AUTH_FILE, "utf8");
-		const auth = JSON.parse(content) as {
-			anthropic?: { refresh?: string; type?: string };
-		};
-		if (auth.anthropic?.type === "oauth" && auth.anthropic.refresh) {
-			return auth.anthropic.refresh;
-		}
-		return null;
-	} catch {
-		return null;
+	// Reuse the shared readAuthFile() helper to avoid duplicate file-read logic
+	const auth = readAuthFile();
+	if (auth?.anthropic?.type === "oauth" && auth.anthropic.refresh) {
+		return auth.anthropic.refresh;
 	}
+	return null;
 }
 
 export function isRefreshInProgress(): boolean {
@@ -82,7 +71,7 @@ interface KeychainTokens {
 
 export async function extractFromKeychain(): Promise<KeychainTokens | null> {
 	try {
-		const { stdout, exitCode } = await execCommand("security", [
+		const { stdout, stderr, exitCode } = await execCommand("security", [
 			"find-generic-password",
 			"-s",
 			"Claude Code-credentials",
@@ -90,7 +79,7 @@ export async function extractFromKeychain(): Promise<KeychainTokens | null> {
 		]);
 
 		if (exitCode !== 0) {
-			error("Failed to extract from Keychain", { exitCode, stderr: stdout });
+			error("Failed to extract from Keychain", { exitCode, stderr });
 			return null;
 		}
 
@@ -259,6 +248,11 @@ async function refreshWithOAuthToken(oauthToken: string, attempt = 1): Promise<O
 async function exchangeSetupToken(setupToken: string): Promise<OAuthTokens | null> {
 	try {
 		info("Exchanging setup token for OAuth credentials");
+
+		// AbortController timeout to prevent hanging
+		const controller = new AbortController();
+		const timeout = setTimeout(() => controller.abort(), 10_000); // 10 second timeout
+
 		const response = await fetch("https://api.anthropic.com/v1/oauth/setup_token/exchange", {
 			method: "POST",
 			headers: {
@@ -267,32 +261,38 @@ async function exchangeSetupToken(setupToken: string): Promise<OAuthTokens | nul
 				"anthropic-version": "2023-06-01",
 			},
 			body: JSON.stringify({ grant_type: "setup_token" }),
+			signal: controller.signal,
 		});
 
-		if (!response.ok) {
-			error("Token exchange failed", { status: response.status });
-			return null;
+		// clearTimeout deferred to finally so AbortController still protects body reads
+		try {
+			if (!response.ok) {
+				error("Token exchange failed", { status: response.status });
+				return null;
+			}
+
+			const data = (await response.json()) as {
+				access_token?: string;
+				refresh_token?: string;
+				expires_in?: number;
+			};
+
+			if (!data.access_token || !data.refresh_token) {
+				error("Invalid exchange response", {
+					hasAccess: !!data.access_token,
+					hasRefresh: !!data.refresh_token,
+				});
+				return null;
+			}
+
+			return {
+				accessToken: data.access_token,
+				refreshToken: data.refresh_token,
+				expiresIn: data.expires_in ?? 28800,
+			};
+		} finally {
+			clearTimeout(timeout);
 		}
-
-		const data = (await response.json()) as {
-			access_token?: string;
-			refresh_token?: string;
-			expires_in?: number;
-		};
-
-		if (!data.access_token || !data.refresh_token) {
-			error("Invalid exchange response", {
-				hasAccess: !!data.access_token,
-				hasRefresh: !!data.refresh_token,
-			});
-			return null;
-		}
-
-		return {
-			accessToken: data.access_token,
-			refreshToken: data.refresh_token,
-			expiresIn: data.expires_in ?? 28800,
-		};
 	} catch (err) {
 		error("Exception exchanging setup token", { error: String(err) });
 		return null;
