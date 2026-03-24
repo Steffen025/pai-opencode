@@ -415,7 +415,7 @@ async function refreshAnthropicToken() {
   lastRefreshAttempt = Date.now();
   try {
     info("Starting token refresh process");
-    const existingRefreshToken = getExistingRefreshToken();
+    const existingRefreshToken = getExistingRefreshToken(); // pragma: allowlist secret — runtime value read from auth.json, not hardcoded
     if (existingRefreshToken) {
       info("Attempting OAuth refresh with existing refresh_token");
       const refreshedTokens = await refreshWithOAuthToken(existingRefreshToken);
