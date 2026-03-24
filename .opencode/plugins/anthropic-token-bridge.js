@@ -308,40 +308,44 @@ async function refreshWithOAuthToken(existingRefreshToken, attempt = 1) {
       body: params.toString(),
       signal: controller.signal
     });
-    clearTimeout(timeout);
-    if (!response.ok) {
-      const errorText = await response.text();
-      let errorData = {};
-      try {
-        errorData = JSON.parse(errorText);
-      } catch {}
-      if (response.status === 429 && attempt < MAX_RETRIES) {
-        const delayMs = BASE_DELAY_MS * Math.pow(2, attempt - 1);
-        warn(`OAuth refresh rate limited (429), retrying in ${delayMs}ms (attempt ${attempt}/${MAX_RETRIES})`);
-        await new Promise((resolve) => setTimeout(resolve, delayMs));
-        return refreshWithOAuthToken(existingRefreshToken, attempt + 1);
-      }
-      if (errorData.error?.type === "invalid_grant") {
-        error("OAuth refresh failed - refresh token invalid or revoked", { status: response.status, error: errorText });
+    // clearTimeout deferred to finally so AbortController still protects body reads
+    try {
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData = {};
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {}
+        if (response.status === 429 && attempt < MAX_RETRIES) {
+          const delayMs = BASE_DELAY_MS * Math.pow(2, attempt - 1);
+          warn(`OAuth refresh rate limited (429), retrying in ${delayMs}ms (attempt ${attempt}/${MAX_RETRIES})`);
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+          return refreshWithOAuthToken(existingRefreshToken, attempt + 1);
+        }
+        if (errorData.error?.type === "invalid_grant") {
+          error("OAuth refresh failed - refresh token invalid or revoked", { status: response.status, error: errorText });
+          return null;
+        }
+        error("OAuth refresh failed", { status: response.status, error: errorText });
         return null;
       }
-      error("OAuth refresh failed", { status: response.status, error: errorText });
-      return null;
+      const data = await response.json();
+      if (!data.access_token || !data.refresh_token) {
+        error("Invalid OAuth refresh response", {
+          hasAccess: !!data.access_token,
+          hasRefresh: !!data.refresh_token
+        });
+        return null;
+      }
+      info("OAuth refresh successful - received new access and refresh tokens");
+      return {
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+        expiresIn: data.expires_in ?? 28800
+      };
+    } finally {
+      clearTimeout(timeout);
     }
-    const data = await response.json();
-    if (!data.access_token || !data.refresh_token) {
-      error("Invalid OAuth refresh response", {
-        hasAccess: !!data.access_token,
-        hasRefresh: !!data.refresh_token
-      });
-      return null;
-    }
-    info("OAuth refresh successful - received new access and refresh tokens");
-    return {
-      accessToken: data.access_token,
-      refreshToken: data.refresh_token,
-      expiresIn: data.expires_in ?? 28800
-    };
   } catch (err) {
     if (attempt < MAX_RETRIES) {
       const delayMs = BASE_DELAY_MS * Math.pow(2, attempt - 1);
@@ -368,24 +372,28 @@ async function exchangeSetupToken(setupToken) {
       body: JSON.stringify({ grant_type: "setup_token" }),
       signal: controller.signal
     });
-    clearTimeout(timeout);
-    if (!response.ok) {
-      error("Token exchange failed", { status: response.status });
-      return null;
+    // clearTimeout deferred to finally so AbortController still protects body reads
+    try {
+      if (!response.ok) {
+        error("Token exchange failed", { status: response.status });
+        return null;
+      }
+      const data = await response.json();
+      if (!data.access_token || !data.refresh_token) {
+        error("Invalid exchange response", {
+          hasAccess: !!data.access_token,
+          hasRefresh: !!data.refresh_token
+        });
+        return null;
+      }
+      return {
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+        expiresIn: data.expires_in ?? 28800
+      };
+    } finally {
+      clearTimeout(timeout);
     }
-    const data = await response.json();
-    if (!data.access_token || !data.refresh_token) {
-      error("Invalid exchange response", {
-        hasAccess: !!data.access_token,
-        hasRefresh: !!data.refresh_token
-      });
-      return null;
-    }
-    return {
-      accessToken: data.access_token,
-      refreshToken: data.refresh_token,
-      expiresIn: data.expires_in ?? 28800
-    };
   } catch (err) {
     error("Exception exchanging setup token", { error: String(err) });
     return null;
@@ -473,6 +481,7 @@ var PROACTIVE_REFRESH_THRESHOLD_MS = 60 * 60 * 1000;
 var KEEPALIVE_INTERVAL_MS = 30 * 60 * 1000;
 var messageCount = 0;
 var keepaliveTimer = null;
+var keepaliveInitialTimeout = null;
 async function keepAlivePing() {
   try {
     const status = checkAnthropicToken();
@@ -494,34 +503,46 @@ async function keepAlivePing() {
     fileLog("Keep-alive: Pinging Anthropic usage endpoint", "info");
     const controller = new AbortController;
     const timeout = setTimeout(() => controller.abort(), 1e4);
-    const response = await fetch("https://api.anthropic.com/api/oauth/usage", {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "anthropic-version": "2023-06-01",
-        "User-Agent": "claude-cli/2.0 (OpenCode Token Bridge)"
-      },
-      signal: controller.signal
-    });
-    clearTimeout(timeout);
-    if (response.ok) {
-      const data = await response.json();
-      fileLog(`Keep-alive: Ping successful (5h usage: ${data.five_hour?.utilization ?? "unknown"}%)`, "info");
-    } else if (response.status === 429) {
-      fileLog("Keep-alive: Rate limited on usage endpoint (non-critical)", "warn");
-    } else {
-      fileLog(`Keep-alive: Usage endpoint returned ${response.status}`, "warn");
+    let response;
+    try {
+      response = await fetch("https://api.anthropic.com/api/oauth/usage", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "anthropic-version": "2023-06-01",
+          "User-Agent": "claude-cli/2.0 (OpenCode Token Bridge)"
+        },
+        signal: controller.signal
+      });
+      if (response.ok) {
+        const data = await response.json();
+        fileLog(`Keep-alive: Ping successful (5h usage: ${data.five_hour?.utilization ?? "unknown"}%)`, "info");
+      } else if (response.status === 429) {
+        fileLog("Keep-alive: Rate limited on usage endpoint (non-critical)", "warn");
+      } else {
+        fileLog(`Keep-alive: Usage endpoint returned ${response.status}`, "warn");
+      }
+    } finally {
+      clearTimeout(timeout);
     }
   } catch (err) {
     fileLogError("Keep-alive: Error during ping", err);
   }
 }
 function startKeepAlive() {
+  // Clear both the pending initial timeout and any running interval
+  // so repeated startKeepAlive() calls don't stack timeouts or intervals
+  if (keepaliveInitialTimeout) {
+    clearTimeout(keepaliveInitialTimeout);
+    keepaliveInitialTimeout = null;
+  }
   if (keepaliveTimer) {
     clearInterval(keepaliveTimer);
+    keepaliveTimer = null;
   }
   fileLog(`Starting keep-alive timer (interval: ${KEEPALIVE_INTERVAL_MS / 60000} minutes)`, "info");
-  setTimeout(() => {
+  keepaliveInitialTimeout = setTimeout(() => {
+    keepaliveInitialTimeout = null;
     keepAlivePing();
     keepaliveTimer = setInterval(keepAlivePing, KEEPALIVE_INTERVAL_MS);
   }, 300000);
