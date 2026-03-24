@@ -170,6 +170,7 @@ function updateAnthropicTokens(accessToken, refreshToken, expiresInSeconds) {
 }
 export {
   updateAnthropicTokens,
+  readAuthFile,
   maskToken,
   checkAnthropicToken
 };

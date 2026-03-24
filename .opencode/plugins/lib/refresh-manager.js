@@ -316,10 +316,10 @@ async function refreshAnthropicToken() {
   lastRefreshAttempt = Date.now();
   try {
     info("Starting token refresh process");
-    const storedRefreshToken = getExistingRefreshToken();
-    if (storedRefreshToken) {
+    const oauthRefreshValue = getExistingRefreshToken();
+    if (oauthRefreshValue) {
       info("Attempting OAuth refresh with stored refresh_token");
-      const refreshedTokens = await refreshWithOAuthToken(storedRefreshToken);
+      const refreshedTokens = await refreshWithOAuthToken(oauthRefreshValue);
       if (refreshedTokens) {
         const success2 = updateAnthropicTokens(refreshedTokens.accessToken, refreshedTokens.refreshToken, refreshedTokens.expiresIn);
         if (success2) {
@@ -329,7 +329,7 @@ async function refreshAnthropicToken() {
       }
       info("OAuth refresh failed, falling back to Keychain");
     } else {
-      info("No stored refresh_token found, skipping OAuth refresh");
+      info("No refresh_token found in auth.json, skipping OAuth refresh");
     }
     const keychainTokens = await extractFromKeychain();
     if (keychainTokens) {

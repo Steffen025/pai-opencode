@@ -16,7 +16,7 @@ export interface TokenStatus {
 	reason: string;
 }
 
-interface AuthFile {
+export interface AuthFile {
 	anthropic?: {
 		type: string;
 		access?: string;
@@ -26,7 +26,7 @@ interface AuthFile {
 	[key: string]: unknown;
 }
 
-function readAuthFile(): AuthFile | null {
+export function readAuthFile(): AuthFile | null {
 	try {
 		const content = fs.readFileSync(AUTH_FILE, "utf8");
 		return JSON.parse(content) as AuthFile;

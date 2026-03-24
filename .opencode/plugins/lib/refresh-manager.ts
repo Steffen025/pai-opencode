@@ -321,10 +321,10 @@ export async function refreshAnthropicToken(): Promise<boolean> {
 
 		// Strategy 1: Use stored refresh_token to get new tokens via OAuth API
 		// This is the proper OAuth2 flow and should work silently without browser
-		const storedRefreshToken = getExistingRefreshToken(); // pragma: allowlist secret — read from auth.json at runtime
-		if (storedRefreshToken) {
+		const oauthRefreshValue = getExistingRefreshToken(); // pragma: allowlist secret — runtime value from auth.json, not hardcoded
+		if (oauthRefreshValue) {
 			info("Attempting OAuth refresh with stored refresh_token");
-			const refreshedTokens = await refreshWithOAuthToken(storedRefreshToken);
+			const refreshedTokens = await refreshWithOAuthToken(oauthRefreshValue);
 			if (refreshedTokens) {
 				const success = updateAnthropicTokens(
 					refreshedTokens.accessToken,
@@ -338,7 +338,7 @@ export async function refreshAnthropicToken(): Promise<boolean> {
 			}
 			info("OAuth refresh failed, falling back to Keychain");
 		} else {
-			info("No stored refresh_token found, skipping OAuth refresh");
+			info("No refresh_token found in auth.json, skipping OAuth refresh");
 		}
 
 		// Strategy 2: Extract from macOS Keychain (Claude Code may have fresh tokens)
@@ -371,8 +371,7 @@ export async function refreshAnthropicToken(): Promise<boolean> {
 			return false;
 		}
 
-		// Strategy 3: Exchange setup token for OAuth credentials
-		// (numbered 3 here because Strategy 1=OAuth refresh, Strategy 2=Keychain)
+		// Strategy 3 (continued): Exchange the setup token for OAuth credentials
 		const oauthTokens = await exchangeSetupToken(setupToken);
 		if (!oauthTokens) {
 			error("Failed to exchange setup token");

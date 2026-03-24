@@ -1,9 +1,6 @@
-import * as fs from "node:fs";
-import * as os from "node:os";
-import * as path from "node:path";
 import { fileLog, fileLogError } from "./lib/file-logger.ts";
 import { extractFromKeychain, isRefreshInProgress, refreshAnthropicToken } from "./lib/refresh-manager.ts";
-import { checkAnthropicToken, updateAnthropicTokens } from "./lib/token-utils.ts";
+import { checkAnthropicToken, readAuthFile, updateAnthropicTokens } from "./lib/token-utils.ts";
 
 const CHECK_INTERVAL_MESSAGES = 5;
 const PROACTIVE_REFRESH_THRESHOLD_MS = 60 * 60 * 1000; // Refresh when < 60 minutes remaining (proactive)
@@ -21,11 +18,9 @@ async function keepAlivePing() {
 			return;
 		}
 
-		// Get the access token from auth.json (use module-scope imports, not dynamic)
-		const authFile = path.join(os.homedir(), ".local", "share", "opencode", "auth.json");
-		const content = fs.readFileSync(authFile, "utf8");
-		const auth = JSON.parse(content) as { anthropic?: { access?: string } };
-		const accessToken = auth.anthropic?.access;
+		// Get the access token via readAuthFile (reuses standardized error handling)
+		const auth = readAuthFile();
+		const accessToken = auth?.anthropic?.access;
 
 		if (!accessToken) {
 			fileLog("Keep-alive: No access token found", "debug");
@@ -153,9 +148,10 @@ async function AnthropicTokenBridge() {
 					return;
 				}
 
-				// PROACTIVE REFRESH: Refresh when < 60 minutes remaining, not just when expired
-				const minutesRemaining = Math.floor(status.timeRemainingMs / (60 * 1000));
-				const needsRefresh = !status.valid || status.expiresSoon || status.timeRemainingMs < PROACTIVE_REFRESH_THRESHOLD_MS;
+			// PROACTIVE REFRESH: expiresSoon is true when timeRemainingMs < REFRESH_THRESHOLD_MS (1h),
+			// which equals PROACTIVE_REFRESH_THRESHOLD_MS — no need to repeat the ms comparison.
+			const minutesRemaining = Math.floor(status.timeRemainingMs / (60 * 1000));
+			const needsRefresh = !status.valid || status.expiresSoon;
 
 				if (!needsRefresh) {
 					fileLog(`Token valid for ${minutesRemaining}m, no refresh needed`, "debug");
@@ -192,13 +188,13 @@ async function AnthropicTokenBridge() {
 			try {
 				fileLog("Session started, syncing token from Keychain", "info");
 
-				// Fast path: if auth.json token is already valid with >60min remaining, skip Keychain sync
-				const quickCheck = checkAnthropicToken();
-				if (quickCheck.valid && !quickCheck.expiresSoon) {
-					const hoursRemaining = Math.floor(quickCheck.timeRemainingMs / (60 * 60 * 1000));
-					fileLog(`Token valid for ${hoursRemaining}h at session start (after fallback check)`, "info");
-					return;
-				}
+			// Fast path: if auth.json token is already valid with >60min remaining, skip Keychain sync
+			const quickCheck = checkAnthropicToken();
+			if (quickCheck.valid && !quickCheck.expiresSoon) {
+				const hoursRemaining = Math.floor(quickCheck.timeRemainingMs / (60 * 60 * 1000));
+				fileLog(`Token valid for ${hoursRemaining}h at session start (fast-path, no Keychain sync needed)`, "info");
+				return;
+			}
 
 				// Step 1: Only attempt Keychain → auth.json sync if token is expired/expiring
 				fileLog("Token expired or expiring soon, attempting Keychain sync", "warn");
