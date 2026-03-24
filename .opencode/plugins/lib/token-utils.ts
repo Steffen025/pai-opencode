@@ -4,7 +4,7 @@ import * as path from "node:path";
 import { error, info, warn } from "./file-logger.ts";
 
 const AUTH_FILE = path.join(os.homedir(), ".local", "share", "opencode", "auth.json");
-const REFRESH_THRESHOLD_MS = 2 * 60 * 60 * 1000; // 2 hours
+const REFRESH_THRESHOLD_MS = 60 * 60 * 1000; // 1 hour - refresh when < 60 min remaining (proactive)
 
 export interface TokenStatus {
 	valid: boolean;
@@ -16,7 +16,7 @@ export interface TokenStatus {
 	reason: string;
 }
 
-interface AuthFile {
+export interface AuthFile {
 	anthropic?: {
 		type: string;
 		access?: string;
@@ -26,7 +26,7 @@ interface AuthFile {
 	[key: string]: unknown;
 }
 
-function readAuthFile(): AuthFile | null {
+export function readAuthFile(): AuthFile | null {
 	try {
 		const content = fs.readFileSync(AUTH_FILE, "utf8");
 		return JSON.parse(content) as AuthFile;
@@ -37,11 +37,18 @@ function readAuthFile(): AuthFile | null {
 }
 
 function writeAuthFile(authData: AuthFile): boolean {
+	// Atomic write: write to a temp file then rename over the target.
+	// This prevents partial/corrupt reads if the process is interrupted mid-write.
+	const tmpFile = `${AUTH_FILE}.tmp.${process.pid}.${Date.now()}`;
 	try {
-		fs.writeFileSync(AUTH_FILE, JSON.stringify(authData, null, 2) + "\n", { mode: 0o600 });
+		const content = JSON.stringify(authData, null, 2) + "\n";
+		fs.writeFileSync(tmpFile, content, { mode: 0o600 });
+		fs.renameSync(tmpFile, AUTH_FILE); // atomic on POSIX
 		return true;
 	} catch (err) {
 		error("Failed to write auth.json", { error: String(err) });
+		// Clean up temp file if rename failed
+		try { fs.unlinkSync(tmpFile); } catch { /* already gone or never created */ }
 		return false;
 	}
 }
@@ -73,7 +80,7 @@ export function checkAnthropicToken(): TokenStatus {
 		};
 	}
 
-	// Validate required fields before using them
+	// Validate required fields before computing time
 	if (!anthropic.access) {
 		return {
 			valid: false,

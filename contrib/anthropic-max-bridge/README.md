@@ -85,15 +85,27 @@ You'll see **$0 input / $0 output** cost because it uses your subscription.
 
 Anthropic OAuth tokens expire after **8–12 hours**.
 
-**Auto-refresh (default):** The `anthropic-token-bridge` plugin checks your token every 5 messages and refreshes it automatically from the macOS Keychain — no action needed.
+**Auto-refresh (default):** The `anthropic-token-bridge` plugin handles refresh automatically using 3 strategies in order:
+1. **Direct OAuth2 refresh** — calls the Anthropic token endpoint with the saved refresh_token (silent, no browser)
+2. **Keychain sync** — reads the latest token from macOS Keychain (works if you've used `claude` recently)
+3. **Setup token exchange** — calls `claude setup-token` and exchanges it (last resort)
+
+No action needed in normal use.
 
 **Manual refresh (fallback):** If auto-refresh fails for any reason, run:
 ```bash
+claude           # ← IMPORTANT: run this FIRST to ensure Keychain has a fresh token
 bash refresh-token.sh
 ```
 
 Then restart OpenCode.
 
+> [!important]
+> **Day 2+ usage:** Tokens expire while you sleep. When you return the next morning:
+> 1. Run `claude` once in Terminal (takes 2 seconds, refreshes the Keychain token)
+> 2. If OpenCode is already running, run `bash refresh-token.sh` and restart it
+>
+> The auto-refresh plugin handles this silently if you use `claude` regularly.
 > [!tip]
 > Claude Code silently refreshes its own token in the background whenever you use it.
 > So the Keychain always has a fresh token after any `claude` use — which is what the auto-refresh plugin pulls from.
@@ -150,22 +162,39 @@ Send them this folder and have them follow **Quick Start** above.
 ## Troubleshooting
 
 ### "No credentials found in Keychain"
-→ Run `claude` and log in first.
+→ Run `claude` in Terminal and log in first. This authenticates Claude Code and stores the token in Keychain.
 
-### "Token has already expired"
-→ Run `claude` (to refresh Claude Code's own token), then `bash refresh-token.sh`.
-
-### HTTP 401 in OpenCode
-→ Token expired and auto-refresh failed. Run `bash refresh-token.sh`, then restart OpenCode.
+### "Token has already expired" / HTTP 401 in OpenCode
+The token expired (happens after ~8–12 hours). Fix:
+```bash
+claude                    # Step 1: refresh the Keychain token (REQUIRED first)
+bash refresh-token.sh     # Step 2: write it to auth.json
+# Then restart OpenCode
+```
+**Do not skip Step 1.** `refresh-token.sh` reads from Keychain — if the Keychain token is also expired, the script will fail with "Keychain token is already expired".
 
 ### HTTP 400 in OpenCode
-→ Plugin not loaded. Check that `~/.opencode/plugins/anthropic-max-bridge.js` exists.
+→ The `anthropic-max-bridge` plugin is not loaded. Check that `~/.opencode/plugins/anthropic-max-bridge.js` exists. Re-run `install.sh` if needed.
+
+### Auto-refresh not working (token keeps expiring)
+→ Check the debug log: `cat /tmp/pai-opencode-debug.log`
+→ If it shows "claude setup-token failed", make sure `claude` is in your PATH and authenticated.
+→ If it shows "OAuth refresh failed — invalid_grant", your refresh token was revoked. Run `claude` to re-authenticate, then `bash refresh-token.sh`.
 
 ### Model shows a non-zero cost
-→ The plugin may not be active. Check OpenCode logs or re-run `install.sh`.
+→ The `anthropic-max-bridge` plugin may not be active, or you're using an API key instead of OAuth. Re-run `install.sh`, restart OpenCode, and verify `auth.json` has `"type": "oauth"`:
+```bash
+cat ~/.local/share/opencode/auth.json | python3 -m json.tool | grep type
+```
 
 ### I don't see `claude-sonnet-4-6` in the model list
 → In OpenCode settings, make sure `anthropic` is an enabled provider.
+
+### How to check debug logs
+All plugin activity is logged to `/tmp/pai-opencode-debug.log`:
+```bash
+tail -f /tmp/pai-opencode-debug.log
+```
 
 ---
 

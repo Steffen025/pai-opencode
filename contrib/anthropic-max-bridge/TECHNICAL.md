@@ -24,13 +24,13 @@ OpenCode (and most SDKs) send it as a string. The plugin transforms it before ea
 
 Without this header, the API returns `401 "OAuth authentication is currently not supported"`:
 
-```http
+```
 anthropic-beta: oauth-2025-04-20
 ```
 
 ### Difference 3: Bearer token vs. API key
 
-```http
+```
 # API key (wrong for OAuth)
 x-api-key: sk-ant-api03-...
 
@@ -166,9 +166,14 @@ The gonzalosr Gist and other community approaches added all of these. None of th
 
 - Access tokens expire after **~8–12 hours**
 - The `anthropic-token-bridge` plugin handles refresh automatically:
-  - Checks token status every 5 user messages
-  - Triggers async refresh when <2 hours remaining
-  - 3 strategies in order: Keychain → `claude setup-token` → setup token exchange API
+  - **config hook**: refreshes silently at OpenCode startup before any auth check → prevents browser popup
+  - **keep-alive ping**: hits `/api/oauth/usage` every 30 min to prevent inactivity expiry
+  - Checks token status every 5 user messages (proactive: triggers when <1 hour remaining)
+  - 3 strategies in order:
+    1. **OAuth `refresh_token` API** (silent, no browser) — `POST /v1/oauth/token` with `User-Agent: claude-cli/2.0`
+    2. Keychain sync (if OAuth refresh fails)
+    3. `claude setup-token` exchange (last resort, may trigger browser)
+  - 3× retry with exponential backoff (2s, 4s, 8s) for 429 rate-limit responses
   - 5-minute cooldown between refresh attempts
   - All log output goes to `/tmp/pai-opencode-debug.log` (TUI-safe)
 - Manual fallback: re-run `refresh-token.sh` if auto-refresh fails, then restart OpenCode

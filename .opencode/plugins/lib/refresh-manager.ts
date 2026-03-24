@@ -1,13 +1,33 @@
 import { spawn } from "node:child_process";
-import { error, info } from "./file-logger.ts";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
+import { error, info, warn } from "./file-logger.ts";
 import { updateAnthropicTokens } from "./token-utils.ts";
 
 const EXEC_TIMEOUT_MS = 15_000; // 15 seconds — prevents execCommand hanging indefinitely
 
 const REFRESH_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
 
+const AUTH_FILE = path.join(os.homedir(), ".local", "share", "opencode", "auth.json");
+
 let isRefreshing = false;
 let lastRefreshAttempt = 0;
+
+function getExistingRefreshToken(): string | null {
+	try {
+		const content = fs.readFileSync(AUTH_FILE, "utf8");
+		const auth = JSON.parse(content) as {
+			anthropic?: { refresh?: string; type?: string };
+		};
+		if (auth.anthropic?.type === "oauth" && auth.anthropic.refresh) {
+			return auth.anthropic.refresh;
+		}
+		return null;
+	} catch {
+		return null;
+	}
+}
 
 export function isRefreshInProgress(): boolean {
 	if (isRefreshing) return true;
@@ -57,12 +77,12 @@ function execCommand(command: string, args: string[]): Promise<ExecResult> {
 interface KeychainTokens {
 	accessToken: string;
 	refreshToken: string;
-	expiresAt?: number;
+	expiresAt?: number; // Unix timestamp in ms (from claudeAiOauth.expiresAt)
 }
 
 export async function extractFromKeychain(): Promise<KeychainTokens | null> {
 	try {
-		const { stdout, stderr, exitCode } = await execCommand("security", [
+		const { stdout, exitCode } = await execCommand("security", [
 			"find-generic-password",
 			"-s",
 			"Claude Code-credentials",
@@ -70,7 +90,7 @@ export async function extractFromKeychain(): Promise<KeychainTokens | null> {
 		]);
 
 		if (exitCode !== 0) {
-			error("Failed to extract from Keychain", { exitCode, stderr });
+			error("Failed to extract from Keychain", { exitCode, stderr: stdout });
 			return null;
 		}
 
@@ -140,14 +160,105 @@ interface OAuthTokens {
 	expiresIn: number;
 }
 
-async function exchangeSetupToken(setupToken: string): Promise<OAuthTokens | null> {
+const ANTHROPIC_OAUTH_CLIENT_ID = "9d1c250a-e61b-44d9-88ed-5944d1962f5e";
+const ANTHROPIC_TOKEN_ENDPOINT = "https://console.anthropic.com/v1/oauth/token";
+
+async function refreshWithOAuthToken(oauthToken: string, attempt = 1): Promise<OAuthTokens | null> { // pragma: allowlist secret — param is a runtime token, not a hardcoded secret
+	const MAX_RETRIES = 3;
+	const BASE_DELAY_MS = 2000; // Start with 2 second delay
+
 	try {
-		info("Exchanging setup token for OAuth credentials");
-		
+		info(`Refreshing OAuth token via Anthropic token endpoint (attempt ${attempt}/${MAX_RETRIES})`);
+
 		// AbortController timeout to prevent hanging
 		const controller = new AbortController();
 		const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-		
+
+		// OAuth2 refresh token flow
+		// Note: Do NOT include scope parameter - Anthropic rejects it on refresh
+		const params = new URLSearchParams({
+			grant_type: "refresh_token",
+			refresh_token: oauthToken, // pragma: allowlist secret — runtime value
+			client_id: ANTHROPIC_OAUTH_CLIENT_ID,
+		});
+
+		const response = await fetch(ANTHROPIC_TOKEN_ENDPOINT, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/x-www-form-urlencoded",
+				"anthropic-version": "2023-06-01",
+				"User-Agent": "claude-cli/2.0 (OpenCode Token Bridge)",
+			},
+			body: params.toString(),
+			signal: controller.signal,
+		});
+
+		clearTimeout(timeout);
+
+		if (!response.ok) {
+			const errorText = await response.text();
+			// Safe parse: non-JSON bodies (e.g. HTML error pages) must not crash the flow
+			let errorData: { error?: { type?: string; message?: string } } = {};
+			try {
+				errorData = JSON.parse(errorText) as { error?: { type?: string; message?: string } };
+			} catch {
+				// Leave errorData as {} and preserve errorText for logging below
+			}
+
+			// Handle rate limiting with exponential backoff
+			if (response.status === 429 && attempt < MAX_RETRIES) {
+				const delayMs = BASE_DELAY_MS * Math.pow(2, attempt - 1); // 2s, 4s, 8s
+				warn(`OAuth refresh rate limited (429), retrying in ${delayMs}ms (attempt ${attempt}/${MAX_RETRIES})`);
+				await new Promise(resolve => setTimeout(resolve, delayMs));
+				return refreshWithOAuthToken(oauthToken, attempt + 1);
+			}
+
+			// Handle invalid_grant (refresh token revoked/expired) - don't retry
+			if (errorData.error?.type === "invalid_grant") {
+				error("OAuth refresh failed - refresh token invalid or revoked", { status: response.status, error: errorText });
+				return null;
+			}
+
+			error("OAuth refresh failed", { status: response.status, error: errorText });
+			return null;
+		}
+
+		const data = (await response.json()) as {
+			access_token?: string;
+			refresh_token?: string;
+			expires_in?: number;
+		};
+
+		if (!data.access_token || !data.refresh_token) {
+			error("Invalid OAuth refresh response", {
+				hasAccess: !!data.access_token,
+				hasRefresh: !!data.refresh_token,
+			});
+			return null;
+		}
+
+		info("OAuth refresh successful - received new access and refresh tokens");
+		return {
+			accessToken: data.access_token,
+			refreshToken: data.refresh_token,
+			expiresIn: data.expires_in ?? 28800,
+		};
+	} catch (err) {
+		// Network errors - retry with backoff
+		if (attempt < MAX_RETRIES) {
+			const delayMs = BASE_DELAY_MS * Math.pow(2, attempt - 1);
+			warn(`OAuth refresh network error, retrying in ${delayMs}ms (attempt ${attempt}/${MAX_RETRIES})`, { error: String(err) });
+			await new Promise(resolve => setTimeout(resolve, delayMs));
+			return refreshWithOAuthToken(oauthToken, attempt + 1);
+		}
+		error("Exception during OAuth refresh (max retries exceeded)", { error: String(err) });
+		return null;
+	}
+}
+
+async function exchangeSetupToken(setupToken: string): Promise<OAuthTokens | null> {
+	try {
+		info("Exchanging setup token for OAuth credentials");
 		const response = await fetch("https://api.anthropic.com/v1/oauth/setup_token/exchange", {
 			method: "POST",
 			headers: {
@@ -156,10 +267,7 @@ async function exchangeSetupToken(setupToken: string): Promise<OAuthTokens | nul
 				"anthropic-version": "2023-06-01",
 			},
 			body: JSON.stringify({ grant_type: "setup_token" }),
-			signal: controller.signal,
 		});
-		
-		clearTimeout(timeout);
 
 		if (!response.ok) {
 			error("Token exchange failed", { status: response.status });
@@ -211,40 +319,51 @@ export async function refreshAnthropicToken(): Promise<boolean> {
 	try {
 		info("Starting token refresh process");
 
-		// Strategy 1: Extract from macOS Keychain
-		const keychainTokens = await extractFromKeychain();
-		if (keychainTokens) {
-			info("Found tokens in Keychain, updating auth.json");
-			
-			// Calculate expiresInSeconds - only use Keychain expiry if it's valid and in the future
-			let expiresInSeconds: number;
-			if (keychainTokens.expiresAt === undefined || keychainTokens.expiresAt === null) {
-				// Legacy: no expiry in Keychain, use 8h default
-				expiresInSeconds = 28800;
-			} else if (keychainTokens.expiresAt > Date.now()) {
-				// Valid future expiry
-				expiresInSeconds = Math.round((keychainTokens.expiresAt - Date.now()) / 1000);
-			} else {
-				// Expired - don't use this token, fall through to setup-token refresh
-				info("Keychain token is expired, falling through to setup-token exchange");
-				expiresInSeconds = 0; // Will cause validation to fail, forcing setup-token path
-			}
-			
-			// Only update if we have a valid expiry (not expired)
-			if (expiresInSeconds > 0) {
+		// Strategy 1: Use stored refresh_token to get new tokens via OAuth API
+		// This is the proper OAuth2 flow and should work silently without browser
+		const oauthRefreshValue = getExistingRefreshToken(); // pragma: allowlist secret — runtime value from auth.json, not hardcoded
+		if (oauthRefreshValue) {
+			info("Attempting OAuth refresh with stored refresh_token");
+			const refreshedTokens = await refreshWithOAuthToken(oauthRefreshValue);
+			if (refreshedTokens) {
 				const success = updateAnthropicTokens(
-					keychainTokens.accessToken,
-					keychainTokens.refreshToken,
-					expiresInSeconds,
+					refreshedTokens.accessToken,
+					refreshedTokens.refreshToken,
+					refreshedTokens.expiresIn,
 				);
 				if (success) {
-					info("Token refresh successful via Keychain");
+					info("Token refresh successful via OAuth refresh_token API");
 					return true;
 				}
 			}
+			info("OAuth refresh failed, falling back to Keychain");
+		} else {
+			info("No refresh_token found in auth.json, skipping OAuth refresh");
 		}
 
-		// Strategy 2: Generate new setup token via Claude Code CLI
+		// Strategy 2: Extract from macOS Keychain (Claude Code may have fresh tokens)
+		const keychainTokens = await extractFromKeychain();
+		if (keychainTokens) {
+			info("Found tokens in Keychain, updating auth.json");
+			// Compute real expiresIn from Keychain's expiresAt; fall back to 8h default
+			let keychainExpiresIn: number;
+			if (keychainTokens.expiresAt && keychainTokens.expiresAt > Date.now()) {
+				keychainExpiresIn = Math.floor((keychainTokens.expiresAt - Date.now()) / 1000);
+			} else {
+				keychainExpiresIn = 28800; // 8h default when expiresAt is missing or already past
+			}
+			const success = updateAnthropicTokens(
+				keychainTokens.accessToken,
+				keychainTokens.refreshToken,
+				keychainExpiresIn,
+			);
+			if (success) {
+				info("Token refresh successful via Keychain");
+				return true;
+			}
+		}
+
+		// Strategy 3: Generate new setup token via Claude Code CLI (may trigger browser)
 		info("Keychain extraction failed, generating new setup token");
 		const setupToken = await generateSetupToken();
 		if (!setupToken) {
@@ -252,7 +371,7 @@ export async function refreshAnthropicToken(): Promise<boolean> {
 			return false;
 		}
 
-		// Strategy 3: Exchange setup token for OAuth credentials
+		// Strategy 3 (continued): Exchange the setup token for OAuth credentials
 		const oauthTokens = await exchangeSetupToken(setupToken);
 		if (!oauthTokens) {
 			error("Failed to exchange setup token");
