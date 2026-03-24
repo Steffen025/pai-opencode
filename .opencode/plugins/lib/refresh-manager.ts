@@ -77,9 +77,10 @@ function execCommand(command: string, args: string[]): Promise<ExecResult> {
 interface KeychainTokens {
 	accessToken: string;
 	refreshToken: string;
+	expiresAt?: number; // Unix timestamp in ms (from claudeAiOauth.expiresAt)
 }
 
-async function extractFromKeychain(): Promise<KeychainTokens | null> {
+export async function extractFromKeychain(): Promise<KeychainTokens | null> {
 	try {
 		const { stdout, exitCode } = await execCommand("security", [
 			"find-generic-password",
@@ -120,7 +121,8 @@ async function extractFromKeychain(): Promise<KeychainTokens | null> {
 			return null;
 		}
 
-		return { accessToken, refreshToken };
+		const expiresAt = oauth?.expiresAt;
+		return { accessToken, refreshToken, expiresAt };
 	} catch (err) {
 		error("Exception extracting from Keychain", { error: String(err) });
 		return null;
@@ -161,7 +163,7 @@ interface OAuthTokens {
 const ANTHROPIC_OAUTH_CLIENT_ID = "9d1c250a-e61b-44d9-88ed-5944d1962f5e";
 const ANTHROPIC_TOKEN_ENDPOINT = "https://console.anthropic.com/v1/oauth/token";
 
-async function refreshWithOAuthToken(existingRefreshToken: string, attempt = 1): Promise<OAuthTokens | null> {
+async function refreshWithOAuthToken(oauthToken: string, attempt = 1): Promise<OAuthTokens | null> { // pragma: allowlist secret — param is a runtime token, not a hardcoded secret
 	const MAX_RETRIES = 3;
 	const BASE_DELAY_MS = 2000; // Start with 2 second delay
 
@@ -176,7 +178,7 @@ async function refreshWithOAuthToken(existingRefreshToken: string, attempt = 1):
 		// Note: Do NOT include scope parameter - Anthropic rejects it on refresh
 		const params = new URLSearchParams({
 			grant_type: "refresh_token",
-			refresh_token: existingRefreshToken,
+			refresh_token: oauthToken, // pragma: allowlist secret — runtime value
 			client_id: ANTHROPIC_OAUTH_CLIENT_ID,
 		});
 
@@ -195,14 +197,20 @@ async function refreshWithOAuthToken(existingRefreshToken: string, attempt = 1):
 
 		if (!response.ok) {
 			const errorText = await response.text();
-			const errorData = JSON.parse(errorText) as { error?: { type?: string; message?: string } };
+			// Safe parse: non-JSON bodies (e.g. HTML error pages) must not crash the flow
+			let errorData: { error?: { type?: string; message?: string } } = {};
+			try {
+				errorData = JSON.parse(errorText) as { error?: { type?: string; message?: string } };
+			} catch {
+				// Leave errorData as {} and preserve errorText for logging below
+			}
 
 			// Handle rate limiting with exponential backoff
 			if (response.status === 429 && attempt < MAX_RETRIES) {
 				const delayMs = BASE_DELAY_MS * Math.pow(2, attempt - 1); // 2s, 4s, 8s
 				warn(`OAuth refresh rate limited (429), retrying in ${delayMs}ms (attempt ${attempt}/${MAX_RETRIES})`);
 				await new Promise(resolve => setTimeout(resolve, delayMs));
-				return refreshWithOAuthToken(existingRefreshToken, attempt + 1);
+				return refreshWithOAuthToken(oauthToken, attempt + 1);
 			}
 
 			// Handle invalid_grant (refresh token revoked/expired) - don't retry
@@ -241,7 +249,7 @@ async function refreshWithOAuthToken(existingRefreshToken: string, attempt = 1):
 			const delayMs = BASE_DELAY_MS * Math.pow(2, attempt - 1);
 			warn(`OAuth refresh network error, retrying in ${delayMs}ms (attempt ${attempt}/${MAX_RETRIES})`, { error: String(err) });
 			await new Promise(resolve => setTimeout(resolve, delayMs));
-			return refreshWithOAuthToken(existingRefreshToken, attempt + 1);
+			return refreshWithOAuthToken(oauthToken, attempt + 1);
 		}
 		error("Exception during OAuth refresh (max retries exceeded)", { error: String(err) });
 		return null;
@@ -311,12 +319,12 @@ export async function refreshAnthropicToken(): Promise<boolean> {
 	try {
 		info("Starting token refresh process");
 
-		// Strategy 1: Use existing refresh_token to get new tokens via OAuth API
+		// Strategy 1: Use stored refresh_token to get new tokens via OAuth API
 		// This is the proper OAuth2 flow and should work silently without browser
-		const existingRefreshToken = getExistingRefreshToken();
-		if (existingRefreshToken) {
-			info("Attempting OAuth refresh with existing refresh_token");
-			const refreshedTokens = await refreshWithOAuthToken(existingRefreshToken);
+		const storedRefreshToken = getExistingRefreshToken(); // pragma: allowlist secret — read from auth.json at runtime
+		if (storedRefreshToken) {
+			info("Attempting OAuth refresh with stored refresh_token");
+			const refreshedTokens = await refreshWithOAuthToken(storedRefreshToken);
 			if (refreshedTokens) {
 				const success = updateAnthropicTokens(
 					refreshedTokens.accessToken,
@@ -330,17 +338,24 @@ export async function refreshAnthropicToken(): Promise<boolean> {
 			}
 			info("OAuth refresh failed, falling back to Keychain");
 		} else {
-			info("No existing refresh_token found, skipping OAuth refresh");
+			info("No stored refresh_token found, skipping OAuth refresh");
 		}
 
 		// Strategy 2: Extract from macOS Keychain (Claude Code may have fresh tokens)
 		const keychainTokens = await extractFromKeychain();
 		if (keychainTokens) {
 			info("Found tokens in Keychain, updating auth.json");
+			// Compute real expiresIn from Keychain's expiresAt; fall back to 8h default
+			let keychainExpiresIn: number;
+			if (keychainTokens.expiresAt && keychainTokens.expiresAt > Date.now()) {
+				keychainExpiresIn = Math.floor((keychainTokens.expiresAt - Date.now()) / 1000);
+			} else {
+				keychainExpiresIn = 28800; // 8h default when expiresAt is missing or already past
+			}
 			const success = updateAnthropicTokens(
 				keychainTokens.accessToken,
 				keychainTokens.refreshToken,
-				28800,
+				keychainExpiresIn,
 			);
 			if (success) {
 				info("Token refresh successful via Keychain");

@@ -37,11 +37,18 @@ function readAuthFile(): AuthFile | null {
 }
 
 function writeAuthFile(authData: AuthFile): boolean {
+	// Atomic write: write to a temp file then rename over the target.
+	// This prevents partial/corrupt reads if the process is interrupted mid-write.
+	const tmpFile = `${AUTH_FILE}.tmp.${process.pid}.${Date.now()}`;
 	try {
-		fs.writeFileSync(AUTH_FILE, JSON.stringify(authData, null, 2) + "\n");
+		const content = JSON.stringify(authData, null, 2) + "\n";
+		fs.writeFileSync(tmpFile, content, { mode: 0o600 });
+		fs.renameSync(tmpFile, AUTH_FILE); // atomic on POSIX
 		return true;
 	} catch (err) {
 		error("Failed to write auth.json", { error: String(err) });
+		// Clean up temp file if rename failed
+		try { fs.unlinkSync(tmpFile); } catch { /* already gone or never created */ }
 		return false;
 	}
 }
@@ -73,8 +80,30 @@ export function checkAnthropicToken(): TokenStatus {
 		};
 	}
 
+	// Validate required fields before computing time
+	if (!anthropic.access) {
+		return {
+			valid: false,
+			exists: true,
+			expiresSoon: false,
+			timeRemainingMs: 0,
+			reason: "missing_access_token",
+		};
+	}
+
+	if (typeof anthropic.expires !== "number" || !Number.isFinite(anthropic.expires)) {
+		return {
+			valid: false,
+			exists: true,
+			expiresSoon: false,
+			timeRemainingMs: 0,
+			reason: "invalid_expires",
+			maskedAccess: maskToken(anthropic.access),
+		};
+	}
+
 	const now = Date.now();
-	const expires = anthropic.expires ?? 0;
+	const expires = anthropic.expires;
 	const timeRemainingMs = expires - now;
 
 	if (timeRemainingMs <= 0) {

@@ -1,3 +1,6 @@
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 import { fileLog, fileLogError } from "./lib/file-logger.ts";
 import { extractFromKeychain, isRefreshInProgress, refreshAnthropicToken } from "./lib/refresh-manager.ts";
 import { checkAnthropicToken, updateAnthropicTokens } from "./lib/token-utils.ts";
@@ -18,10 +21,7 @@ async function keepAlivePing() {
 			return;
 		}
 
-		// Get the access token from auth.json
-		const fs = await import("node:fs");
-		const path = await import("node:path");
-		const os = await import("node:os");
+		// Get the access token from auth.json (use module-scope imports, not dynamic)
 		const authFile = path.join(os.homedir(), ".local", "share", "opencode", "auth.json");
 		const content = fs.readFileSync(authFile, "utf8");
 		const auth = JSON.parse(content) as { anthropic?: { access?: string } };
@@ -102,23 +102,31 @@ async function AnthropicTokenBridge() {
 				const minutesRemaining = Math.floor(status.timeRemainingMs / (60 * 1000));
 				fileLog(`Config hook: Token has ${minutesRemaining} minutes remaining`, "info");
 
-				// If token is expired or expiring soon, try to refresh immediately
-				if (!status.valid || status.expiresSoon || status.timeRemainingMs < PROACTIVE_REFRESH_THRESHOLD_MS) {
-					fileLog(`Config hook: Token needs refresh (${minutesRemaining}m left), attempting early refresh`, "warn");
+			// If token is expired or expiring soon, kick off a non-blocking refresh.
+			// expiresSoon is true when timeRemainingMs < REFRESH_THRESHOLD_MS (both 1h),
+			// so checking expiresSoon is sufficient — no need to repeat the ms comparison.
+			if (!status.valid || status.expiresSoon) {
+				fileLog(`Config hook: Token needs refresh (${minutesRemaining}m left), attempting early refresh`, "warn");
 
-					if (!isRefreshInProgress()) {
-						const success = await refreshAnthropicToken();
-						if (success) {
-							fileLog("Config hook: Early token refresh successful - browser popup should be avoided", "info");
-						} else {
-							fileLog("Config hook: Early refresh failed - OpenCode may open browser", "error");
-						}
-					} else {
-						fileLog("Config hook: Refresh already in progress, waiting", "info");
-					}
+				if (!isRefreshInProgress()) {
+					// Fire-and-forget: do NOT await so plugin init is not blocked
+					refreshAnthropicToken()
+						.then((success) => {
+							if (success) {
+								fileLog("Config hook: Early token refresh successful - browser popup should be avoided", "info");
+							} else {
+								fileLog("Config hook: Early refresh failed - OpenCode may open browser", "error");
+							}
+						})
+						.catch((err: unknown) => {
+							fileLogError("Config hook: Unexpected error during refresh", err);
+						});
 				} else {
-					fileLog(`Config hook: Token valid for ${minutesRemaining}m, no early refresh needed`, "info");
+					fileLog("Config hook: Refresh already in progress, skipping", "info");
 				}
+			} else {
+				fileLog(`Config hook: Token valid for ${minutesRemaining}m, no early refresh needed`, "info");
+			}
 
 			// Start the keep-alive timer regardless of whether we refreshed
 			// This keeps the token active by periodically pinging the usage endpoint

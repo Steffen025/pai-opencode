@@ -46,12 +46,18 @@ function readAuthFile() {
   }
 }
 function writeAuthFile(authData) {
+  const tmpFile = `${AUTH_FILE}.tmp.${process.pid}.${Date.now()}`;
   try {
-    fs.writeFileSync(AUTH_FILE, JSON.stringify(authData, null, 2) + `
-`, { mode: 384 });
+    const content = JSON.stringify(authData, null, 2) + `
+`;
+    fs.writeFileSync(tmpFile, content, { mode: 384 });
+    fs.renameSync(tmpFile, AUTH_FILE);
     return true;
   } catch (err) {
     error("Failed to write auth.json", { error: String(err) });
+    try {
+      fs.unlinkSync(tmpFile);
+    } catch {}
     return false;
   }
 }
