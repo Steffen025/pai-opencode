@@ -58,12 +58,17 @@ function readAuthFile() {
   }
 }
 function writeAuthFile(authData) {
+  // Atomic write: write to a temp file then rename over the target.
+  // Prevents partial/corrupt reads if the process is interrupted mid-write.
+  const tmpFile = `${AUTH_FILE}.tmp.${process.pid}.${Date.now()}`;
   try {
-    fs.writeFileSync(AUTH_FILE, JSON.stringify(authData, null, 2) + `
-`, { mode: 384 });
+    const content = JSON.stringify(authData, null, 2) + "\n";
+    fs.writeFileSync(tmpFile, content, { mode: 0o600 });
+    fs.renameSync(tmpFile, AUTH_FILE); // atomic on POSIX
     return true;
   } catch (err) {
     error("Failed to write auth.json", { error: String(err) });
+    try { fs.unlinkSync(tmpFile); } catch { /* already gone or never created */ }
     return false;
   }
 }
@@ -290,7 +295,7 @@ async function refreshWithOAuthToken(existingRefreshToken, attempt = 1) {
     const timeout = setTimeout(() => controller.abort(), 1e4);
     const params = new URLSearchParams({
       grant_type: "refresh_token",
-      refresh_token: existingRefreshToken,
+      refresh_token: existingRefreshToken, // pragma: allowlist secret — runtime value from auth.json, not hardcoded
       client_id: ANTHROPIC_OAUTH_CLIENT_ID
     });
     const response = await fetch(ANTHROPIC_TOKEN_ENDPOINT, {
@@ -536,14 +541,18 @@ async function AnthropicTokenBridge() {
         const minutesRemaining = Math.floor(status.timeRemainingMs / 60000);
         fileLog(`Config hook: Token has ${minutesRemaining} minutes remaining`, "info");
         if (!status.valid || status.expiresSoon || status.timeRemainingMs < PROACTIVE_REFRESH_THRESHOLD_MS) {
-          fileLog(`Config hook: Token needs refresh (${minutesRemaining}m left), attempting early refresh`, "warn");
+          fileLog(`Config hook: Token needs refresh (${minutesRemaining}m left), starting background refresh`, "warn");
           if (!isRefreshInProgress()) {
-            const success = await refreshAnthropicToken();
-            if (success) {
-              fileLog("Config hook: Early token refresh successful - browser popup should be avoided", "info");
-            } else {
-              fileLog("Config hook: Early refresh failed - OpenCode may open browser", "error");
-            }
+            // Fire-and-forget — do not await so plugin startup is not blocked
+            refreshAnthropicToken().then((success) => {
+              if (success) {
+                fileLog("Config hook: Early token refresh successful - browser popup should be avoided", "info");
+              } else {
+                fileLog("Config hook: Early refresh failed - OpenCode may open browser", "error");
+              }
+            }).catch((err) => {
+              fileLogError("Config hook: Unexpected error during background refresh", err);
+            });
           } else {
             fileLog("Config hook: Refresh already in progress, waiting", "info");
           }
