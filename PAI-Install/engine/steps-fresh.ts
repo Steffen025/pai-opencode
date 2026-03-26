@@ -230,11 +230,11 @@ export async function stepInstallPAI(
 			// Legacy flat field — read by getIdentity() in identity.ts until reader migration lands
 			voiceId: state.collected.voiceId || "",
 			// Nested schema — read by validate.ts and future callers
+			// Note: actions.ts will replace voices.main with full voice settings
+			// (voiceId, stability, similarityBoost, style, speed) during voice setup
 			voices: {
 				main: {
 					voiceId: state.collected.voiceId || "",
-					provider: state.collected.voiceProvider || "none",
-					enabled: state.collected.voiceEnabled || false,
 				},
 			},
 		},
