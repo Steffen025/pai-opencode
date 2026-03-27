@@ -11,7 +11,8 @@ bash PAI-Install/install.sh --help
 bash PAI-Install/install.sh --preset zen --name "Your Name" --ai-name "Jeremy"
 ```
 
-> **Note:** The `--cli` flag is accepted for backward compatibility but is no longer required.
+> [!note]
+> The `--cli` flag is accepted for backward compatibility but is no longer required.
 
 ## What This Installer Does
 

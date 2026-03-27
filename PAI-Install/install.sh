@@ -57,15 +57,37 @@ INSTALLER_DIR="$SCRIPT_DIR"
 info "Launching CLI installer..."
 echo ""
 
-# Backwards-compatible alias
-if [ "${1:-}" = "--cli" ]; then
-	shift
-fi
+# Scan all args so removed flags cannot slip through
+args=("$@")
+stripLeadingCli=0
 
-# Hard fail only when GUI mode is explicitly requested
-if [ "${1:-}" = "--gui" ] || [ "${1:-}" = "--mode=gui" ] || { [ "${1:-}" = "--mode" ] && [ "${2:-}" = "gui" ]; }; then
-	error "Requested GUI mode was removed. Use CLI options."
-	exec bun "$INSTALLER_DIR/cli/quick-install.ts" --help
+for ((i = 0; i < ${#args[@]}; i++)); do
+	arg="${args[$i]}"
+	next="${args[$((i + 1))]:-}"
+
+	if [ "$arg" = "--cli" ]; then
+		if [ $i -eq 0 ]; then
+			stripLeadingCli=1
+		else
+			error "Flag --cli is no longer required. Remove it and re-run."
+			exit 2
+		fi
+	fi
+
+	if [ "$arg" = "--gui" ] || [ "$arg" = "--mode=gui" ] || { [ "$arg" = "--mode" ] && [ "$next" = "gui" ]; }; then
+		error "Requested GUI mode was removed. Use CLI options."
+		exit 2
+	fi
+
+	if [ "$arg" = "--mode" ] || [[ "$arg" == --mode=* ]]; then
+		error "Flag --mode is not supported. Use --migrate or --update."
+		exit 2
+	fi
+done
+
+# Backwards-compatible alias
+if [ $stripLeadingCli -eq 1 ]; then
+	shift
 fi
 
 exec bun "$INSTALLER_DIR/cli/quick-install.ts" "$@"

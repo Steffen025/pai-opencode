@@ -328,7 +328,7 @@ agents:
 - **3 presets** ready to use
 
 ### Migration Guide
-1. Re-run the installer: `bash PAI-Install/install.sh --help`
+1. Re-run the installer update flow: `bash PAI-Install/install.sh --update`
 2. Or switch profile manually: `bun run .opencode/tools/switch-provider.ts zen-paid`
 3. Custom agent models → Edit `opencode.json` agent section directly
 
@@ -617,7 +617,7 @@ This release brings full PAI 2.5 Algorithm compatibility and adds 5 new handlers
 
 4. **Alternative: Fresh install (recommended for a clean setup):**
    ```bash
-   bash PAI-Install/install.sh --help
+    bash PAI-Install/install.sh
    ```
 
 **See [UPGRADE.md](/UPGRADE.md) for detailed step-by-step instructions.**
@@ -628,7 +628,7 @@ This release brings full PAI 2.5 Algorithm compatibility and adds 5 new handlers
 git fetch origin
 git checkout main
 git pull origin main
-bash PAI-Install/install.sh --help
+ bash PAI-Install/install.sh --update
 ```
 
 Re-running the installer is recommended — it generates the new profile format with dynamic tier routing.

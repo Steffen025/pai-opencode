@@ -115,7 +115,8 @@ const STATE_FILE = path.join(tmpdir(), 'browser-session.json')
 
 ### Affected Files
 
-  - Installer bootstrap: `PAI-Install/install.sh`
+  - Installer engine: `PAI-Install/engine/actions.ts`, `PAI-Install/engine/steps-fresh.ts`, `PAI-Install/engine/steps-migrate.ts`
+  - CLI entrypoint: `PAI-Install/cli/quick-install.ts`
 - `Telos/Tools/UpdateTelos.ts`
 - `CORE/Tools/Banner*.ts`
 - `CORE/Tools/FeatureRegistry.ts`
@@ -138,7 +139,7 @@ const HOME = homedir()
 
 ### Problem
 
-Installer code assumes `.zshrc` or `.bashrc` exists.
+Installer code assumes `process.env.SHELL` is set and may modify `.bashrc`/`.zshrc`.
 
 ### Fix Pattern
 
