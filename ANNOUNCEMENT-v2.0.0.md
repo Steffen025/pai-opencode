@@ -45,7 +45,7 @@ Pay exactly what the task requires.
 git clone https://github.com/Steffen025/pai-opencode
 cd pai-opencode
 bun install
-bash PAI-Install/install.sh --cli --preset zen --name "Your Name" --ai-name "Jeremy"
+bash PAI-Install/install.sh --preset zen --name "Your Name" --ai-name "Jeremy"
 opencode
 ```
 

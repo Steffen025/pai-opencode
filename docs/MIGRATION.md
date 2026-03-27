@@ -41,8 +41,8 @@ cd pai-opencode
 # 2. Install dependencies
 bun install
 
-# 3. Run the CLI installer
-bash PAI-Install/install.sh --cli --preset zen --name "Your Name" --ai-name "Jeremy"
+# 3. Run the installer
+bash PAI-Install/install.sh --preset zen --name "Your Name" --ai-name "Jeremy"
 
 # 4. Start OpenCode
 opencode
@@ -82,7 +82,7 @@ cd pai-opencode
 This normalizes your `opencode.json` and `~/.opencode/` before migration.
 
 ```bash
-bash PAI-Install/install.sh --cli --preset zen --name "Your Name" --ai-name "Jeremy"
+bash PAI-Install/install.sh --preset zen --name "Your Name" --ai-name "Jeremy"
 ```
 
 ### Step 4: Preview Migration (Dry Run)

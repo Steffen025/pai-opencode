@@ -5,11 +5,13 @@ CLI-only installer for PAI OpenCode.
 ## Quick Start
 
 ```bash
-bash PAI-Install/install.sh --cli --help
+bash PAI-Install/install.sh --help
 
 # Example: fresh install (Zen)
-bash PAI-Install/install.sh --cli --preset zen --name "Your Name" --ai-name "Jeremy"
+bash PAI-Install/install.sh --preset zen --name "Your Name" --ai-name "Jeremy"
 ```
+
+> **Note:** The `--cli` flag is accepted for backward compatibility but is no longer required.
 
 ## What This Installer Does
 
@@ -46,6 +48,7 @@ PAI-Install/
 ## Notes
 
 - GUI installer was removed. `install.sh` always runs the CLI installer.
+- The `--cli` flag is accepted for backward compatibility but is optional (the default behavior is CLI mode).
 
 ## Post-Installation
 

@@ -96,11 +96,11 @@ PAI-OpenCode is the complete port of **Daniel Miessler's Personal AI Infrastruct
 ### New Users (Installer)
 
 ```bash
-# Run the CLI installer
-bash PAI-Install/install.sh --cli --help
+# Run the installer
+bash PAI-Install/install.sh --help
 
 # Example: fresh install (Zen)
-bash PAI-Install/install.sh --cli --preset zen --name "Your Name" --ai-name "Jeremy"
+bash PAI-Install/install.sh --preset zen --name "Your Name" --ai-name "Jeremy"
 ```
 
 ### Manual Setup
@@ -113,8 +113,8 @@ cd pai-opencode
 # 2. Install dependencies
 bun install
 
-# 3. Run the CLI installer
-bash PAI-Install/install.sh --cli --preset zen --name "Your Name" --ai-name "Jeremy"
+# 3. Run the installer
+bash PAI-Install/install.sh --preset zen --name "Your Name" --ai-name "Jeremy"
 
 # 4. Start OpenCode
 opencode
@@ -439,7 +439,7 @@ MIT License — see [LICENSE](LICENSE) for details.
 git clone https://github.com/Steffen025/pai-opencode.git
 cd pai-opencode
 bun install
-bash PAI-Install/install.sh --cli --preset zen --name "Your Name" --ai-name "Jeremy"
+bash PAI-Install/install.sh --preset zen --name "Your Name" --ai-name "Jeremy"
 opencode
 ```
 

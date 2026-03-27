@@ -5,7 +5,7 @@
 #
 # Usage:
 #   bash install.sh [args...]          # CLI installation (default)
-#   bash install.sh --cli [args...]    # CLI installation (alias)
+#   bash install.sh --cli [args...]    # CLI installation (--cli flag accepted for backward compatibility)
 #
 
 set -euo pipefail
