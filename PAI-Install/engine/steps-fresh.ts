@@ -6,12 +6,13 @@
  */
 
 import type { InstallState } from "./types.ts";
+import { PAI_VERSION } from "./types.ts";
 import { buildOpenCodeBinary } from "./build-opencode.ts";
 import type { BuildResult } from "./build-opencode.ts";
 import { PROVIDER_MODELS, PROVIDER_LABELS } from "./provider-models.ts";
 import type { ProviderName } from "./provider-models.ts";
 import { existsSync, mkdirSync, writeFileSync, chmodSync, symlinkSync, unlinkSync, lstatSync, realpathSync, readFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join, resolve, dirname } from "node:path";
 import { homedir } from "node:os";
 
 // ═══════════════════════════════════════════════════════════
@@ -202,9 +203,20 @@ export async function stepInstallPAI(
 	const toolsDir = join(localOpencodeDir, "tools");
 	const globalOpencodeLink = join(homedir(), ".opencode");
 	
-	// Create local .opencode directory structure
-	mkdirSync(localOpencodeDir, { recursive: true });
-	mkdirSync(toolsDir, { recursive: true });
+	// Create local .opencode directory structure (including all dirs validate.ts checks)
+	const dirsToCreate = [
+		localOpencodeDir,
+		toolsDir,
+		join(localOpencodeDir, "skills"),
+		join(localOpencodeDir, "MEMORY"),
+		join(localOpencodeDir, "MEMORY", "STATE"),
+		join(localOpencodeDir, "MEMORY", "WORK"),
+		join(localOpencodeDir, "hooks"),
+		join(localOpencodeDir, "Plans"),
+	];
+	for (const dir of dirsToCreate) {
+		mkdirSync(dir, { recursive: true });
+	}
 	onProgress(92, "Created local directory structure...");
 	
 	// Generate settings.json (without API keys - those go in .env)
@@ -215,11 +227,19 @@ export async function stepInstallPAI(
 		},
 		daidentity: {
 			name: state.collected.aiName || "PAI",
-			voice: {
-				enabled: state.collected.voiceEnabled || false,
-				provider: state.collected.voiceProvider || "none",
-				voiceId: state.collected.voiceId || "default",
+			// Legacy flat field — read by getIdentity() in identity.ts until reader migration lands
+			voiceId: state.collected.voiceId || "",
+			// Nested schema — read by validate.ts and future callers
+			// Note: actions.ts will replace voices.main with full voice settings
+			// (voiceId, stability, similarityBoost, style, speed) during voice setup
+			voices: {
+				main: {
+					voiceId: state.collected.voiceId || "",
+				},
 			},
+		},
+		pai: {
+			version: PAI_VERSION,
 		},
 		providers: {
 			default: state.collected.provider || "zen",
@@ -379,6 +399,43 @@ ${providerEnvVar}=${state.collected.apiKey || ""}
 		console.error(`You can manually create it with: ln -s ${localOpencodeDir} ~/.opencode`);
 	}
 	
+	// Write shell alias so `pai` command works in new terminals
+	onProgress(99, "Configuring shell alias...");
+	const shellPath = process.env.SHELL || "/bin/zsh";
+	const shellName = shellPath.split("/").pop() || "zsh";
+
+	const shellConfigMap: Record<string, string> = {
+		zsh:  join(homedir(), ".zshrc"),
+		bash: join(homedir(), ".bashrc"),
+		fish: join(homedir(), ".config", "fish", "config.fish"),
+	};
+	const shellConfig = shellConfigMap[shellName] ?? join(homedir(), ".zshrc");
+
+	// Build shell-specific alias/function block.
+	// POSIX shells use "$@"; fish uses $argv and function/end syntax.
+	const escapedInstallDir = installDir.replaceAll('"', '\\"');
+	const aliasBlock = shellName === "fish"
+		? `\n# PAI alias — added by PAI installer\nfunction pai\n\tset -l __pai_oldpwd (pwd)\n\tcd "${escapedInstallDir}"\n\tand bun run .opencode/tools/pai.ts $argv\n\tcd $__pai_oldpwd\nend\n`
+		: `\n# PAI alias — added by PAI installer\npai() { (cd "${escapedInstallDir}" && bun run .opencode/tools/pai.ts "$@"); }\n`;
+
+	try {
+		// Ensure parent directory exists (matters for fish: ~/.config/fish/ may be absent)
+		mkdirSync(dirname(shellConfig), { recursive: true });
+
+		// Only append if the alias isn't already there
+		const existing = existsSync(shellConfig)
+			? readFileSync(shellConfig, "utf-8")
+			: "";
+		if (!existing.includes("# PAI alias")) {
+			// Append only aliasBlock — do NOT pass existing as content with flag:"a"
+			// (that would write existing twice and corrupt the shell config)
+			writeFileSync(shellConfig, aliasBlock, { flag: "a" });
+		}
+	} catch (err) {
+		console.error(`Warning: Could not write shell alias to ${shellConfig}: ${err}`);
+		console.error(`Add manually: ${aliasBlock.trim()}`);
+	}
+
 	onProgress(100, "Installation complete!");
 }
 

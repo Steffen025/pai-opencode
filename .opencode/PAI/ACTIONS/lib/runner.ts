@@ -64,7 +64,7 @@ export async function loadAction(name: string): Promise<ActionSpec> {
   const module = await import(actionPath);
   const action = module.default || module.action;
 
-  if (!action || !action.execute) {
+  if (typeof action?.execute !== 'function') {
     throw new Error(`Action ${name} does not export a valid ActionSpec`);
   }
 
