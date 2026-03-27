@@ -162,27 +162,40 @@ async function runFreshInstall(): Promise<void> {
 		onProgress(70, "Skipped OpenCode build");
 	}
 	
-	// Step 4: Provider Config
-	onProgress(75, "Configuring provider...");
-	const validProviders = Object.keys(PROVIDER_MODELS) as ProviderName[];
-	const preset = values.preset || "zen";
-	const provider: ProviderName = validProviders.includes(preset as ProviderName)
-		? (preset as ProviderName)
-		: "zen";
+  // Step 4: Provider Config
+  onProgress(75, "Configuring provider...");
+  const validProviders = Object.keys(PROVIDER_MODELS) as ProviderName[];
+  const preset = values.preset || "zen";
+  const provider: ProviderName = validProviders.includes(preset as ProviderName)
+    ? (preset as ProviderName)
+    : "zen";
 
-	if (!values["api-key"]) {
-		console.error(`❌ --api-key is required for provider "${provider}"`);
-		process.exit(1);
-	}
+  const API_KEY_REQUIRED = new Set<ProviderName>(["openai", "anthropic", "openrouter"]);
+  const providerEnvMap: Record<ProviderName, string[]> = {
+    anthropic: ["ANTHROPIC_API_KEY", "API_KEY"],
+    openai: ["OPENAI_API_KEY", "API_KEY"],
+    openrouter: ["OPENROUTER_API_KEY", "API_KEY"],
+    zen: ["ZEN_API_KEY", "API_KEY"],
+  };
 
-	await stepProviderConfig(
-		state,
-		{
-			provider,
-			apiKey: values["api-key"] || "",
-		},
-		onProgress
-	);
+  const providedKey = (values["api-key"] || "").trim();
+  const envCandidates = providerEnvMap[provider] || ["API_KEY"];
+  const envKey = envCandidates.map((name) => process.env[name]).find(Boolean) || "";
+  const chosenKey = providedKey || envKey;
+
+  if (API_KEY_REQUIRED.has(provider) && !chosenKey) {
+    console.error(`❌ --api-key or one of ${envCandidates.join(" or ")} environment variables must be provided for provider "${provider}"`);
+    process.exit(1);
+  }
+
+  await stepProviderConfig(
+    state,
+    {
+      provider,
+      apiKey: chosenKey,
+    },
+    onProgress
+  );
 	
 	// Step 5: Identity
 	onProgress(80, "Setting identity...");

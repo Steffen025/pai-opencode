@@ -6,7 +6,7 @@
 
 import { exec, spawn } from "child_process";
 import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync, symlinkSync, unlinkSync, chmodSync, lstatSync, cpSync, rmSync, copyFileSync, statSync } from "fs";
-import { homedir } from "os";
+import { homedir, tmpdir } from "os";
 import { join, basename, dirname } from "path";
 import type { InstallState, EngineEventHandler, DetectionResult } from "./types";
 import { PAI_VERSION, ALGORITHM_VERSION } from "./types";
@@ -114,6 +114,64 @@ async function tryExec(cmd: string, timeout = 30000): Promise<string | null> {
       }
     });
   });
+}
+
+const OPENCODE_SOURCE_REPO = "https://github.com/anomalyco/opencode.git";
+const OPENCODE_SOURCE_BRANCH = "feature/model-tiers";
+
+function resolveBuiltBinaryPath(buildDir: string): string | null {
+  const platform = process.platform === "darwin" ? "darwin" : "linux";
+  const archSuffix = process.arch === "arm64" ? "arm64" : "x64";
+  const candidate = join(
+    buildDir,
+    "packages/opencode/dist",
+    `opencode-${platform}-${archSuffix}`,
+    "bin/opencode"
+  );
+  return existsSync(candidate) ? candidate : null;
+}
+
+async function buildOpenCodeFromSource(): Promise<{ success: boolean; error?: string; binaryPath?: string }> {
+  const buildDir = join(tmpdir(), `opencode-build-${Date.now()}`);
+  try {
+    const cloneResult = await tryExec(`git clone ${OPENCODE_SOURCE_REPO} "${buildDir}"`, 180000);
+    if (cloneResult === null) {
+      return { success: false, error: "git clone failed" };
+    }
+
+    const checkoutResult = await tryExec(`cd "${buildDir}" && git checkout ${OPENCODE_SOURCE_BRANCH}`, 60000);
+    if (checkoutResult === null) {
+      return { success: false, error: "git checkout failed" };
+    }
+
+    const installResult = await tryExec(`cd "${buildDir}" && bun install`, 300000);
+    if (installResult === null) {
+      return { success: false, error: "bun install failed" };
+    }
+
+    const buildResult = await tryExec(`cd "${buildDir}" && bun run ./packages/opencode/script/build.ts --single`, 300000);
+    if (buildResult === null) {
+      return { success: false, error: "bun run build failed" };
+    }
+
+    const binaryPath = resolveBuiltBinaryPath(buildDir);
+    if (!binaryPath) {
+      return { success: false, error: "Built binary not found" };
+    }
+
+    const installDir = join(homedir(), ".local", "bin");
+    mkdirSync(installDir, { recursive: true });
+    const targetPath = join(installDir, "opencode");
+    copyFileSync(binaryPath, targetPath);
+    chmodSync(targetPath, 0o755);
+
+    return { success: true, binaryPath: targetPath };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
+  } finally {
+    await tryExec(`rm -rf "${buildDir}"`);
+  }
 }
 
 // ─── User Context Migration (v2.5/v3.0 → v4.x) ─────────────────
@@ -334,16 +392,22 @@ export async function runPrerequisites(
 
   // Install OpenCode if missing
   if (!det.tools.opencode.installed) {
-    await emit({ event: "progress", step: "prerequisites", percent: 70, detail: "Installing OpenCode..." });
+    await emit({ event: "progress", step: "prerequisites", percent: 70, detail: "Building OpenCode from source..." });
 
-    // Use bun only (per PAI stack preferences)
-    const result = await tryExec("bun install -g @opencode-ai/opencode", 120000);
-    if (result !== null) {
-      await emit({ event: "message", content: "OpenCode installed via bun." });
+    const buildResult = await buildOpenCodeFromSource();
+    if (buildResult.success && buildResult.binaryPath) {
+      det.tools.opencode.installed = true;
+      const versionOutput = await tryExec(`"${buildResult.binaryPath}" --version`, 5000);
+      det.tools.opencode.version = versionOutput || "custom build";
+      det.tools.opencode.path = buildResult.binaryPath;
+      await emit({
+        event: "message",
+        content: `OpenCode built from source and installed to ${buildResult.binaryPath}`,
+      });
     } else {
       await emit({
         event: "message",
-          content: "Could not install OpenCode automatically. Please install manually: bun install -g @opencode-ai/opencode",
+        content: "Could not install OpenCode automatically. Please install manually by cloning https://github.com/anomalyco/opencode.git, running bun install, and bun run ./packages/opencode/script/build.ts --single before copying the resulting binary into ~/.local/bin/opencode.",
       });
     }
   } else {
