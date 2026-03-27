@@ -108,16 +108,22 @@ export async function buildOpenCodeBinary(
 ): Promise<BuildResult> {
 	const { onProgress, skipIfExists = false, forceRebuild = false } = options;
 	
-  // Check if already exists
-  if (existsSync(LOCAL_BIN_PATH) && skipIfExists && !forceRebuild) {
-    const version = await getBinaryVersion(LOCAL_BIN_PATH);
-    await onProgress("Custom OpenCode binary already exists", 100);
-    return {
-      success: true,
-      skipped: true,
-      version,
-      binaryPath: LOCAL_BIN_PATH,
-    };
+  // Check if already exists at either location
+  if (skipIfExists && !forceRebuild) {
+    const existsAtLocal = existsSync(LOCAL_BIN_PATH);
+    const existsAtLegacy = existsSync(PAI_BIN_PATH);
+
+    if (existsAtLocal || existsAtLegacy) {
+      const existingPath = existsAtLocal ? LOCAL_BIN_PATH : PAI_BIN_PATH;
+      const version = await getBinaryVersion(existingPath);
+      await onProgress("Custom OpenCode binary already exists", 100);
+      return {
+        success: true,
+        skipped: true,
+        version,
+        binaryPath: existingPath,
+      };
+    }
   }
 	
 	try {
