@@ -6,9 +6,9 @@ description: "Generate TypeScript CLIs. USE WHEN create CLI, build CLI, command-
 ## Customization
 
 **Before executing, check for user customizations at:**
-`~/.opencode/PAI/USER/SKILLCUSTOMIZATIONS/CreateCLI/`
+`${OPENCODE_DIR:-~/.opencode}/PAI/USER/SKILLCUSTOMIZATIONS/CreateCLI/`
 
-If this directory exists, load and apply any PREFERENCES.md, configurations, or resources found there. These override default behavior. If the directory does not exist, proceed with skill defaults.
+If this directory exists, load and apply any PREFERENCES.md, configurations, or resources found there. These override default behavior. If the directory does not exist, proceed with skill defaults. If `OPENCODE_DIR` is customized, use that value for path resolution.
 
 # CreateCLI
 
@@ -18,6 +18,53 @@ Generate production-ready TypeScript CLIs with comprehensive documentation, type
 
 ---
 
+
+## MANDATORY
+
+### USE WHEN
+
+Activate when you see these patterns:
+
+#### Direct Requests
+- "Create a CLI for [API/service/tool]"
+- "Build a command-line interface for X"
+- "Make a CLI that does Y"
+- "Generate a TypeScript CLI"
+- "I need a CLI tool for Z"
+
+#### Context Clues
+- User describes repetitive API calls → Suggest CLI
+- User mentions "I keep typing this command" → Suggest CLI wrapper
+- User has bash script doing complex work → Suggest TypeScript CLI replacement
+- User working with API that lacks official CLI → Suggest creating one
+
+#### Examples
+- ✅ "Create a CLI for the GitHub API"
+- ✅ "Build a command-line tool to process CSV files"
+- ✅ "Make a CLI for my database migrations"
+- ✅ "Generate a CLI that wraps this API"
+- ✅ "I need a tool like llcli but for Notion API"
+
+### Core Capabilities Summary
+
+- Three-tier CLI generation strategy (Tier 1 default, Tier 2 escalation, Tier 3 reference)
+- Production-ready output with strict TypeScript and deterministic behavior
+- Workflow routing for create/add/upgrade operations
+- Built-in docs + setup generation for immediate usability
+
+### Technology Stack Alignment
+
+- Runtime: Bun
+- Language: TypeScript
+- Package manager: Bun
+- Output style: deterministic, composable CLI behavior
+
+### Quality Gates
+
+- Compilation gate (TypeScript strict mode, no unresolved type errors)
+- Functionality gate (commands execute with correct exit code behavior)
+- Documentation gate (README + QUICKSTART + help text)
+- Integration gate (PAI CLI-first architecture alignment)
 
 ## Voice Notification
 
@@ -49,32 +96,6 @@ Running the **WorkflowName** workflow from the **CreateCLI** skill...
   - Create a new CLI tool from scratch → `Workflows/CreateCli.md`
   - Add a new command to existing CLI → `Workflows/AddCommand.md`
   - Upgrade CLI to higher tier → `Workflows/UpgradeTier.md`
-
----
-
-## 🚀 WHEN TO ACTIVATE THIS SKILL
-
-Activate when you see these patterns:
-
-### Direct Requests
-- "Create a CLI for [API/service/tool]"
-- "Build a command-line interface for X"
-- "Make a CLI that does Y"
-- "Generate a TypeScript CLI"
-- "I need a CLI tool for Z"
-
-### Context Clues
-- User describes repetitive API calls → Suggest CLI
-- User mentions "I keep typing this command" → Suggest CLI wrapper
-- User has bash script doing complex work → Suggest TypeScript CLI replacement
-- User working with API that lacks official CLI → Suggest creating one
-
-### Examples
-- ✅ "Create a CLI for the GitHub API"
-- ✅ "Build a command-line tool to process CSV files"
-- ✅ "Make a CLI for my database migrations"
-- ✅ "Generate a CLI that wraps this API"
-- ✅ "I need a tool like llcli but for Notion API"
 
 ---
 
@@ -206,6 +227,12 @@ Every generated CLI follows:
 - `examples/data-transform/` - Complex CLI (Commander.js)
 
 ---
+
+## OPTIONAL
+
+- Example scenarios and generated directory structures for common requests
+- Extended context references (framework comparisons, patterns, testing, distribution)
+- Template/resource references for advanced customization
 
 ## 📖 EXAMPLES
 

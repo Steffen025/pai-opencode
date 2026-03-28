@@ -105,7 +105,7 @@ This is the main command you'll use. It takes three parameters:
 !`head -50 ~/.opencode/PAI/USER/TELOS/updates.md`
 
 ## View Specific TELOS File
-!`FILE="$1"; cat ~/.opencode/PAI/USER/TELOS/"$FILE"`
+!`FILE="$1"; VALID_FILES="BELIEFS.md BOOKS.md CHALLENGES.md FRAMES.md GOALS.md LESSONS.md MISSION.md MODELS.md MOVIES.md NARRATIVES.md PREDICTIONS.md PROBLEMS.md PROJECTS.md STRATEGIES.md TELOS.md TRAUMAS.md WISDOM.md WRONG.md updates.md"; case " $VALID_FILES " in *" $FILE "*) ;; *) echo "❌ Invalid file: $FILE"; exit 1 ;; esac; [[ "$FILE" == *"/"* || "$FILE" == *".."* ]] && { echo "❌ Invalid file path"; exit 1; }; cat ~/.opencode/PAI/USER/TELOS/"$FILE"`
 
 # PROCESSING INSTRUCTIONS
 
@@ -288,6 +288,6 @@ The TypeScript implementation handles:
 
 The script is at: `~/.opencode/commands/update-telos.ts`
 
-All backups are stored in: `~/.opencode/PAI/USER/TELOS/Backups/`
+All backups are stored in: `~/.opencode/PAI/USER/TELOS/backups/`
 
 All changes are logged in: `~/.opencode/PAI/USER/TELOS/updates.md`

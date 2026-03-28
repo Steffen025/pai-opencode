@@ -148,8 +148,8 @@ function validateUserReference(file: string, match: string): Issue | null {
     return null;
   }
 
-  // Allow PAI skill (it's private context loader)
-  if (file.includes("PAI/")) {
+  // Allow canonical PAI directories only (boundary-aware)
+  if (file.startsWith(".opencode/PAI/") || file.startsWith("PAI/")) {
     return null;
   }
 

@@ -293,7 +293,7 @@ Extended+: Rehearse verification for each CRITICAL criterion.
 
 - Validate prerequisites: env vars, credentials, dependencies, state, files.
 - Execution strategy: parallelize non-serial work at Extended+ (use Delegation skill).
-- Create PRD at `~/.opencode/MEMORY/WORK/{session-slug}/PRD-{YYYYMMDD}-{slug}.md` via `generatePRDTemplate()`.
+- Create PRD at `${OPENCODE_DIR:-~/.opencode}/MEMORY/WORK/{session-slug}/PRD-{YYYYMMDD}-{slug}.md` via `generatePRDTemplate()` (writes to OPENCODE_DIR-based location).
 - Write PLAN section. Every PRD requires a plan.
 - For complex multi-approach tasks, use PlanMode skill.
 - Quality Gate re-check.

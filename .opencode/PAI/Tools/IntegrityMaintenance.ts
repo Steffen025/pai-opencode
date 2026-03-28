@@ -108,8 +108,9 @@ interface UpdateData {
 // Constants
 // ============================================================================
 
-const PAI_DIR = process.env.OPENCODE_DIR || process.env.HOME + '/.opencode';
-const CREATE_UPDATE_SCRIPT = join(PAI_DIR, 'skills/_SYSTEM/Tools/CreateUpdate.ts');
+const OPENCODE_DIR = process.env.OPENCODE_DIR || process.env.HOME + '/.opencode';
+const CREATE_UPDATE_SCRIPT = join(OPENCODE_DIR, 'skills/_SYSTEM/Tools/CreateUpdate.ts');
+const UPDATE_SEARCH_SCRIPT = join(OPENCODE_DIR, 'PAI', 'Tools', 'UpdateSearch.ts');
 
 // Words that indicate generic/bad titles - reject these
 const GENERIC_TITLE_PATTERNS = [
@@ -719,7 +720,7 @@ async function generateVerboseNarrative(
         future_impact: aiNarrative.future_impact,
         future_bullets: aiNarrative.future_bullets,
         verification_steps: aiNarrative.verification_steps,
-        verification_commands: [`bun ~/.opencode/PAI/Tools/UpdateSearch.ts recent 5`],
+        verification_commands: [`bun ${UPDATE_SEARCH_SCRIPT} recent 5`],
         confidence: 'high',
       },
       aiTitle: aiNarrative.title,
@@ -749,7 +750,7 @@ async function generateVerboseNarrative(
       future_impact: `The ${changeType.replace('_', ' ')} will use updated behavior.`,
       future_bullets: ['Changes are active for future sessions'],
       verification_steps: ['Changes applied via automatic detection'],
-      verification_commands: [`bun ~/.opencode/PAI/Tools/UpdateSearch.ts recent 5`],
+      verification_commands: [`bun ${UPDATE_SEARCH_SCRIPT} recent 5`],
       confidence: 'medium',
     },
   };

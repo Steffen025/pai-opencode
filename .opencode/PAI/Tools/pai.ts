@@ -28,10 +28,10 @@ import { join, basename } from "path";
 // Configuration
 // ============================================================================
 
-const CLAUDE_DIR = process.env.OPENCODE_DIR || join(homedir(), ".opencode");
-const MCP_DIR = join(CLAUDE_DIR, "MCPs");
-const ACTIVE_MCP = join(CLAUDE_DIR, ".mcp.json");
-const BANNER_SCRIPT = join(CLAUDE_DIR, "PAI", "Tools", "Banner.ts");
+const OPENCODE_DIR = process.env.OPENCODE_DIR || join(homedir(), ".opencode");
+const MCP_DIR = join(OPENCODE_DIR, "MCPs");
+const ACTIVE_MCP = join(OPENCODE_DIR, ".mcp.json");
+const BANNER_SCRIPT = join(OPENCODE_DIR, "PAI", "Tools", "Banner.ts");
 const VOICE_SERVER = "http://localhost:8888/notify/personality";
 const WALLPAPER_DIR = join(homedir(), "Projects", "Wallpaper");
 // Note: RAW archiving removed - Claude Code handles its own cleanup (30-day retention in projects/)
@@ -417,7 +417,7 @@ async function cmdLaunch(options: { mcp?: string; resume?: boolean; skipPerms?: 
 
   // Change to PAI directory unless --local flag is set
   if (!options.local) {
-    process.chdir(CLAUDE_DIR);
+    process.chdir(OPENCODE_DIR);
   }
 
   // Voice notification (using focused marker for calmer tone)
@@ -559,7 +559,7 @@ async function cmdPrompt(prompt: string) {
   // NOTE: No --dangerously-skip-permissions - rely on settings.json permissions
   const args = ["claude", "-p", prompt];
 
-  process.chdir(CLAUDE_DIR);
+  process.chdir(OPENCODE_DIR);
 
   const proc = spawn(args, {
     stdio: ["inherit", "inherit", "inherit"],

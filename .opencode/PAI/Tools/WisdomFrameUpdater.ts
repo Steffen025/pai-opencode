@@ -16,10 +16,11 @@
  */
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { homedir } from 'os';
 import { join } from 'path';
 import { parseArgs } from 'util';
 
-const BASE_DIR = process.env.OPENCODE_DIR || join(process.env.HOME!, '.opencode');
+const BASE_DIR = process.env.OPENCODE_DIR || join(homedir() || '.', '.opencode');
 const FRAMES_DIR = join(BASE_DIR, 'MEMORY', 'WISDOM', 'FRAMES');
 
 // ── Types ──

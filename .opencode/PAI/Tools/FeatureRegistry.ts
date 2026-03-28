@@ -19,7 +19,7 @@
  */
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { homedir } from 'os';
 
 // Validate home directory
@@ -29,7 +29,10 @@ if (!HOME) {
   process.exit(1);
 }
 
-const REGISTRY_DIR = join(process.env.OPENCODE_DIR || join(HOME, '.opencode'), 'MEMORY', 'progress');
+const OPENCODE_DIR = process.env.OPENCODE_DIR
+  ? resolve(process.env.OPENCODE_DIR)
+  : join(HOME, '.opencode');
+const REGISTRY_DIR = join(OPENCODE_DIR, 'MEMORY', 'progress');
 
 interface TestStep {
   step: string;

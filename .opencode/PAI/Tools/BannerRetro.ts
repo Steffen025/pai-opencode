@@ -20,7 +20,7 @@ import { join } from "path";
 import { spawnSync } from "child_process";
 
 const HOME = process.env.HOME!;
-const CLAUDE_DIR = process.env.OPENCODE_DIR || join(HOME, ".opencode");
+const OPENCODE_ROOT = process.env.OPENCODE_DIR || join(HOME, ".opencode");
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Terminal Width Detection
@@ -311,7 +311,7 @@ interface SystemStats {
 }
 
 function readDAIdentity(): string {
-  const settingsPath = join(CLAUDE_DIR, "settings.json");
+  const settingsPath = join(OPENCODE_ROOT, "settings.json");
   try {
     const settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
     return settings.daidentity?.displayName || settings.daidentity?.name || settings.env?.DA || "PAI";
@@ -321,7 +321,7 @@ function readDAIdentity(): string {
 }
 
 function countSkills(): number {
-  const skillsDir = join(CLAUDE_DIR, "skills");
+  const skillsDir = join(OPENCODE_ROOT, "skills");
   if (!existsSync(skillsDir)) return 0;
   let count = 0;
   try {
@@ -333,7 +333,7 @@ function countSkills(): number {
 }
 
 function countUserFiles(): number {
-  const userDir = join(CLAUDE_DIR, "PAI/USER");
+  const userDir = join(OPENCODE_ROOT, "PAI/USER");
   if (!existsSync(userDir)) return 0;
   let count = 0;
   const countRecursive = (dir: string) => {
@@ -349,11 +349,15 @@ function countUserFiles(): number {
 }
 
 function countHooks(): number {
-  const hooksDir = join(CLAUDE_DIR, "hooks");
-  if (!existsSync(hooksDir)) return 0;
+  const pluginsDir = join(OPENCODE_ROOT, "plugins");
+  const hooksDir = join(OPENCODE_ROOT, "hooks");
+
+  const targetDir = existsSync(pluginsDir) ? pluginsDir : hooksDir;
+  if (!existsSync(targetDir)) return 0;
+
   let count = 0;
   try {
-    for (const entry of readdirSync(hooksDir, { withFileTypes: true })) {
+    for (const entry of readdirSync(targetDir, { withFileTypes: true })) {
       if (entry.isFile() && entry.name.endsWith(".ts")) count++;
     }
   } catch {}
@@ -361,7 +365,7 @@ function countHooks(): number {
 }
 
 function countWorkItems(): number {
-  const workDir = join(CLAUDE_DIR, "MEMORY/WORK");
+  const workDir = join(OPENCODE_ROOT, "MEMORY/WORK");
   if (!existsSync(workDir)) return 0;
   try {
     return readdirSync(workDir, { withFileTypes: true })
@@ -372,7 +376,7 @@ function countWorkItems(): number {
 }
 
 function countLearnings(): number {
-  const learningDir = join(CLAUDE_DIR, "MEMORY/LEARNING");
+  const learningDir = join(OPENCODE_ROOT, "MEMORY/LEARNING");
   if (!existsSync(learningDir)) return 0;
   let count = 0;
   const countRecursive = (dir: string) => {
