@@ -240,10 +240,14 @@ async function sendGoogleTTS(message: string, sessionId: string): Promise<boolea
 	}
 
 	const settings = getSettings();
-	const googleApiKey = settings.env?.GOOGLE_TTS_API_KEY || process.env.GOOGLE_TTS_API_KEY;
+	const googleApiKey =
+		settings.env?.GOOGLE_API_KEY ||
+		settings.env?.GOOGLE_TTS_API_KEY ||
+		process.env.GOOGLE_API_KEY ||
+		process.env.GOOGLE_TTS_API_KEY;
 
 	if (!googleApiKey) {
-		fileLog("[Voice:Google] No API key configured (GOOGLE_TTS_API_KEY)", "debug");
+		fileLog("[Voice:Google] No API key configured (GOOGLE_API_KEY/GOOGLE_TTS_API_KEY)", "debug");
 		return false;
 	}
 
@@ -349,7 +353,12 @@ async function isElevenLabsAvailable(): Promise<boolean> {
 function isGoogleTTSConfigured(): boolean {
 	if (!isMacOS()) return false;
 	const settings = getSettings();
-	return !!(settings.env?.GOOGLE_TTS_API_KEY || process.env.GOOGLE_TTS_API_KEY);
+	return !!(
+		settings.env?.GOOGLE_API_KEY ||
+		settings.env?.GOOGLE_TTS_API_KEY ||
+		process.env.GOOGLE_API_KEY ||
+		process.env.GOOGLE_TTS_API_KEY
+	);
 }
 
 function isMacOS(): boolean {

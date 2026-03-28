@@ -32,7 +32,7 @@
 
 import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { inference } from "../../skills/PAI/Tools/Inference";
+import { inference } from "../../PAI/Tools/Inference";
 import { fileLog, fileLogError } from "../lib/file-logger";
 import { getIdentity, getPrincipal } from "../lib/identity";
 import { getLearningCategory } from "../lib/learning-utils";

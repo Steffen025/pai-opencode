@@ -8,7 +8,7 @@
  *
  * Configuration files:
  *   Base:  ~/.opencode/skills/Agents/Data/Traits.yaml
- *   User:  ~/.opencode/skills/CORE/USER/SKILLCUSTOMIZATIONS/Agents/Traits.yaml
+ *   User:  ~/.opencode/PAI/USER/SKILLCUSTOMIZATIONS/Agents/Traits.yaml
  *
  * Usage:
  *   # Infer traits from task description
@@ -35,7 +35,7 @@ import Handlebars from "handlebars";
 // Paths
 const HOME = process.env.HOME || "~";
 const BASE_TRAITS_PATH = `${HOME}/.opencode/skills/Agents/Data/Traits.yaml`;
-const USER_TRAITS_PATH = `${HOME}/.opencode/skills/CORE/USER/SKILLCUSTOMIZATIONS/Agents/Traits.yaml`;
+const USER_TRAITS_PATH = `${HOME}/.opencode/PAI/USER/SKILLCUSTOMIZATIONS/Agents/Traits.yaml`;
 const TEMPLATE_PATH = `${HOME}/.opencode/skills/Agents/Templates/DynamicAgent.hbs`;
 
 // Types
@@ -504,7 +504,7 @@ OPTIONS:
 
 CONFIGURATION:
   Base traits:  ~/.opencode/skills/Agents/Data/Traits.yaml
-  User traits:  ~/.opencode/skills/CORE/USER/SKILLCUSTOMIZATIONS/Agents/Traits.yaml
+  User traits:  ~/.opencode/PAI/USER/SKILLCUSTOMIZATIONS/Agents/Traits.yaml
 
   User traits are merged over base (user takes priority).
   Add your custom voices, personalities, and prosody settings in the user file.

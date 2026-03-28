@@ -145,7 +145,7 @@ function getCounts(openCodeDir: string): Counts {
 		workflows: countWorkflowFiles(join(openCodeDir, "skills")),
 		plugins: countPlugins(openCodeDir), // Changed from 'hooks'
 		signals: countRatingsLines(join(openCodeDir, "MEMORY/LEARNING/SIGNALS/ratings.jsonl")),
-		files: countFilesRecursive(join(openCodeDir, "skills/PAI/USER")),
+		files: countFilesRecursive(join(openCodeDir, "PAI/USER")),
 		updatedAt: getISOTimestamp(), // Using time.ts utility
 	};
 }

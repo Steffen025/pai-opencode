@@ -6,7 +6,7 @@ Intelligent pattern selection for Fabric CLI. Automatically selects the right pa
 
 **Before starting any task with this skill, load complete PAI context:**
 
-`read ~/.opencode/skills/CORE/SKILL.md`
+`read ~/.opencode/PAI/SKILL.md`
 
 This provides access to:
 - Complete contact list (Angela, Bunny, Saša, Greg, team members)

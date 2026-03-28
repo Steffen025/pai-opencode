@@ -693,21 +693,21 @@ An **open-source framework** for augmenting humans using AI.
 
 ## Native Fabric Patterns in PAI
 
-**Location:** `~/.opencode/skills/CORE/Tools/fabric/Patterns/`
+**Location:** `~/.opencode/skills/Utilities/Fabric/Patterns/`
 
 PAI maintains a local copy of all Fabric patterns for native execution. Instead of spawning the `fabric` CLI for every pattern-based task, the system reads and applies patterns directly as prompts.
 
 ### When to Use Native Patterns (Default)
 
 For any pattern-based processing, the system will:
-1. Read `tools/fabric/Patterns/{pattern_name}/system.md`
+1. Read `skills/Utilities/Fabric/Patterns/{pattern_name}/system.md`
 2. Apply the pattern instructions directly to the content
 3. Execute without external CLI calls
 
 **Examples:**
-- `extract_wisdom` → Read and apply `tools/fabric/Patterns/extract_wisdom/system.md`
-- `summarize` → Read and apply `tools/fabric/Patterns/summarize/system.md`
-- `analyze_claims` → Read and apply `tools/fabric/Patterns/analyze_claims/system.md`
+- `extract_wisdom` → Read and apply `skills/Utilities/Fabric/Patterns/extract_wisdom/system.md`
+- `summarize` → Read and apply `skills/Utilities/Fabric/Patterns/summarize/system.md`
+- `analyze_claims` → Read and apply `skills/Utilities/Fabric/Patterns/analyze_claims/system.md`
 
 ### When to Still Use the Fabric CLI
 
@@ -720,9 +720,9 @@ These operations require the CLI because they access external services or config
 
 ### Updating Patterns
 
-Run the update script to sync latest patterns:
+Update Fabric patterns via the CLI:
 ```bash
-~/.opencode/skills/CORE/Tools/fabric/update-patterns.sh
+fabric -U
 ```
 
 This pulls upstream updates via `fabric -U` and syncs to PAI's local copy.
@@ -1157,10 +1157,10 @@ Reusable quality and completion checks.
 
 ## Template Location
 
-All templates live in `~/.opencode/skills/Prompting/Templates/`:
+All templates live in `~/.opencode/skills/Utilities/Prompting/Templates/`:
 
 ```
-skills/Prompting/
+skills/Utilities/Prompting/
 ├── Templates/
 │   ├── Primitives/       # Core template files (.hbs)
 │   │   ├── Roster.hbs
@@ -1184,7 +1184,7 @@ skills/Prompting/
 
 **CLI Usage:**
 ```bash
-bun ~/.opencode/skills/Prompting/Tools/RenderTemplate.ts \
+bun ~/.opencode/skills/Utilities/Prompting/Tools/RenderTemplate.ts \
   --template Primitives/Roster.hbs \
   --data Data/Agents.yaml \
   --output Compiled/AgentRoster.md
@@ -1192,7 +1192,7 @@ bun ~/.opencode/skills/Prompting/Tools/RenderTemplate.ts \
 
 **Programmatic Usage:**
 ```typescript
-import { renderTemplate } from '~/.opencode/skills/Prompting/Tools/RenderTemplate.ts';
+import { renderTemplate } from '~/.opencode/skills/Utilities/Prompting/Tools/RenderTemplate.ts';
 
 const output = renderTemplate('Primitives/Briefing.hbs', {
   agent: { id: 'EN-1', name: 'Skeptical Thinker', personality: '...' },

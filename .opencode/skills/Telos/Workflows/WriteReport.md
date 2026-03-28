@@ -151,7 +151,7 @@ If artifacts don't exist, run the assessment workflow first (CreateNarrativePoin
 
 ```bash
 # Copy template to output directory (if not already done)
-cp -r ~/.opencode/skills/_TELOS/report-template/* {output_dir}/
+cp -r ~/.opencode/skills/Telos/ReportTemplate/* {output_dir}/
 
 # Install dependencies
 cd {output_dir} && bun install
@@ -463,7 +463,7 @@ cd {output_dir} && bun dev
 **CRITICAL: The report template lives at:**
 
 ```
-~/.opencode/skills/_TELOS/report-template/
+~/.opencode/skills/Telos/ReportTemplate/
 ```
 
 This template includes:
@@ -609,11 +609,11 @@ Before board presentation:
 **To update fonts:**
 ```bash
 # Copy latest fonts from ULSite
-cp ~/Projects/ULSite/public/fonts/*.woff2 ~/.opencode/skills/_TELOS/report-template/public/fonts/
+cp ~/Projects/ULSite/public/fonts/*.woff2 ~/.opencode/skills/Telos/ReportTemplate/Public/Fonts/
 ```
 
 **To update template components:**
-Edit files in `~/.opencode/skills/_TELOS/report-template/components/`
+Edit files in `~/.opencode/skills/Telos/ReportTemplate/Components/`
 
 **To change color scheme:**
-Edit CSS custom properties in `~/.opencode/skills/_TELOS/report-template/app/globals.css`
+Edit CSS custom properties in `~/.opencode/skills/Telos/ReportTemplate/App/globals.css`

@@ -262,7 +262,7 @@ export async function stepInstallPAI(
 	
 	// Create .env file with API keys (restricted permissions)
 	const providerEnvVar = `${(state.collected.provider || "zen").toUpperCase()}_API_KEY`;
-	const voiceEnvVar = state.collected.voiceProvider === "google" ? "GOOGLE_TTS_API_KEY" :
+	const voiceEnvVar = state.collected.voiceProvider === "google" ? "GOOGLE_API_KEY" :
 		state.collected.voiceProvider === "elevenlabs" ? "ELEVENLABS_API_KEY" :
 		state.collected.voiceProvider === "macos" ? "" : "";
 	
@@ -277,6 +277,9 @@ ${providerEnvVar}=${state.collected.apiKey || ""}
 	
 	if (voiceEnvVar && state.collected.voiceApiKey) {
 		envContent += `${voiceEnvVar}=${state.collected.voiceApiKey}\n`;
+		if (state.collected.voiceProvider === "google") {
+			envContent += `GOOGLE_TTS_API_KEY=${state.collected.voiceApiKey}\n`;
+		}
 	}
 	
 	const envPath = join(localOpencodeDir, ".env");

@@ -1,15 +1,15 @@
 {
-  "paiVersion": "2.5-opencode",
+  "paiVersion": "4.0.3-opencode",
   "env": {
     "PAI_DIR": ".opencode",
     "OPENCODE_MAX_OUTPUT_TOKENS": "80000",
     "BASH_DEFAULT_TIMEOUT_MS": "600000"
   },
   "contextFiles": [
-    "skills/PAI/SKILL.md",
-    "skills/PAI/SYSTEM/AISTEERINGRULES.md",
-    "skills/PAI/USER/AISTEERINGRULES.md",
-    "skills/PAI/USER/DAIDENTITY.md"
+    "PAI/SKILL.md",
+    "PAI/AISTEERINGRULES.md",
+    "PAI/README.md",
+    "PAI/USER/README.md"
   ],
   "daidentity": {
     "name": "PAI",
@@ -34,8 +34,8 @@
   "pai": {
     "source": "github.com/Steffen025/pai-opencode",
     "upstream": "github.com/danielmiessler/PAI",
-    "version": "2.5",
-    "algorithm": "v0.2.25"
+    "version": "4.0.3",
+    "algorithm": "v3.7.0"
   },
   "techStack": {
     "browser": "chrome",

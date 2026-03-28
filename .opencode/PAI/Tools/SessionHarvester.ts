@@ -2,7 +2,7 @@
 /**
  * SessionHarvester - Extract learnings from Claude Code session transcripts
  *
- * Harvests insights from ~/.claude/projects/ sessions and writes to LEARNING/
+ * Harvests insights from ~/.opencode/projects/ sessions and writes to LEARNING/
  *
  * Commands:
  *   --recent N     Harvest from N most recent sessions (default: 10)
@@ -19,19 +19,17 @@
 import { parseArgs } from "util";
 import * as fs from "fs";
 import * as path from "path";
-import { getLearningCategory, isLearningCapture } from "../../hooks/lib/learning-utils";
+import { getLearningCategory, isLearningCapture } from "../../plugins/lib/learning-utils";
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-const CLAUDE_DIR = path.join(process.env.HOME!, ".claude");
-// Derive the project slug dynamically from CLAUDE_DIR (works on macOS and Linux)
-// macOS: ${HOME}/.claude → -Users-username--claude
-// Linux: /home/username/.claude → -home-username--claude
-const CWD_SLUG = CLAUDE_DIR.replace(/[\/\.]/g, "-");
-const PROJECTS_DIR = path.join(CLAUDE_DIR, "projects", CWD_SLUG);
-const LEARNING_DIR = path.join(CLAUDE_DIR, "MEMORY", "LEARNING");
+const OPENCODE_DIR = process.env.OPENCODE_DIR || path.join(process.env.HOME!, ".opencode");
+// Derive the project slug dynamically from current working directory
+const CWD_SLUG = process.cwd().replace(/[\/\.]/g, "-");
+const PROJECTS_DIR = path.join(OPENCODE_DIR, "projects", CWD_SLUG);
+const LEARNING_DIR = path.join(OPENCODE_DIR, "MEMORY", "LEARNING");
 
 // Patterns indicating learning moments in conversations
 const CORRECTION_PATTERNS = [
