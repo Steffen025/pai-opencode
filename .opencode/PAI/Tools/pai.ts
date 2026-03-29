@@ -128,7 +128,7 @@ function displayBanner() {
 }
 
 function getCurrentVersion(): string | null {
-  const result = spawnSync(["claude", "--version"]);
+  const result = spawnSync(["opencode", "--version"]);
   const output = result.stdout.toString();
   const match = output.match(/([0-9]+\.[0-9]+\.[0-9]+)/);
   return match ? match[1] : null;
@@ -147,11 +147,11 @@ function compareVersions(a: string, b: string): number {
 async function getLatestVersion(): Promise<string | null> {
   try {
     const response = await fetch(
-      "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/latest"
+      "https://registry.npmjs.org/opencode-ai/latest"
     );
-    const version = (await response.text()).trim();
-    if (/^[0-9]+\.[0-9]+\.[0-9]+/.test(version)) {
-      return version;
+    const data = (await response.json()) as { version?: string };
+    if (data?.version && /^[0-9]+\.[0-9]+\.[0-9]+/.test(data.version)) {
+      return data.version;
     }
   } catch {
     return null;
@@ -399,7 +399,7 @@ async function cmdLaunch(options: { mcp?: string; resume?: boolean; skipPerms?: 
   // (InstantiatePAI.ts is retired — kept for reference only)
 
   displayBanner();
-  const args = ["claude"];
+  const args = ["opencode"];
 
   // Handle MCP configuration
   if (options.mcp) {
@@ -408,11 +408,9 @@ async function cmdLaunch(options: { mcp?: string; resume?: boolean; skipPerms?: 
   }
 
   // Add flags
-  // NOTE: We no longer use --dangerously-skip-permissions by default.
-  // The settings.json permission system (allow/deny/ask) provides proper security.
-  // Use --dangerous flag explicitly if you really need to skip all permission checks.
+  // NOTE: opencode uses --continue (not --resume) to resume the last session.
   if (options.resume) {
-    args.push("--resume");
+    args.push("--continue");
   }
 
   // Change to PAI directory unless --local flag is set
@@ -434,44 +432,22 @@ async function cmdLaunch(options: { mcp?: string; resume?: boolean; skipPerms?: 
 }
 
 async function cmdUpdate() {
-  log("Checking for updates...", "🔍");
+  log("Updating OpenCode...", "🔄");
 
   const current = getCurrentVersion();
-  const latest = await getLatestVersion();
-
-  if (!current) {
-    error("Could not detect current version");
+  if (current) {
+    console.log(`Current: v${current}`);
   }
 
-  console.log(`Current: v${current}`);
-  if (latest) {
-    console.log(`Latest:  v${latest}`);
+  const upgradeResult = spawnSync(["opencode", "upgrade"], {
+    stdin: "inherit",
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+  if (upgradeResult.exitCode !== 0) {
+    error("OpenCode upgrade failed");
   }
-
-  // Skip if already up to date
-  if (latest && compareVersions(current, latest) >= 0) {
-    log("Already up to date", "✅");
-    return;
-  }
-
-  log("Updating Claude Code...", "🔄");
-
-  // Step 1: Update Bun
-  log("Step 1/2: Updating Bun...", "📦");
-  const bunResult = spawnSync(["brew", "upgrade", "bun"]);
-  if (bunResult.exitCode !== 0) {
-    log("Bun update skipped (may already be latest)", "⚠️");
-  } else {
-    log("Bun updated", "✅");
-  }
-
-  // Step 2: Update Claude Code
-  log("Step 2/2: Installing latest Claude Code...", "🤖");
-  const claudeResult = spawnSync(["bash", "-c", "curl -fsSL https://claude.ai/install.sh | bash"]);
-  if (claudeResult.exitCode !== 0) {
-    error("Claude Code installation failed");
-  }
-  log("Claude Code updated", "✅");
+  log("OpenCode updated", "✅");
 
   // Show final version
   const newVersion = getCurrentVersion();
@@ -555,9 +531,8 @@ function cmdMcpList() {
 }
 
 async function cmdPrompt(prompt: string) {
-  // One-shot prompt execution
-  // NOTE: No --dangerously-skip-permissions - rely on settings.json permissions
-  const args = ["claude", "-p", prompt];
+  // One-shot prompt execution via `opencode run <message>`
+  const args = ["opencode", "run", prompt];
 
   process.chdir(OPENCODE_DIR);
 
@@ -575,14 +550,14 @@ function cmdHelp() {
 pai - Personal AI CLI Tool (v2.0.0)
 
 USAGE:
-  k                        Launch Claude (no MCPs, max performance)
+  k                        Launch OpenCode (no MCPs, max performance)
   k -m <mcp>               Launch with specific MCP(s)
   k -m bd,ap               Launch with multiple MCPs
   k -r, --resume           Resume last session
   k -l, --local            Stay in current directory (don't cd to ~/.opencode)
 
 COMMANDS:
-  k update                 Update Claude Code to latest version
+  k update                 Update OpenCode to latest version
   k version, -v            Show version information
   k profiles               List available MCP profiles
   k mcp list               List all available MCPs
@@ -609,7 +584,7 @@ EXAMPLES:
   k -m bd,ap,chrome        Start with multiple MCPs
   k -r                     Resume last session
   k mcp set research       Switch to research profile
-  k update                 Update Claude Code
+  k update                 Update OpenCode
   k prompt "What time is it?"   One-shot prompt
   k -w                     List available wallpapers
   k -w circuit-board       Switch wallpaper (Kitty + macOS)
