@@ -14,6 +14,7 @@ import type { ProviderName } from "./provider-models.ts";
 import { existsSync, mkdirSync, writeFileSync, chmodSync, symlinkSync, unlinkSync, lstatSync, realpathSync, readFileSync, renameSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
 import { homedir } from "node:os";
+import { spawnSync } from "bun";
 
 // ═══════════════════════════════════════════════════════════
 // Step 1: Welcome
@@ -358,6 +359,30 @@ ${providerEnvVar}=${state.collected.apiKey || ""}
 		JSON.stringify(opencode, null, 2),
 	);
 	onProgress(96, "Generated opencode.json...");
+
+	// Install runtime dependencies needed by .opencode/tools scripts (e.g. yaml in switch-provider.ts)
+	onProgress(97, "Installing PAI runtime dependencies...");
+	const rootInstall = spawnSync({
+		cmd: ["bun", "install"],
+		cwd: installDir,
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	if (rootInstall.exitCode !== 0) {
+		const err = rootInstall.stderr.toString().trim() || rootInstall.stdout.toString().trim();
+		throw new Error(`Failed to install repository dependencies: ${err}`);
+	}
+
+	const opencodeInstall = spawnSync({
+		cmd: ["bun", "install"],
+		cwd: localOpencodeDir,
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	if (opencodeInstall.exitCode !== 0) {
+		const err = opencodeInstall.stderr.toString().trim() || opencodeInstall.stdout.toString().trim();
+		throw new Error(`Failed to install .opencode dependencies: ${err}`);
+	}
 
 	// Create symlink from ~/.opencode to local .opencode
 	onProgress(98, "Creating symlink ~/.opencode → ./.opencode...");
