@@ -70,7 +70,7 @@ urls=$(pbpaste)
 import { isContentAlreadyParsed } from '../utils/collision-detection';
 
 const entityIndex = JSON.parse(
-  fs.readFileSync('~/.opencode/skills/parser/entity-index.json', 'utf-8')
+  fs.readFileSync('~/.opencode/skills/Utilities/Parser/entity-index.json', 'utf-8')
 );
 
 const newUrls = urls.filter(url => !isContentAlreadyParsed(url, entityIndex));
@@ -453,7 +453,7 @@ function processArticleEntities(
 }
 
 // Main processing
-const entityIndexPath = '~/.opencode/skills/parser/entity-index.json';
+const entityIndexPath = '~/.opencode/skills/Utilities/Parser/entity-index.json';
 const entityIndex: EntityIndex = JSON.parse(fs.readFileSync(entityIndexPath, 'utf-8'));
 
 const rawEntities = JSON.parse(fs.readFileSync('raw-entities.json', 'utf-8'));
@@ -484,7 +484,7 @@ const ajv = new Ajv({ strict: false });
 addFormats(ajv);
 
 const schema = JSON.parse(
-  fs.readFileSync('~/.opencode/skills/parser/schema/content-schema.json', 'utf-8')
+  fs.readFileSync('~/.opencode/skills/Utilities/Parser/schema/content-schema.json', 'utf-8')
 );
 
 const validate = ajv.compile(schema);
@@ -556,7 +556,7 @@ processedArticles.forEach((article: any, index: number) => {
   } else {
     // Save validated content
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-    const filename = `~/.opencode/skills/parser/output/${timestamp}_batch-${index + 1}.json`;
+    const filename = `~/.opencode/skills/Utilities/Parser/output/${timestamp}_batch-${index + 1}.json`;
     fs.writeFileSync(filename, JSON.stringify(fullContent, null, 2));
     console.log(`Saved: ${filename}`);
   }
@@ -569,7 +569,7 @@ The entity index is automatically updated during step 5. Verify the update:
 
 ```bash
 # Check entity counts
-cat ~/.opencode/skills/parser/entity-index.json | jq '{
+cat ~/.opencode/skills/Utilities/Parser/entity-index.json | jq '{
   people_count: (.people | length),
   companies_count: (.companies | length),
   links_count: (.links | length),

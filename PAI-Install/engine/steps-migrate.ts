@@ -5,7 +5,7 @@
  * 5-step migration flow with explicit user consent and backup.
  */
 
-import { existsSync, cpSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, cpSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import type { InstallState } from "./types";
@@ -224,18 +224,20 @@ exec bun "${join(paiDir, "PAI", "Tools", "pai.ts")}" "$@"
 	const aliasLine = isFish
 		? `alias pai 'bun ${escapedPath}'`
 		: `alias pai='bun ${escapedPath}'`;
-	const marker = "# PAI shell setup";
+	const startMarker = "# PAI shell setup — added by PAI installer";
+	const endMarker = "# end PAI shell setup";
 	
 	try {
 		let content = "";
 		if (existsSync(rcPath)) {
-			content = require("fs").readFileSync(rcPath, "utf-8");
+			content = readFileSync(rcPath, "utf-8");
+			content = content.replace(/\n?# PAI shell setup — added by PAI installer[\s\S]*?# end PAI shell setup\n?/g, "");
 			// Remove old PAI aliases
 			content = content.replace(/^#\s*(?:PAI|CORE)\s*alias.*\n.*alias pai=.*\n?/gm, "");
 			content = content.replace(/^alias pai=.*\n?/gm, "");
 			content = content.replace(/^alias pai\s+.*\n?/gm, "");
 		}
-		content = content.trimEnd() + `\n\n${marker}\n${aliasLine}\n`;
+		content = content.trimEnd() + `\n\n${startMarker}\n${aliasLine}\n${endMarker}\n`;
 		writeFileSync(rcPath, content);
 	} catch (err) {
 		console.warn("Could not update shell rc file:", err);
