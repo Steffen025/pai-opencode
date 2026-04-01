@@ -8,6 +8,7 @@
 import { existsSync, cpSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
+import { spawnSync } from "bun";
 import type { InstallState } from "./types";
 import { PAI_VERSION } from "./types";
 import { migrateV2ToV3, isMigrationNeeded } from "./migrate";
@@ -241,6 +242,23 @@ exec bun "${join(paiDir, "PAI", "Tools", "pai.ts")}" "$@"
 		writeFileSync(rcPath, content);
 	} catch (err) {
 		console.warn("Could not update shell rc file:", err);
+	}
+
+	// 4. Ensure runtime deps for .opencode/tools scripts are installed
+	onProgress(99, "Installing runtime dependencies...");
+	try {
+		const installResult = spawnSync({
+			cmd: ["bun", "install"],
+			cwd: paiDir,
+			stdout: "pipe",
+			stderr: "pipe",
+		});
+		if (installResult.exitCode !== 0) {
+			const err = installResult.stderr.toString().trim() || installResult.stdout.toString().trim();
+			console.warn("Could not install .opencode dependencies:", err);
+		}
+	} catch (err) {
+		console.warn("Could not install runtime dependencies:", err);
 	}
 	
 	onProgress(100, "Migration complete!");
