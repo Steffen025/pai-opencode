@@ -12,10 +12,10 @@ import { fileLog } from "./file-logger";
  *
  * ZEN Free Models (as of Jan 2026):
  * - opencode/big-pickle (Free)
- * - opencode/grok-code (Free - Grok Code Fast 1)
- * - opencode/glm-4.7-free (Free - GLM 4.7)
- * - opencode/minimax-m2-1-free (Free - MiniMax M2.1)
- * - opencode/gpt-5-nano (Free)
+ * - opencode/nemotron-3-super-free (NVidia Nemotron 3 Super)
+ * - opencode/qwen3.6-plus-free (Qwen3.6 Plus Free)
+ * - opencode/mimo-v2-pro-free (MiMo V2 Pro Free)
+ * - opencode/mimo-v2-omni-free(MiMo V2 Omni Free)
  *
  * See: https://opencode.ai/docs/zen/
  */
