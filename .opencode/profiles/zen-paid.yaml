@@ -2,7 +2,7 @@
 # No subscription needed. PAID models preserve privacy (no data collection).
 #
 # Connect via: /connect in OpenCode → choose ZEN
-# Models: kimi-k2.5, glm-4.7, minimax-m2.1, gemini-3-flash
+# Models: kimi-k2.5, glm-5, minimax-m2.5, gemini-3-flash
 #
 name: zen-paid
 description: OpenCode ZEN paid models - budget-friendly, privacy-preserving
@@ -15,40 +15,40 @@ agents:
   Architect:
     model: opencode/kimi-k2.5
     tiers:
-      quick: opencode/glm-4.7
+      quick: opencode/glm-5
       standard: opencode/kimi-k2.5
       advanced: opencode/kimi-k2.5
   Engineer:
     model: opencode/kimi-k2.5
     tiers:
-      quick: opencode/glm-4.7
+      quick: opencode/glm-5
       standard: opencode/kimi-k2.5
       advanced: opencode/kimi-k2.5
   general:
-    model: opencode/glm-4.7
+    model: opencode/glm-5
     tiers:
-      quick: opencode/glm-4.7
+      quick: opencode/glm-5
       standard: opencode/kimi-k2.5
       advanced: opencode/kimi-k2.5
   explore:
-    model: opencode/minimax-m2.1
+    model: opencode/minimax-m2.5
   Intern:
-    model: opencode/minimax-m2.1
+    model: opencode/minimax-m2.5
     tiers:
-      quick: opencode/minimax-m2.1
-      standard: opencode/minimax-m2.1
-      advanced: opencode/glm-4.7
+      quick: opencode/minimax-m2.5
+      standard: opencode/minimax-m2.5
+      advanced: opencode/glm-5
   Writer:
     model: opencode/gemini-3-flash
     tiers:
-      quick: opencode/minimax-m2.1
+      quick: opencode/minimax-m2.5
       standard: opencode/gemini-3-flash
       advanced: opencode/kimi-k2.5
   DeepResearcher:
-    model: opencode/glm-4.7
+    model: opencode/glm-5
     tiers:
-      quick: opencode/minimax-m2.1
-      standard: opencode/glm-4.7
+      quick: opencode/minimax-m2.5
+      standard: opencode/glm-5
       advanced: opencode/kimi-k2.5
   GeminiResearcher:
     model: opencode/gemini-3-flash
@@ -59,38 +59,38 @@ agents:
   GrokResearcher:
     model: opencode/kimi-k2.5
     tiers:
-      quick: opencode/glm-4.7
+      quick: opencode/glm-5
       standard: opencode/kimi-k2.5
       advanced: opencode/kimi-k2.5
   PerplexityResearcher:
     model: opencode/kimi-k2.5
     tiers:
-      quick: opencode/glm-4.7
+      quick: opencode/glm-5
       standard: opencode/kimi-k2.5
       advanced: opencode/kimi-k2.5
   CodexResearcher:
-    model: opencode/glm-4.7
+    model: opencode/glm-5
     tiers:
-      quick: opencode/minimax-m2.1
-      standard: opencode/glm-4.7
+      quick: opencode/minimax-m2.5
+      standard: opencode/glm-5
       advanced: opencode/kimi-k2.5
   QATester:
-    model: opencode/glm-4.7
+    model: opencode/glm-5
   Pentester:
     model: opencode/kimi-k2.5
     tiers:
-      quick: opencode/glm-4.7
+      quick: opencode/glm-5
       standard: opencode/kimi-k2.5
       advanced: opencode/kimi-k2.5
   Designer:
-    model: opencode/glm-4.7
+    model: opencode/glm-5
     tiers:
-      quick: opencode/minimax-m2.1
-      standard: opencode/glm-4.7
+      quick: opencode/minimax-m2.5
+      standard: opencode/glm-5
       advanced: opencode/kimi-k2.5
   Artist:
-    model: opencode/glm-4.7
+    model: opencode/glm-5
     tiers:
-      quick: opencode/minimax-m2.1
-      standard: opencode/glm-4.7
+      quick: opencode/minimax-m2.5
+      standard: opencode/glm-5
       advanced: opencode/kimi-k2.5
