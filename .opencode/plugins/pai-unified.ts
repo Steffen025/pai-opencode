@@ -252,8 +252,11 @@ async function readFileSafe(filePath: string): Promise<string | null> {
  */
 async function loadMinimalBootstrap(): Promise<string | null> {
 	try {
-		const cwd = process.cwd();
-		const paiDir = path.join(cwd, ".opencode", "PAI");
+		// Resolve PAI directory relative to plugin location, not cwd
+		// Plugin is at ~/.opencode/plugins/pai-unified.ts
+		// PAI is at ~/.opencode/PAI/
+		const pluginDir = path.dirname(__filename);
+		const paiDir = path.join(pluginDir, "..", "PAI");
 		const bootstrapPath = path.join(paiDir, "MINIMAL_BOOTSTRAP.md");
 
 		// Check if bootstrap exists (async)
@@ -370,18 +373,27 @@ export const PaiUnified: Plugin = async (_ctx) => {
 			await injectCompactionContext(input, output);
 		},
 
-		/**
-		 * CONTEXT INJECTION (SessionStart equivalent)
-		 *
-		 * WP2: Injects minimal bootstrap (~7KB) instead of full 233KB context.
-		 * Skills load on-demand via OpenCode native skill tool.
-		 */
-		"experimental.chat.system.transform": async (input, output) => {
-			try {
-				fileLog("Injecting minimal bootstrap context (WP2 lazy loading)...");
+	/**
+	 * CONTEXT INJECTION (SessionStart equivalent)
+	 *
+	 * WP2: Injects minimal bootstrap (~7KB) instead of full 233KB context.
+	 * Skills load on-demand via OpenCode native skill tool.
+	 *
+	 * NOTE: Only loads when PAI_ENABLED=1 is set (via `pai` wrapper).
+	 * Plain `opencode` launches without PAI context by design.
+	 */
+	"experimental.chat.system.transform": async (input, output) => {
+		try {
+			// Gate: Only load PAI context when explicitly enabled via pai wrapper
+			if (!process.env.PAI_ENABLED) {
+				fileLog("PAI context disabled (use 'pai' command for full context)", "info");
+				return;
+			}
 
-				// Emit session start
-				emitSessionStart({ model: (input as any).model }).catch(() => {});
+			fileLog("Injecting minimal bootstrap context (WP2 lazy loading)...");
+
+			// Emit session start
+			emitSessionStart({ model: (input as any).model }).catch(() => {});
 
 				// WP2: Use minimal bootstrap instead of full context loader
 				const bootstrap = await loadMinimalBootstrap();
