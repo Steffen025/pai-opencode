@@ -49,6 +49,13 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
+
+// ESM-equivalent of __dirname — .opencode/package.json has "type": "module"
+// so CommonJS globals (__dirname / __filename) are not defined. Used below
+// by loadMinimalBootstrap() to resolve the PAI dir relative to this plugin
+// file regardless of the current working directory opencode is launched from.
+const PLUGIN_DIR = path.dirname(fileURLToPath(import.meta.url));
 import type { Hooks, Plugin } from "@opencode-ai/plugin";
 import { captureAgentOutput, isTaskTool } from "./handlers/agent-capture";
 import { validateAgentExecution } from "./handlers/agent-execution-guard";
@@ -252,11 +259,13 @@ async function readFileSafe(filePath: string): Promise<string | null> {
  */
 async function loadMinimalBootstrap(): Promise<string | null> {
 	try {
-		// Resolve PAI directory relative to plugin location, not cwd
+		// Resolve PAI directory relative to plugin location, not cwd.
 		// Plugin is at ~/.opencode/plugins/pai-unified.ts
-		// PAI is at ~/.opencode/PAI/
-		const pluginDir = path.dirname(__filename);
-		const paiDir = path.join(pluginDir, "..", "PAI");
+		// PAI is at   ~/.opencode/PAI/
+		// PLUGIN_DIR is resolved via fileURLToPath(import.meta.url) because
+		// .opencode/package.json declares "type": "module" — __filename is
+		// not defined in ESM contexts.
+		const paiDir = path.join(PLUGIN_DIR, "..", "PAI");
 		const bootstrapPath = path.join(paiDir, "MINIMAL_BOOTSTRAP.md");
 
 		// Check if bootstrap exists (async)
