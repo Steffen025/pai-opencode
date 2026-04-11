@@ -393,9 +393,12 @@ export const PaiUnified: Plugin = async (_ctx) => {
 	 */
 	"experimental.chat.system.transform": async (input, output) => {
 		try {
-			// Gate: Only load PAI context when explicitly enabled via pai wrapper
-			if (!process.env.PAI_ENABLED) {
-				fileLog("PAI context disabled (use 'pai' command for full context)", "info");
+			// Gate: Only load PAI context when the `pai` wrapper explicitly sets
+			// PAI_ENABLED=1. We check for the exact string "1" (not just truthy)
+			// so accidental env pollution (e.g. PAI_ENABLED=0, PAI_ENABLED=false)
+			// does not inadvertently enable context injection.
+			if (process.env.PAI_ENABLED !== "1") {
+				fileLog("PAI context disabled (PAI_ENABLED !== '1'; use 'pai' command for full context)", "info");
 				return;
 			}
 
