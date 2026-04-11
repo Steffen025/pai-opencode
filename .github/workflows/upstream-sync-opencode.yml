@@ -27,8 +27,13 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176 # v2.17.0
+        with:
+          egress-policy: audit
+
       - name: Checkout fork
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           repository: ${{ env.FORK_REPO }}
           token: ${{ secrets.UPSTREAM_SYNC_TOKEN }}
@@ -58,7 +63,7 @@ jobs:
 
       - name: Check for new releases
         id: check_releases
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
           script: |
             const upstreamOwner = process.env.UPSTREAM_OWNER;
@@ -96,7 +101,7 @@ jobs:
 
       - name: Create sync issue (commits)
         if: steps.check_commits.outputs.commits_behind != '0'
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
           script: |
             const commitCount = '${{ steps.check_commits.outputs.commits_behind }}';
@@ -140,7 +145,7 @@ jobs:
 
       - name: Create sync issue (release)
         if: steps.check_releases.outputs.new_release == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
           script: |
             const releaseTag = '${{ steps.check_releases.outputs.release_tag }}';
