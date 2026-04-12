@@ -29,22 +29,31 @@ env:
   # WICHTIG: Das ist dein FORK auf GitHub (nicht der lokale Pfad!)
   FORK_REPO: Steffen025/Personal_AI_Infrastructure
 
+permissions:
+  contents: read
+
 jobs:
   check-upstream:
     name: Check PAI Upstream & Create Info Issue
     runs-on: ubuntu-latest
     permissions:
       issues: write
-      
+      contents: read
+
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176 # v2.17.0
+        with:
+          egress-policy: audit
+
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           fetch-depth: 1
 
       - name: Fetch upstream commit history
         id: upstream_check
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
           script: |
             const upstreamOwner = process.env.UPSTREAM_OWNER;
@@ -126,7 +135,7 @@ jobs:
 
       - name: Check for new releases
         id: release_check
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
           script: |
             const upstreamOwner = process.env.UPSTREAM_OWNER;
@@ -170,7 +179,7 @@ jobs:
 
       - name: Create info issue (commits)
         if: steps.upstream_check.outputs.has_updates == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
           script: |
             const commitCount = '${{ steps.upstream_check.outputs.commit_count }}';
@@ -310,7 +319,7 @@ jobs:
 
       - name: Create release issue
         if: steps.release_check.outputs.new_release == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
           script: |
             const releaseTag = '${{ steps.release_check.outputs.release_tag }}';

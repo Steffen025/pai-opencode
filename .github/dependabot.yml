@@ -1,0 +1,76 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /.opencode/PAI/Tools/pipeline-monitor-ui
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /.opencode/observability-server/dashboard
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /.opencode/observability-server
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /.opencode
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /.opencode/skills/Agents/Tools
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /.opencode/skills/Media/Remotion/Tools
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /.opencode/skills/Scraping/Apify
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /.opencode/skills/Security/WebAssessment/BugBountyTool
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /.opencode/skills/Telos/DashboardTemplate
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /.opencode/skills/Telos/ReportTemplate
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /.opencode/skills/Utilities/Browser
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /.opencode/skills/Utilities/Pptx/Scripts
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /.opencode/skills/Utilities/Prompting/Templates/Tools
+    schedule:
+      interval: daily
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: daily

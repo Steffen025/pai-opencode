@@ -6,6 +6,9 @@ on:
   pull_request_review_comment:
     types: [created]
 
+permissions:
+  contents: read
+
 jobs:
   opencode:
     # Only trigger on /opencode or /oc commands
@@ -22,14 +25,19 @@ jobs:
       issues: write
     
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176 # v2.17.0
+        with:
+          egress-policy: audit
+
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           fetch-depth: 1
           persist-credentials: false
 
       - name: Run OpenCode
-        uses: anomalyco/opencode/github@latest
+        uses: anomalyco/opencode/github@77fc88c8ade8e5a620ebbe1197f3a572d29ae91a # pinned to 77fc88c8
         env:
           # Optional: Falls du einen API Key hast, als Secret konfigurieren
           # ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
