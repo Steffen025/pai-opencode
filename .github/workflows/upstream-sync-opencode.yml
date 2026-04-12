@@ -68,7 +68,7 @@ jobs:
 
       - name: Check for new releases
         id: check_releases
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const upstreamOwner = process.env.UPSTREAM_OWNER;
@@ -106,7 +106,7 @@ jobs:
 
       - name: Create sync issue (commits)
         if: steps.check_commits.outputs.commits_behind != '0'
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const commitCount = '${{ steps.check_commits.outputs.commits_behind }}';
@@ -150,7 +150,7 @@ jobs:
 
       - name: Create sync issue (release)
         if: steps.check_releases.outputs.new_release == 'true'
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const releaseTag = '${{ steps.check_releases.outputs.release_tag }}';
