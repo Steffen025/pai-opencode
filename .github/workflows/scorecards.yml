@@ -14,8 +14,9 @@ on:
   push:
     branches: ["main"]
 
-# Declare default permissions as read only.
-permissions: read-all
+# Minimal default permissions — job-level block grants what's actually needed.
+permissions:
+  contents: read
 
 jobs:
   analysis:

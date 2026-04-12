@@ -16,6 +16,9 @@ repos:
   hooks:
   - id: end-of-file-fixer
   - id: trailing-whitespace
+  - id: check-yaml
+  - id: check-json
+  - id: check-merge-conflict
 - repo: https://github.com/pylint-dev/pylint
   rev: v2.17.2
   hooks:
