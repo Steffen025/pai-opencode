@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.1](https://github.com/Steffen025/pai-opencode/compare/pai-opencode-v3.0.0...pai-opencode-v3.0.1) (2026-04-13)
+
+
+### Bug Fixes
+
+* update hero banner path in README ([e7e1c92](https://github.com/Steffen025/pai-opencode/commit/e7e1c9220bb245d1ce009b62623d2e190ab0f3ae))
+
 ## [3.0.0](https://github.com/Steffen025/pai-opencode/compare/opencode-v2.0.0...pai-opencode-v3.0.0) (2026-04-13)
 
 PAI-OpenCode v3.0 is the **OpenCode-native release** — a complete re-architecture that moves from a Claude Code fork to vanilla OpenCode, removes the bootstrap loading mechanism in favour of the native skill system, and ships a zero-config Zen-free default so users are productive immediately.
