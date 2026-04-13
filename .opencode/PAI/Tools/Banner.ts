@@ -328,15 +328,13 @@ function createNavyBanner(stats: SystemStats, width: number): string {
   // Header: PAI-OpenCode v3.0 | Personal AI Infrastructure
   const paiColored = `${C.navy}P${RESET}${C.medBlue}A${RESET}${C.lightBlue}I${RESET}`;
   const headerText = `${paiColored}${C.slate}-OpenCode ${C.silver}v${stats.paiVersion}${RESET} ${C.steel}|${RESET} ${C.slate}Personal AI Infrastructure${RESET}`;
-  const headerLen = 44; // "PAI-OpenCode v3.0.0 | Personal AI Infrastructure"
-  const headerPad = " ".repeat(Math.floor((width - headerLen) / 2));
+  const headerPad = " ".repeat(Math.floor((width - visibleLength(headerText)) / 2));
   lines.push(`${headerPad}${headerText}`);
   lines.push(""); // Blank line between header and tagline
 
   // Tagline in light blue with ellipsis
   const quote = `${ITALIC}${C.lightBlue}"Magnifying human capabilities..."${RESET}`;
-  const quoteLen = 35; // includes ellipsis
-  const quotePad = " ".repeat(Math.floor((width - quoteLen) / 2));
+  const quotePad = " ".repeat(Math.floor((width - visibleLength(quote)) / 2));
   lines.push(`${quotePad}${quote}`);
 
   // Extra space between top text area and main content
@@ -362,8 +360,7 @@ function createNavyBanner(stats: SystemStats, width: number): string {
   lines.push(`${urlPad}${urlLine}`);
 
   const creditLine = `${C.muted}Built on PAI by Daniel Miessler \u00b7 github.com/danielmiessler/PAI${RESET}`;
-  const creditLen = 61; // visible length
-  const creditPad = " ".repeat(Math.floor((width - creditLen) / 2));
+  const creditPad = " ".repeat(Math.floor((width - visibleLength(creditLine)) / 2));
   lines.push(`${creditPad}${creditLine}`);
   lines.push("");
 
@@ -681,13 +678,13 @@ function createNavyMediumBanner(stats: SystemStats, width: number): string {
   // Header (no border)
   const paiColored = `${C.navy}P${RESET}${C.medBlue}A${RESET}${C.lightBlue}I${RESET}`;
   const headerText = `${paiColored}${C.slate}-OpenCode ${C.silver}v${stats.paiVersion}${RESET} ${C.steel}|${RESET} ${C.slate}Personal AI Infrastructure${RESET}`;
-  const headerPad = " ".repeat(Math.max(0, Math.floor((width - 44) / 2)));
+  const headerPad = " ".repeat(Math.max(0, Math.floor((width - visibleLength(headerText)) / 2)));
   lines.push(`${headerPad}${headerText}`);
   lines.push("");
 
   // Tagline
   const quote = `${ITALIC}${C.lightBlue}"Magnifying human capabilities..."${RESET}`;
-  const quotePad = " ".repeat(Math.max(0, Math.floor((width - 35) / 2)));
+  const quotePad = " ".repeat(Math.max(0, Math.floor((width - visibleLength(quote)) / 2)));
   lines.push(`${quotePad}${quote}`);
   lines.push("");
 
@@ -703,7 +700,7 @@ function createNavyMediumBanner(stats: SystemStats, width: number): string {
   const urlPad = " ".repeat(Math.max(0, Math.floor((width - stats.repoUrl.length - 3) / 2)));
   lines.push(`${urlPad}${urlLine}`);
   const creditLine = `${C.steel}Built on PAI by Daniel Miessler \u00b7 github.com/danielmiessler/PAI${RESET}`;
-  const creditPad = " ".repeat(Math.max(0, Math.floor((width - 61) / 2)));
+  const creditPad = " ".repeat(Math.max(0, Math.floor((width - visibleLength(creditLine)) / 2)));
   lines.push(`${creditPad}${creditLine}`);
   lines.push("");
 

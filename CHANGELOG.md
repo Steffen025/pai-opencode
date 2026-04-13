@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.0.0](https://github.com/Steffen025/pai-opencode/compare/opencode-v2.0.0...pai-opencode-v3.0.0) (2026-04-13)
 
-PAI-OpenCode v3.0 is the **OpenCode-native release** — a complete re-architecture that moves from a Claude Code fork to vanilla OpenCode, removes the bootstrap loading mechanism in favour of the native skill system, and ships a zero-config Zen free default so users are productive immediately.
+PAI-OpenCode v3.0 is the **OpenCode-native release** — a complete re-architecture that moves from a Claude Code fork to vanilla OpenCode, removes the bootstrap loading mechanism in favour of the native skill system, and ships a zero-config Zen-free default so users are productive immediately.
 
 ---
 
@@ -148,9 +148,11 @@ Full guide: [UPGRADE.md](UPGRADE.md).
 
 Special thanks to community members whose contributions are included in this release:
 
-* **[@eddovandenboom](https://github.com/eddovandenboom)** — PAI wrapper script, `--fix-symlink` flag ([PR #104](https://github.com/Steffen025/pai-opencode/pull/104))
-* **[@ktneely](https://github.com/ktneely)** — Model profile updates for provider-agnostic routing ([PR #103](https://github.com/Steffen025/pai-opencode/pull/103))
-* **[@step-security-bot](https://github.com/step-security-bot)** — CI security hardening, pinned Actions SHA hashes ([PR #106](https://github.com/Steffen025/pai-opencode/pull/106))
+| Contributor | Contribution | PR |
+|-------------|-------------|-----|
+| **[@eddovandenboom](https://github.com/eddovandenboom)** | PAI wrapper script, `--fix-symlink` flag | [#104](https://github.com/Steffen025/pai-opencode/pull/104) |
+| **[@ktneely](https://github.com/ktneely)** | Model profile updates for provider-agnostic routing | [#103](https://github.com/Steffen025/pai-opencode/pull/103) |
+| **[@step-security-bot](https://github.com/step-security-bot)** | CI security hardening, pinned Actions SHA hashes | [#106](https://github.com/Steffen025/pai-opencode/pull/106) |
 
 ---
 
