@@ -1,4 +1,4 @@
-![PAI-OpenCode Hero Banner](docs/images/v2.0-hero-banner.jpg)
+![PAI-OpenCode Hero Banner](docs/images/hero-banner.jpg)
 
 # PAI-OpenCode
 
