@@ -1,4 +1,3 @@
-<!-- PAI SKILL.md — Core skill definition for Personal AI Infrastructure -->
 ---
 name: PAI
 description: Personal AI Infrastructure core. The authoritative reference for how PAI works.

@@ -1,10 +1,10 @@
 {
-  "generated": "2026-03-19T23:43:15.603Z",
-  "totalSkills": 52,
+  "generated": "2026-04-13T09:19:28.749Z",
+  "totalSkills": 53,
   "categories": 7,
-  "flatSkills": 11,
+  "flatSkills": 12,
   "hierarchicalSkills": 41,
-  "alwaysLoadedCount": 2,
+  "alwaysLoadedCount": 3,
   "deferredCount": 50,
   "skills": {
     "agents": {
@@ -605,6 +605,16 @@
       ],
       "tier": "deferred",
       "isHierarchical": true
+    },
+    "pai": {
+      "name": "PAI",
+      "path": "PAI/SKILL.md",
+      "category": null,
+      "fullDescription": "Personal AI Infrastructure core. The authoritative reference for how PAI works.",
+      "triggers": [],
+      "workflows": [],
+      "tier": "always",
+      "isHierarchical": false
     },
     "paiupgrade": {
       "name": "PAIUpgrade",

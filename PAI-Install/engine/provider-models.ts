@@ -26,10 +26,11 @@ export const PROVIDER_MODELS: Record<ProviderName, ModelTierMap> = {
 		advanced: "anthropic/claude-opus-4-6",
 	},
 	zen: {
-		// OpenCode Zen — cost-optimised tiers (IDs verified against opencode.ai/docs/zen/)
-		quick: "zen/minimax-m2.5-free",       // FREE
-		standard: "zen/gpt-5.1-codex-mini",   // $0.25/M in+out
-		advanced: "zen/claude-3-5-haiku",     // $0.80/M — catalog ID for Claude Haiku 3.5
+		// OpenCode Zen — ALL FREE models (no API key required for out-of-box experience)
+		// Users upgrade to paid models post-install via /connect in OpenCode
+		quick: "opencode/gpt-5-nano",              // FREE — fastest
+		standard: "opencode/qwen3.6-plus-free",    // FREE — capable general/coding
+		advanced: "opencode/big-pickle",            // FREE — Zen flagship, heaviest
 	},
 	openrouter: {
 		quick: "openrouter/google/gemini-flash-1.5",

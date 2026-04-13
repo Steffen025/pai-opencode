@@ -41,7 +41,9 @@ interface SkillIndex {
 }
 
 // Skills that should always be fully loaded (Tier 1)
+// PAI = the core PAI skill (Algorithm, ISC, Capabilities) — MUST always be loaded
 const ALWAYS_LOADED_SKILLS = [
+  'PAI',
   'CORE',
   'Development',
   'Research',

@@ -248,41 +248,21 @@ async function readFileSafe(filePath: string): Promise<string | null> {
 }
 
 /**
- * Load minimal bootstrap context — WP2: Minimal Useful
+ * Load user context — Steering Rules + User Identity
  *
- * Loads:
- * 1. MINIMAL_BOOTSTRAP.md (core Algorithm + Steering Rules)
- * 2. System AISTEERINGRULES.md (if exists)
- * 3. User Identity files (ABOUTME, TELOS, DAIDENTITY) if exist
+ * The PAI Core Skill (Algorithm, ISC, Capabilities) is loaded via the
+ * skill system (tier: "always") — NOT here. This function loads only
+ * the dynamic, user-specific context that can't live in static skill files:
  *
- * Target: ~15KB (not 2KB - must know the user!)
+ * 1. System AISTEERINGRULES.md (behavioral governance)
+ * 2. User Identity files (ABOUTME, TELOS, DAIDENTITY) if they exist
  */
 async function loadMinimalBootstrap(): Promise<string | null> {
 	try {
-		// Resolve PAI directory relative to plugin location, not cwd.
-		// Plugin is at ~/.opencode/plugins/pai-unified.ts
-		// PAI is at   ~/.opencode/PAI/
-		// PLUGIN_DIR is resolved via fileURLToPath(import.meta.url) because
-		// .opencode/package.json declares "type": "module" — __filename is
-		// not defined in ESM contexts.
 		const paiDir = path.join(PLUGIN_DIR, "..", "PAI");
-		const bootstrapPath = path.join(paiDir, "MINIMAL_BOOTSTRAP.md");
-
-		// Check if bootstrap exists (async)
-		try {
-			await fs.promises.access(bootstrapPath);
-		} catch {
-			fileLog("MINIMAL_BOOTSTRAP.md not found, using fallback", "warn");
-			return null;
-		}
-
 		const contextParts: string[] = [];
 
-		// 1. Core bootstrap (async)
-		const bootstrapContent = await fs.promises.readFile(bootstrapPath, "utf-8");
-		contextParts.push(`--- PAI BOOTSTRAP ---\n${bootstrapContent}`);
-
-		// 2. System Steering Rules (if exists)
+		// 1. System Steering Rules (if exists)
 		const systemSteeringPath = path.join(paiDir, "AISTEERINGRULES.md");
 		const systemSteering = await readFileSafe(systemSteeringPath);
 		if (systemSteering) {
@@ -290,7 +270,7 @@ async function loadMinimalBootstrap(): Promise<string | null> {
 			fileLog("Loaded System AISTEERINGRULES.md");
 		}
 
-		// 3. User Identity Files (if exist) — CRITICAL: Must know the user!
+		// 2. User Identity Files (if exist) — CRITICAL: Must know the user!
 		const userDir = path.join(paiDir, "USER");
 		const userFiles = [
 			{ file: "ABOUTME.md", label: "User Profile" },
@@ -310,12 +290,17 @@ async function loadMinimalBootstrap(): Promise<string | null> {
 			}
 		}
 
+		if (contextParts.length === 0) {
+			fileLog("No user context files found — PAI Core loaded via skill system");
+			return null;
+		}
+
 		// Combine all context
 		const fullContext = contextParts.join("\n\n");
 		const size = Buffer.byteLength(fullContext, "utf-8");
-		fileLog(`Bootstrap loaded: ${size} bytes (${userContextLoaded} user files)`);
+		fileLog(`User context loaded: ${size} bytes (${userContextLoaded} user files)`);
 
-		return `<system-reminder>\nPAI CONTEXT (Lazy Loading Bootstrap)\n\n${fullContext}\n\n---\nSkills load on-demand via OpenCode skill tool. User context auto-loaded if exists.\n</system-reminder>`;
+		return `<system-reminder>\nPAI CONTEXT (User Context)\n\n${fullContext}\n\n---\nPAI Core Skill loaded via skill system. Skills load on-demand via Skill tool.\n</system-reminder>`;
 	} catch (error) {
 		fileLogError("Failed to load minimal bootstrap", error);
 		// Return null to signal failure - caller should handle

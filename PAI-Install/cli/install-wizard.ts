@@ -21,8 +21,7 @@ import {
 	stepProviderConfig,
 	stepVoice,
 } from "../engine/steps-fresh.ts";
-import { PROVIDER_LABELS, PROVIDER_MODELS } from "../engine/provider-models.ts";
-import type { ProviderName } from "../engine/provider-models.ts";
+
 import {
 	stepCreateBackup,
 	stepDetectMigration,
@@ -47,15 +46,6 @@ const COLOR = {
 } as const;
 
 const PROGRESS_BAR_WIDTH = 24;
-
-const API_KEY_REQUIRED = new Set<ProviderName>(["openai", "anthropic", "openrouter"]);
-
-const PROVIDER_ENV_VARS: Record<ProviderName, string[]> = {
-	anthropic: ["ANTHROPIC_API_KEY", "API_KEY"],
-	openai: ["OPENAI_API_KEY", "API_KEY"],
-	openrouter: ["OPENROUTER_API_KEY", "API_KEY"],
-	zen: ["ZEN_API_KEY", "API_KEY"],
-};
 
 type Mode = "fresh" | "migrate" | "update";
 
@@ -362,39 +352,14 @@ async function runFreshWizard(): Promise<void> {
 	printInfo("OpenCode install is managed by the vanilla opencode.ai installer.");
 	printInfo("If opencode is not on your PATH, run: curl -fsSL https://opencode.ai/install | bash");
 
-	const providerChoices = (Object.keys(PROVIDER_MODELS) as ProviderName[]).map((provider) => ({
-		label: PROVIDER_LABELS[provider].label,
-		value: provider,
-		description: PROVIDER_LABELS[provider].description,
-	}));
-
-	const provider = (await askChoice("Choose AI provider:", providerChoices, 1)) as ProviderName;
-	const envCandidates = PROVIDER_ENV_VARS[provider];
-	const envKey = envCandidates.map((key) => process.env[key]).find(Boolean)?.trim() || "";
-	let apiKey = "";
-
-	if (API_KEY_REQUIRED.has(provider)) {
-		const hasEnvKey = envKey.length > 0;
-		if (hasEnvKey) {
-			printInfo(`Detected ${envCandidates.join("/")} in environment.`);
-		}
-
-		apiKey = await askHidden(
-			`Enter ${provider} API key${hasEnvKey ? " (press Enter to use env key)" : ""}`,
-			"",
-		);
-	}
-
-	const chosenApiKey = apiKey.trim() || envKey;
-	if (API_KEY_REQUIRED.has(provider) && !chosenApiKey) {
-		printError(`Provider ${provider} requires API key.`);
-		printInfo(`Set one of: ${envCandidates.join(", ")} or enter it in wizard.`);
-		process.exit(1);
-	}
+	// Provider defaults to Zen free — no API key needed for out-of-box experience.
+	// Users configure premium providers AFTER install via `/connect` in OpenCode.
+	printInfo("Using OpenCode Zen (free models) — no API key required.");
+	printInfo("To connect premium providers later, run /connect inside OpenCode.\n");
 
 	await stepProviderConfig(
 		state,
-		{ provider, apiKey: chosenApiKey },
+		{ provider: "zen", apiKey: "" },
 		progress,
 	);
 
