@@ -25,49 +25,49 @@
       "model": "opencode/big-pickle"
     },
     "Architect": {
-      "model": "opencode/qwen3.6-plus-free"
+      "model": "opencode/big-pickle"
     },
     "Engineer": {
-      "model": "opencode/qwen3.6-plus-free"
+      "model": "opencode/big-pickle"
     },
     "general": {
-      "model": "opencode/qwen3.6-plus-free"
+      "model": "opencode/big-pickle"
     },
     "explore": {
-      "model": "opencode/gpt-5-nano"
+      "model": "opencode/big-pickle"
     },
     "Intern": {
-      "model": "opencode/gpt-5-nano"
+      "model": "opencode/big-pickle"
     },
     "Writer": {
-      "model": "opencode/qwen3.6-plus-free"
+      "model": "opencode/big-pickle"
     },
     "DeepResearcher": {
-      "model": "opencode/nemotron-3-super-free"
+      "model": "opencode/big-pickle"
     },
     "GeminiResearcher": {
-      "model": "opencode/minimax-m2.5-free"
+      "model": "opencode/big-pickle"
     },
     "GrokResearcher": {
-      "model": "opencode/qwen3.6-plus-free"
+      "model": "opencode/big-pickle"
     },
     "PerplexityResearcher": {
       "model": "opencode/big-pickle"
     },
     "CodexResearcher": {
-      "model": "opencode/nemotron-3-super-free"
+      "model": "opencode/big-pickle"
     },
     "QATester": {
-      "model": "opencode/qwen3.6-plus-free"
+      "model": "opencode/big-pickle"
     },
     "Pentester": {
-      "model": "opencode/qwen3.6-plus-free"
+      "model": "opencode/big-pickle"
     },
     "Designer": {
-      "model": "opencode/minimax-m2.5-free"
+      "model": "opencode/big-pickle"
     },
     "Artist": {
-      "model": "opencode/minimax-m2.5-free"
+      "model": "opencode/big-pickle"
     }
   }
 }

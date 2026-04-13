@@ -420,7 +420,16 @@ async function runFreshWizard(): Promise<void> {
 	print("Next steps:");
 	print("  1. Open a new terminal or source your shell config file");
 	print("  2. Run: pai");
-	print("  3. Optional: switch provider profiles via switch-provider tool");
+	print("");
+	print("To use a different model provider (optional):");
+	print("  Step 1 — Connect the provider inside a running OpenCode session:");
+	print("           /connect");
+	print("  Step 2 — Update agent model assignments in opencode.json:");
+	print("           bun run .opencode/tools/switch-provider.ts <profile>");
+	print("           bun run .opencode/tools/switch-provider.ts --list   (see available profiles)");
+	print("");
+	printInfo("Default: all agents use opencode/big-pickle (Zen free, no API key needed).");
+	printInfo("Free model list: https://opencode.ai/docs/zen/");
 }
 
 async function runMigrationWizard(): Promise<void> {
