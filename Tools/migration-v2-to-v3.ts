@@ -246,7 +246,8 @@ async function migrateSkills(report: MigrationReport, dryRun: boolean): Promise<
 				log(`Migrated flat skill to hierarchical: ${skill.name}`, "success");
 				migratedCount++;
 			}
-		} // Close SKILL.md check
+		} // Close if (dryRun)
+	} // Close SKILL.md check
 	}
 
 	if (migratedCount > 0) {
