@@ -113,14 +113,14 @@ interface SystemStats {
 
 function getStats(): SystemStats {
   let name = "PAI";
-  let paiVersion = "4.0.3";
+  let paiVersion = "3.0.0";                                   // PAI-OpenCode version
   let algorithmVersion = "3.7.0";
   let catchphrase = "{name} here, ready to go";
-  let repoUrl = "github.com/danielmiessler/PAI";
+  let repoUrl = "github.com/Steffen025/pai-opencode";         // PAI-OpenCode repo
   try {
     const settings = JSON.parse(readFileSync(join(CLAUDE_DIR, "settings.json"), "utf-8"));
     name = settings.daidentity?.displayName || settings.daidentity?.name || "PAI";
-    paiVersion = settings.pai?.version || "2.0";
+    paiVersion = settings.pai?.version || "3.0.0";
     algorithmVersion = (settings.pai?.algorithmVersion || algorithmVersion).replace(/^v/i, '');
     catchphrase = settings.daidentity?.startupCatchphrase || catchphrase;
     repoUrl = settings.pai?.repoUrl || repoUrl;
@@ -163,10 +163,10 @@ function getStats(): SystemStats {
   const platform = process.platform === "darwin" ? "macOS" : process.platform;
   const arch = process.arch;
 
-  // Try to get Claude Code version
-  let ccVersion = "2.0";
+  // Try to get OpenCode version
+  let ccVersion = "";
   try {
-    const result = spawnSync("claude", ["--version"], { encoding: "utf-8" });
+    const result = spawnSync("opencode", ["--version"], { encoding: "utf-8" });
     if (result.stdout) {
       const match = result.stdout.match(/(\d+\.\d+\.\d+)/);
       if (match) ccVersion = match[1];
@@ -325,18 +325,16 @@ function createNavyBanner(stats: SystemStats, width: number): string {
   lines.push(`${framePad}${topBorder}`);
   lines.push("");
 
-  // Header: PAI (in logo colors) | Personal AI Infrastructure
+  // Header: PAI-OpenCode v3.0 | Personal AI Infrastructure
   const paiColored = `${C.navy}P${RESET}${C.medBlue}A${RESET}${C.lightBlue}I${RESET}`;
-  const headerText = `${paiColored} ${C.steel}|${RESET} ${C.slate}Personal AI Infrastructure${RESET}`;
-  const headerLen = 33; // "PAI | Personal AI Infrastructure"
-  const headerPad = " ".repeat(Math.floor((width - headerLen) / 2));
+  const headerText = `${paiColored}${C.slate}-OpenCode ${C.silver}v${stats.paiVersion}${RESET} ${C.steel}|${RESET} ${C.slate}Personal AI Infrastructure${RESET}`;
+  const headerPad = " ".repeat(Math.floor((width - visibleLength(headerText)) / 2));
   lines.push(`${headerPad}${headerText}`);
   lines.push(""); // Blank line between header and tagline
 
   // Tagline in light blue with ellipsis
   const quote = `${ITALIC}${C.lightBlue}"Magnifying human capabilities..."${RESET}`;
-  const quoteLen = 35; // includes ellipsis
-  const quotePad = " ".repeat(Math.floor((width - quoteLen) / 2));
+  const quotePad = " ".repeat(Math.floor((width - visibleLength(quote)) / 2));
   lines.push(`${quotePad}${quote}`);
 
   // Extra space between top text area and main content
@@ -355,11 +353,15 @@ function createNavyBanner(stats: SystemStats, width: number): string {
   lines.push("");
   lines.push("");
 
-  // Footer: Unicode symbol + URL in medium blue (A color)
+  // Footer: repo URL + credit line
   const urlLine = `${C.steel}\u2192${RESET} ${C.medBlue}${stats.repoUrl}${RESET}`;
   const urlLen = stats.repoUrl.length + 3;
   const urlPad = " ".repeat(Math.floor((width - urlLen) / 2));
   lines.push(`${urlPad}${urlLine}`);
+
+  const creditLine = `${C.muted}Built on PAI by Daniel Miessler \u00b7 github.com/danielmiessler/PAI${RESET}`;
+  const creditPad = " ".repeat(Math.floor((width - visibleLength(creditLine)) / 2));
+  lines.push(`${creditPad}${creditLine}`);
   lines.push("");
 
   // Bottom border with full horizontal line and reticle corners
@@ -675,14 +677,14 @@ function createNavyMediumBanner(stats: SystemStats, width: number): string {
 
   // Header (no border)
   const paiColored = `${C.navy}P${RESET}${C.medBlue}A${RESET}${C.lightBlue}I${RESET}`;
-  const headerText = `${paiColored} ${C.steel}|${RESET} ${C.slate}Personal AI Infrastructure${RESET}`;
-  const headerPad = " ".repeat(Math.max(0, Math.floor((width - 33) / 2)));
+  const headerText = `${paiColored}${C.slate}-OpenCode ${C.silver}v${stats.paiVersion}${RESET} ${C.steel}|${RESET} ${C.slate}Personal AI Infrastructure${RESET}`;
+  const headerPad = " ".repeat(Math.max(0, Math.floor((width - visibleLength(headerText)) / 2)));
   lines.push(`${headerPad}${headerText}`);
   lines.push("");
 
   // Tagline
   const quote = `${ITALIC}${C.lightBlue}"Magnifying human capabilities..."${RESET}`;
-  const quotePad = " ".repeat(Math.max(0, Math.floor((width - 35) / 2)));
+  const quotePad = " ".repeat(Math.max(0, Math.floor((width - visibleLength(quote)) / 2)));
   lines.push(`${quotePad}${quote}`);
   lines.push("");
 
@@ -697,6 +699,9 @@ function createNavyMediumBanner(stats: SystemStats, width: number): string {
   const urlLine = `${C.steel}\u2192${RESET} ${C.medBlue}${stats.repoUrl}${RESET}`;
   const urlPad = " ".repeat(Math.max(0, Math.floor((width - stats.repoUrl.length - 3) / 2)));
   lines.push(`${urlPad}${urlLine}`);
+  const creditLine = `${C.steel}Built on PAI by Daniel Miessler \u00b7 github.com/danielmiessler/PAI${RESET}`;
+  const creditPad = " ".repeat(Math.max(0, Math.floor((width - visibleLength(creditLine)) / 2)));
+  lines.push(`${creditPad}${creditLine}`);
   lines.push("");
 
   return lines.join("\n");

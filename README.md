@@ -439,6 +439,20 @@ The open-source, provider-agnostic runtime that makes PAI-OpenCode possible.
 
 ---
 
+## Contributors
+
+Thank you to everyone who has contributed code, content, or tooling to PAI-OpenCode:
+
+| Contributor | Contribution |
+|-------------|-------------|
+| **[@eddovandenboom](https://github.com/eddovandenboom)** | PAI wrapper script — separate `pai` command, `--fix-symlink` flag ([PR #104](https://github.com/Steffen025/pai-opencode/pull/104)) |
+| **[@ktneely](https://github.com/ktneely)** | Model profile updates for provider-agnostic routing ([PR #103](https://github.com/Steffen025/pai-opencode/pull/103), incorporated into [PR #107](https://github.com/Steffen025/pai-opencode/pull/107)) |
+| **[@step-security-bot](https://github.com/step-security-bot)** | CI security hardening — pinned Actions SHA hashes, `permissions: contents: read` ([PR #106](https://github.com/Steffen025/pai-opencode/pull/106), incorporated into [PR #108](https://github.com/Steffen025/pai-opencode/pull/108)) |
+
+*Want to contribute? See [CONTRIBUTING.md](CONTRIBUTING.md).*
+
+---
+
 ## License
 
 MIT License — see [LICENSE](LICENSE) for details.

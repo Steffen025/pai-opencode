@@ -728,8 +728,8 @@ function translateSkills(
               // If contains special YAML chars (colon, quote, etc.), wrap in quotes
               if (desc.includes(':') || desc.includes("'") || desc.includes('"') ||
                   desc.includes('#') || desc.includes('|') || desc.includes('>')) {
-                // Escape internal double quotes and wrap
-                const escaped = desc.replace(/"/g, '\\"');
+                // Escape backslashes first, then double quotes (order matters)
+                const escaped = desc.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
                 return `${prefix}"${escaped}"`;
               }
               return match;

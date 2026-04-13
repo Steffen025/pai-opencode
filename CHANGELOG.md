@@ -7,153 +7,155 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [3.0.0] - 2026-04-12
+## [3.0.0](https://github.com/Steffen025/pai-opencode/compare/opencode-v2.0.0...pai-opencode-v3.0.0) (2026-04-13)
+
+PAI-OpenCode v3.0 is the **OpenCode-native release** — a complete re-architecture that moves from a Claude Code fork to vanilla OpenCode, removes the bootstrap loading mechanism in favour of the native skill system, and ships a zero-config Zen-free default so users are productive immediately.
+
+---
 
 ### ⚠️ Breaking Changes
 
-- **`model_tiers` removed (WP-M1 Vanilla OpenCode Migration).** PAI-OpenCode now runs on **vanilla OpenCode** from opencode.ai. The custom `Steffen025/opencode` fork (branch `feature/model-tiers`) is no longer used. Each agent in `opencode.json` has exactly one `model` field — the `model_tiers` block (with `quick`/`standard`/`advanced` sub-models) is no longer supported.
-- **`model_tier` parameter removed from Task tool.** Task tool calls no longer accept a `model_tier: "quick" | "standard" | "advanced"` argument. The agent's configured model is always used. See ADR-019 for the full rationale.
-- **Installer no longer builds OpenCode from source.** Fresh installs now invoke the official vanilla installer (`curl -fsSL https://opencode.ai/install | bash`) instead of cloning and compiling the fork. Install time drops from ~5-10 minutes to seconds.
-- Plugin system migrated from hooks to event-driven architecture (WP-A)
-- Skills structure changed: flat → hierarchical Category/Skill (WP-C)
-- Config dual-file: `opencode.json` + `settings.json` (replaces single file)
-- All paths migrated: `.claude/` → `.opencode/`, `CLAUDE.md` → `AGENTS.md`
-
-### Migration Path (for existing v2.x users with model_tiers)
-
-**Automated:** Run `bun run PAI-Install/engine/migrate-legacy-config.ts ~/.opencode/opencode.json`. This converts old `model_tiers` blocks to the new flat format by preserving each agent's `standard` tier model as the new canonical `model`.
-
-**Manual:** Delete all `model_tiers` blocks from your `opencode.json`. Keep only the top-level `"model"` field per agent. Example:
-
-```jsonc
-// BEFORE (v2.x — no longer supported)
-"Engineer": {
-  "model": "anthropic/claude-sonnet-4-5",
-  "model_tiers": {
-    "quick": { "model": "anthropic/claude-haiku-4-5" },
-    "standard": { "model": "anthropic/claude-sonnet-4-5" },
-    "advanced": { "model": "anthropic/claude-opus-4-6" }
-  }
-}
-
-// AFTER (v3.0+)
-"Engineer": {
-  "model": "anthropic/claude-sonnet-4-5"
-}
-```
-
-**For Task tool callers:**
-
-```typescript
-// BEFORE (v2.x)
-Task({ subagent_type: "Engineer", model_tier: "quick", prompt: "..." })
-
-// AFTER (v3.0+) — use a lightweight agent for cheap work
-Task({ subagent_type: "explore", prompt: "..." })     // or "Intern"
-// For standard work, just use Engineer
-Task({ subagent_type: "Engineer", prompt: "..." })
-// For heavy work, use Architect or Algorithm
-Task({ subagent_type: "Architect", prompt: "..." })
-```
-
-### Added
-
-#### Session Registry (WP-N1) — PR #50
-- **`session_registry` custom tool** — Lists all active sessions with IDs and metadata
-- **`session_results` custom tool** — Fetches output from a named session
-- OpenCode-native session awareness for post-compaction context recovery
-
-#### Compaction Intelligence (WP-N2) — PR #51
-- **`experimental.session.compacting` hook** — Detects compaction events in real time
-- **Context injection on resume** — Automatically re-injects PAI context after compaction
-- Prevents silent context loss mid-session
-
-#### Algorithm Awareness (WP-N3) — PR #52+#53
-- **SKILL.md CONTEXT RECOVERY** — Uses `session_registry` + `session_results` for post-compaction awareness
-- **PRD `parent_session_id`** — Links child PRDs back to originating session
-- Full Algorithm v1.8.0 context continuity across compaction boundaries
-
-#### LSP Documentation (WP-N4) — PR #53
-- **AGENTS.md LSP section** — Documents OpenCode's Language Server Protocol integration
-- **Installer `.env` setup** — API key configuration documented
-- *Note: WP-N4 originally also documented the `Steffen025/opencode` fork and `feature/model-tiers` branch. Those docs were removed in WP-M1 (Vanilla OpenCode Migration, see below) and replaced with vanilla OpenCode install instructions.*
-
-#### Plan Update (WP-N5) — PR #54
-- **All planning docs synced** — TODO-v3.0.md, OPTIMIZED-PR-PLAN.md reflect WP-N1..N4 complete
-- Progress diagrams updated
-
-#### System Self-Awareness (WP-N6) — PR #55
-- **OpenCodeSystem skill** — Self-referential skill for system introspection
-- **4 architecture reference docs** — SystemArchitecture.md, ToolReference.md, Configuration.md, Troubleshooting.md
-- **ADR-017** — System self-awareness architectural decision
-
-#### roborev + Biome CI (WP-N7) — PR #56
-- **roborev plugin handler** — `plugins/handlers/roborev-trigger.ts` for AI code review
-- **CodeReview skill** — `skills/CodeReview/SKILL.md` for in-session code review
-- **GitHub Actions CI** — `.github/workflows/code-quality.yml` runs Biome on every PR
-- **ADR-018** — roborev + Biome CI architectural decision
-
-#### Obsidian Formatting Guidelines (WP-N8) — PR #57
-- **FormattingGuidelines.md** — Obsidian frontmatter, callouts, Mermaid, code block patterns
-- **AgentCapabilityMatrix.md** — All agent types, agent models, tool/MCP access, decision rules
-
-#### Installer opencode.json Fix (WP-N9) — PR #58
-- **4 provider presets** — anthropic, zen, openrouter, openai (was 3)
-- **opencode.json generation** — Correct provider-specific config per preset
-- `principalName` populated from username during install
-
-#### Docs Consolidation (WP-N10) — PR #59
-- **CHANGELOG.md** — Released, WP-N1..N10 Added sections with correct WP titles
-- **CONTRIBUTING.md** — Skills structure updated to hierarchical `Category/SkillName/`
-- **INSTALL.md** — 4 provider presets documented
-- **README.md** — Broken links to non-existent files removed
-- **Planning docs deleted** — GAP-ANALYSIS-v3.0.md, EPIC-v3.0-OpenCode-Native.md, OPENCODE-NATIVE-RESEARCH.md (completed, no longer needed)
-
-#### Vanilla OpenCode Migration (WP-M1)
-- **ADR-019** — `docs/architecture/adr/ADR-019-vanilla-opencode-migration.md` — Architectural decision record documenting the `model_tiers` removal, fork archival rationale, and rejected alternatives
-- **Legacy-config migration script** — `PAI-Install/engine/migrate-legacy-config.ts` — Automated converter for user `opencode.json` files with legacy `model_tiers` blocks, preserves each agent's `standard` tier model as the new canonical `model`, creates `.pre-v3.0.bak` backup before any changes
-- **Vanilla installer path** — `PAI-Install/engine/actions.ts` — New `installVanillaOpenCode()` function calls `curl -fsSL https://opencode.ai/install | bash` instead of cloning a fork
-- **Deprecation notices** — Troubleshooting.md, ToolReference.md, AgentCapabilityMatrix.md, and PLATFORM-DIFFERENCES.md gained explicit deprecation callouts explaining the `model_tier` removal and pointing to the migration script
-- **Partial supersession markers** — ADR-005 and ADR-012 gained `> [!warning] PARTIAL SUPERSESSION` notices at the top plus inline historical notes, preserving decision history while clarifying which parts are superseded by ADR-019
-
-### Removed (WP-M1 Vanilla Migration)
-
-- `PAI-Install/engine/build-opencode.ts` — the entire 245-LOC fork build system
-- `model_tiers` config block from `opencode.json` (16 agents, all tiers stripped)
-- `model_tier` parameter reading from `.opencode/plugins/handlers/agent-execution-guard.ts`
-- `modelTier` field from `.opencode/plugins/handlers/session-registry.ts` session entries
-- `tiers?` field from `AgentConfig` interface in `.opencode/tools/switch-provider.ts`
-- `tiers:` sections from all 5 profile YAML files (`.opencode/profiles/{anthropic,openai,zen,zen-paid,local}.yaml`)
-- Fork-clone / build-from-source logic from `PAI-Install/engine/actions.ts`, `steps-fresh.ts`, `steps-migrate.ts`, `steps-update.ts`
-- `runSkipBuildFallback` dead code from `PAI-Install/cli/install-wizard.ts`
-- `model_tier mapping` requirement from `.coderabbit.yaml` agent frontmatter validation rule
-- `stepBuildOpenCode` and `stepBinaryUpdate` binary-build logic — functions retained as no-ops for API compatibility, delegations to fork-build removed
-- All references to `Steffen025/opencode` URLs and `feature/model-tiers` branch from runtime code
-
-### Changed (WP-M1 Vanilla Migration)
-
-- `PAI-Install/wrapper-template.sh` — Rewritten from custom-build launcher to vanilla-OpenCode wrapper. `--rebuild` replaced with `--install` (invokes `opencode.ai/install`).
-- `PAI-Install/engine/actions.ts` — `buildOpenCodeFromSource()` replaced with `installVanillaOpenCode()` which runs the official vanilla install script.
-- `opencode.json` — Flat one-model-per-agent format. Sensible defaults: Algorithm=Opus, explore/Intern=Haiku, everyone else=Sonnet.
-- `.opencode/profiles/*.yaml` — All 5 profiles (anthropic, openai, zen, zen-paid, local) collapsed to `model:` per agent; tier sub-keys removed.
-- `README.md`, `INSTALL.md`, `UPGRADE.md`, `KNOWN_LIMITATIONS.md`, `docs/**`, `EPIC-v3.0-Synthesis-Architecture.md` — All documentation rewritten to reflect vanilla OpenCode and agent-based cost optimization.
-
-### Deprecated (WP-M1 Vanilla Migration)
-
-- `--skip-build` CLI flag — silently ignored with deprecation warning. Will be removed in a future release.
-
-### Changed
-- Skills organization: flat → hierarchical (Category/Skill)
-- Config management: single-file → dual-file
-- Installer: CLI-only → CLI + Electron GUI
-- Security: none → full prompt injection protection
-
-### Migration
-- See [UPGRADE.md](/UPGRADE.md) for detailed migration instructions
-- Run `bun Tools/migration-v2-to-v3.ts --dry-run` to preview
-- Automatic backup created before any changes
+* **`model_tiers` removed (WP-M1).** Each agent in `opencode.json` has exactly one `model` field. The `model_tiers` block (`quick`/`standard`/`advanced`) and the `model_tier` Task parameter are gone. Run `migrate-legacy-config.ts` to auto-convert. See [ADR-019](docs/architecture/adr/ADR-019-vanilla-opencode-migration.md) and [UPGRADE.md](UPGRADE.md).
+* **Vanilla OpenCode only.** The custom `Steffen025/opencode` fork is archived. Install via the official [opencode.ai](https://opencode.ai) installer — no custom build required.
+* **Bootstrap loading removed (ADR-020).** `MINIMAL_BOOTSTRAP.md` is deleted. The PAI Core Skill (Algorithm, ISC, Capabilities) now loads via OpenCode's native skill system (`tier: always` via `GenerateSkillIndex.ts` + `skills/PAI` symlink). Plugin loads user identity context only.
+* **`skills/CORE` renamed to `skills/PAI`.** All internal paths updated.
+* **Provider setup is post-install.** The install wizard no longer asks about providers. Connect via `/connect` in OpenCode, then update agent models with `switch-provider.ts`. See [INSTALL.md](INSTALL.md).
 
 ---
+
+### Migration
+
+For v2.x users with `model_tiers` configs:
+
+```bash
+bun run PAI-Install/engine/migrate-legacy-config.ts ~/.opencode/opencode.json
+```
+
+Full guide: [UPGRADE.md](UPGRADE.md).
+
+---
+
+### Features
+
+#### Core Architecture
+
+* **Algorithm v3.7.0 ported** from upstream PAI v4.0.3 — Constraint Fidelity System, Verification Rehearsal, ISC Adherence Check, Build Drift Prevention (WP1, PRs #32-35)
+* **Hierarchical skill structure** — 11 categories (Agents, ContentAnalysis, Investigation, Media, Research, Scraping, Security, Telos, Thinking, USMetrics, Utilities) migrated from flat layout (WP4, PRs #38-40)
+* **Native skill loading** — `PAI/SKILL.md` is `tier: always` via `GenerateSkillIndex.ts`; skills load on-demand via OpenCode's native skill tool; 233KB static context eliminated (WP2, PR #34 + PR #138)
+* **Zen free out-of-box** — all agents default to `opencode/big-pickle` (permanent Zen flagship, no API key required); volatile free Zen models removed as defaults due to rotation risk (PR #138)
+
+#### Event-Driven Plugin System (WP3 + WP-A, PRs #37, #42)
+
+* **Unified plugin** `pai-unified.ts` — replaces 5 separate plugins and hook emulation layer
+* **5 new plugin handlers**: `prd-sync.ts`, `session-cleanup.ts`, `last-response-cache.ts`, `relationship-memory.ts`, `question-tracking.ts`
+* **Bus events**: `session.compacted`, `session.error`, `permission.asked`, `command.executed`, `installation.update.available`, `session.updated`, `session.created`
+* **`shell.env` hook** — PAI context injected per bash call
+* **`loadUserSystemContext()`** — plugin now loads only user-specific context (PAI/AISTEERINGRULES.md + USER/* identity files); Algorithm content loads via skill system
+
+#### Security Hardening (WP-B, PR #43)
+
+* **Prompt injection detection** — `injection-patterns.ts` with configurable sensitivity (low/medium/high)
+* **Input sanitization layer** — `sanitizer.ts` pre-processes input before LLM
+* **Security event logging** — audit trail for injection attempts
+* Integration runs on `tool.execute.before` and `message.received` events
+
+#### Core PAI System (WP-C, PR #45)
+
+* **Skill structure fixes** — flattened incorrectly nested `USMetrics/USMetrics/` and `Telos/Telos/` directories
+* **New skills ported from PAI v4.0.3**: `Utilities/AudioEditor/`, `Utilities/Delegation/`
+* **PAI docs ported from v4.0.3**: `CLI.md`, `CLIFIRSTARCHITECTURE.md`, `DOCUMENTATIONINDEX.md`, `FLOWS.md`, `PAIAGENTSYSTEM.md`, `THENOTIFICATIONSYSTEM.md` + 3 subdirectories (`ACTIONS/`, `FLOWS/`, `PIPELINES/`)
+* **`BuildOpenCode.ts`** — OpenCode-native replacement for `BuildCLAUDE.ts`
+
+#### Installer & Migration (WP-D, PR #47)
+
+* **Migration script** `migrate-legacy-config.ts` — auto-converts `model_tiers` blocks, preserves `standard` tier model, creates `.pre-v3.0.bak` backup
+* **DB Health tooling** — `db-utils.ts` monitors DB size and session age; warns when DB > 500 MB or sessions > 90 days old
+* **`db-archive.ts`** — standalone Bun tool (`--dry-run`, `--vacuum`, `--restore`)
+* **`/db-archive` custom command** — session archiving in OpenCode TUI
+* **`DB-MAINTENANCE.md`** — operational guide
+* **Interactive terminal install wizard** — CLI-only, Electron GUI removed (PR #96)
+* **PAI wrapper script** — `pai` command separate from `opencode`, explicit `PAI_ENABLED=1` (PR #104)
+
+#### Session Intelligence (WP-N1–N3, PRs #50-53)
+
+* **Session Registry** — `session_registry` and `session_results` custom tools for post-compaction context recovery (ADR-012)
+* **Compaction Intelligence** — `compaction-intelligence.ts` hooks `experimental.session.compacting`; injects registry + ISC + PRD context into compaction summary to prevent silent context loss (ADR-015)
+* **Algorithm Awareness** — SKILL.md updated with post-compaction recovery pattern; `parent_session_id` links child PRDs to originating session (ADR-013)
+
+#### Documentation & Tooling (WP-N4–N10, PRs #53-59)
+
+* **LSP integration documented** — `OPENCODE_EXPERIMENTAL_LSP_TOOL=true` opt-in, LSP vs Grep decision table (ADR-014)
+* **System Self-Awareness skill** — `OpenCodeSystem/SKILL.md` with `SystemArchitecture.md`, `ToolReference.md`, `Configuration.md`, `Troubleshooting.md` (ADR-017)
+* **roborev + Biome CI** — `roborev-trigger.ts` handler, `CodeReview` skill, `code-quality.yml` GitHub Actions workflow (ADR-018)
+* **Obsidian Formatting Guidelines** — `FormattingGuidelines.md` and `AgentCapabilityMatrix.md` (16 agents, models, tool access, decision rules)
+* **ADR-019** — Vanilla OpenCode migration decision record
+* **ADR-020** — Native OpenCode context loading (bootstrap removal) decision record
+
+#### Provider Infrastructure
+
+* **`switch-provider.ts`** — switches all agent models with one command; profiles: zen, zen-free, zen-paid, anthropic, openai, local; `--multi-research` for native research agents
+* **Two-step provider setup** documented — `/connect` (credentials) → `switch-provider.ts` (opencode.json agent models)
+* **Anthropic Claude Max ToS warning** — community plugin not shipped; ToS-safe alternatives documented in INSTALL.md
+
+#### CI/CD
+
+* **GitHub Actions** — `ci.yml`, `code-quality.yml`, `codeql.yml`, `scorecards.yml`, upstream sync workflows
+* **CodeRabbit** integration (`.coderabbit.yaml`)
+* **StepSecurity hardening** — CI workflows hardened (PR #108)
+* **release-please** — automated release management
+
+---
+
+### Bug Fixes
+
+* Fix `files_loaded` counter — now counts all injected files including `PAI/AISTEERINGRULES.md` (was hardcoded `1`)
+* Fix `USER/` → `PAI/USER/` paths in plugin, docs, and diagrams
+* Remove provider API key write from `.env` generation — model provider auth via `/connect`, not `.env`
+* Remove misleading `ANTHROPIC_API_KEY`/`OPENAI_API_KEY` examples from `.env` template
+* Rename `loadMinimalBootstrap()` → `loadUserSystemContext()` — name now matches behaviour
+* Fix stale log messages in plugin (`"minimal bootstrap"` → `"user system context"`)
+* Fix `ALWAYS_LOADED_SKILLS` docs — correctly shows all 6 entries matching `GenerateSkillIndex.ts`
+
+---
+
+### Removed
+
+* `PAI-Install/electron/` — GUI installer
+* `PAI-Install/engine/build-opencode.ts` — fork build system (245 LOC)
+* `MINIMAL_BOOTSTRAP.md` — replaced by native skill system
+* `model_tiers` blocks from `opencode.json` and all provider profiles
+* `model_tier` parameter from `agent-execution-guard.ts`, `session-registry.ts`
+* `tiers:` sections from all provider YAML profiles
+* `PAI-Install/web/` and `PAI-Install/main.ts`
+* All references to `Steffen025/opencode` fork and `feature/model-tiers` branch
+
+---
+
+### Dependencies
+
+* bump @opencode-ai/plugin 1.1.39 → 1.4.3 ([#118](https://github.com/Steffen025/pai-opencode/pull/118))
+* bump actions/checkout v4 → v6 ([#124](https://github.com/Steffen025/pai-opencode/pull/124))
+* bump actions/github-script v7 → v9 ([#129](https://github.com/Steffen025/pai-opencode/pull/129))
+* bump actions/upload-artifact v4 → v7 ([#127](https://github.com/Steffen025/pai-opencode/pull/127))
+* bump github/codeql-action v3 → v4 ([#114](https://github.com/Steffen025/pai-opencode/pull/114))
+* bump ossf/scorecard-action 2.4.0 → 2.4.3 ([#111](https://github.com/Steffen025/pai-opencode/pull/111))
+* bump sharp 0.33.5 → 0.34.5 in Pptx/Scripts ([#119](https://github.com/Steffen025/pai-opencode/pull/119))
+* bump @types/node v20 → v25 in BugBountyTool ([#113](https://github.com/Steffen025/pai-opencode/pull/113))
+
+---
+
+### Contributors
+
+Special thanks to community members whose contributions are included in this release:
+
+| Contributor | Contribution | PR |
+|-------------|-------------|-----|
+| **[@eddovandenboom](https://github.com/eddovandenboom)** | PAI wrapper script, `--fix-symlink` flag | [#104](https://github.com/Steffen025/pai-opencode/pull/104) |
+| **[@ktneely](https://github.com/ktneely)** | Model profile updates for provider-agnostic routing | [#103](https://github.com/Steffen025/pai-opencode/pull/103) |
+| **[@step-security-bot](https://github.com/step-security-bot)** | CI security hardening, pinned Actions SHA hashes | [#106](https://github.com/Steffen025/pai-opencode/pull/106) |
+
+---
+
 
 ## [2.0.0] - 2026-02-19
 
