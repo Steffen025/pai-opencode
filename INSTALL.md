@@ -323,26 +323,63 @@ PAI-OpenCode ships with **OpenCode Zen free** as the default provider. Big Pickl
 
 ### Connecting Premium Providers
 
-To use Anthropic Max, paid Zen models, or any other provider, run `/connect` inside OpenCode after install:
+Provider setup is a **post-install step** — PAI-OpenCode ships with Zen free so you can start immediately, then connect additional providers whenever you're ready.
 
-```
+Connecting a provider is a two-step process:
+
+#### Step 1 — Establish credentials via `/connect`
+
+Run `/connect` inside a running OpenCode session and follow the prompts:
+
+```text
 /connect
 ```
 
-This opens OpenCode's provider connection flow. You can connect:
+OpenCode stores credentials securely in `~/.opencode/`. Supported providers:
 
 | Provider | Best For | Cost |
 |----------|----------|------|
-| **Anthropic Max** | Best quality, Claude Opus 4.6 / Sonnet 4.5 | Claude Max subscription |
-| **ZEN PAID** | Budget-friendly paid models (GLM 4.7, Kimi K2.5, Gemini Flash) | ~$1-15/1M tokens |
+| **Zen paid** | Budget-friendly paid models (GLM 4.7, Kimi K2.5, Gemini Flash) | ~$1-15/1M tokens |
+| **Anthropic (API key)** | Best quality, Claude Opus 4.6 / Sonnet 4.5 | Pay-per-token |
 | **OpenRouter** | Provider diversity, 100+ models | Varies by model |
 | **OpenAI** | GPT-4o, GPT-4.1 | ~$10-30/1M tokens |
+| **Ollama** | Local, private, offline | Free (your hardware) |
 
-Alternatively, add API keys directly to `~/.opencode/.env`:
+#### Step 2 — Update agent model assignments in `opencode.json`
+
+`/connect` stores your credentials, but the agent model strings in `opencode.json` still point to the Zen free defaults. Switch them to your newly connected provider:
+
 ```bash
-ANTHROPIC_API_KEY=your_key
-OPENAI_API_KEY=your_key
+# Switch all agents to Anthropic models
+bun run .opencode/tools/switch-provider.ts anthropic
+
+# Switch to paid Zen models
+bun run .opencode/tools/switch-provider.ts zen-paid
+
+# Switch to OpenAI models
+bun run .opencode/tools/switch-provider.ts openai
+
+# List all available profiles
+bun run .opencode/tools/switch-provider.ts --list
 ```
+
+See [ADVANCED-SETUP.md](docs/ADVANCED-SETUP.md) for manual `opencode.json` editing and custom profiles.
+
+---
+
+### ⚠️ Anthropic Claude Max — Important Note
+
+Anthropic's Claude Max subscription (the one used at claude.ai) is designed for direct human use. Routing it through a third-party tool like OpenCode via OAuth is a **grey area in Anthropic's Terms of Service** and carries a risk of account suspension.
+
+**How the connection works technically:**
+OpenCode connects to Claude Max via a community plugin — [`cemalturkcan/opencode-anthropic-login-via-cli`](https://github.com/cemalturkcan/opencode-anthropic-login-via-cli) — that authenticates your Claude Max account and proxies requests through it.
+
+**Why PAI-OpenCode does not ship this plugin:**
+We intentionally exclude it from the distribution. Installing and using it is your own decision and responsibility — we do not want to expose users to ToS risk without their explicit informed consent.
+
+**Alternatives that are clearly within Anthropic's ToS:**
+- **Anthropic API key** — Pay-per-token access via [console.anthropic.com](https://console.anthropic.com/). Add `ANTHROPIC_API_KEY=sk-ant-...` to `~/.opencode/.env` and run `/connect` → Anthropic.
+- **OpenCode Zen paid** — High-quality models at competitive rates, no ToS concerns. Includes access to models equivalent in capability to Sonnet/Opus tiers.
 
 ### Changing Providers After Install
 

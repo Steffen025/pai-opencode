@@ -1,6 +1,8 @@
 # AGENTS.md — PAI-OpenCode Repository
 
-**Runtime:** Bun (never npm/yarn/pnpm) | **Linter:** Biome (never ESLint/Prettier) | **Lang:** TypeScript ESM
+| Runtime | Linter | Lang |
+|---------|--------|------|
+| Bun (never npm/yarn/pnpm) | Biome (never ESLint/Prettier) | TypeScript ESM |
 
 ```bash
 bun install                  # Install dependencies

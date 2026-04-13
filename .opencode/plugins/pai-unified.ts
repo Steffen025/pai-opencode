@@ -53,7 +53,7 @@ import { fileURLToPath } from "node:url";
 
 // ESM-equivalent of __dirname — .opencode/package.json has "type": "module"
 // so CommonJS globals (__dirname / __filename) are not defined. Used below
-// by loadMinimalBootstrap() to resolve the PAI dir relative to this plugin
+// by loadUserSystemContext() to resolve the PAI dir relative to this plugin
 // file regardless of the current working directory opencode is launched from.
 const PLUGIN_DIR = path.dirname(fileURLToPath(import.meta.url));
 import type { Hooks, Plugin } from "@opencode-ai/plugin";
@@ -257,7 +257,7 @@ async function readFileSafe(filePath: string): Promise<string | null> {
  * 1. System AISTEERINGRULES.md (behavioral governance)
  * 2. User Identity files (ABOUTME, TELOS, DAIDENTITY) if they exist
  */
-async function loadMinimalBootstrap(): Promise<string | null> {
+async function loadUserSystemContext(): Promise<string | null> {
 	try {
 		const paiDir = path.join(PLUGIN_DIR, "..", "PAI");
 		const contextParts: string[] = [];
@@ -393,7 +393,7 @@ export const PaiUnified: Plugin = async (_ctx) => {
 			emitSessionStart({ model: (input as any).model }).catch(() => {});
 
 				// WP2: Use minimal bootstrap instead of full context loader
-				const bootstrap = await loadMinimalBootstrap();
+				const bootstrap = await loadUserSystemContext();
 
 				if (bootstrap && bootstrap.length > 0) {
 					output.system.push(bootstrap);

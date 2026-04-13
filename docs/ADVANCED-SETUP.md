@@ -3,7 +3,10 @@
 
 
 ## Overview
-The installer configures a preset for your initial provider routing (`zen`, `anthropic`, `openrouter`, `openai`). See [INSTALL.md](../INSTALL.md) for installation details.
+
+The installer configures Zen free as the default provider. Connecting additional providers and updating agent model assignments are **post-install steps** — see [INSTALL.md — Connecting Premium Providers](../INSTALL.md#connecting-premium-providers) for the two-step process (`/connect` → `switch-provider`).
+
+> **Anthropic Claude Max note:** Routing a Claude Max subscription through OpenCode via OAuth requires a community plugin that PAI-OpenCode intentionally does not ship ([details in INSTALL.md](../INSTALL.md#️-anthropic-claude-max--important-note)). The ToS-safe alternative is an Anthropic API key or OpenCode Zen paid.
 
 ## Custom Model Configuration
 

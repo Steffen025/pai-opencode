@@ -50,7 +50,7 @@ const ALWAYS_LOADED_SKILLS = [
 
 Create `skills/PAI → ../PAI` symlink so OpenCode's native skill scanner discovers `PAI/SKILL.md`. The scanner already follows symlinks (established in upstream #620). No special handling required.
 
-```
+```text
 .opencode/
 ├── skills/
 │   └── PAI -> ../PAI    ← new symlink

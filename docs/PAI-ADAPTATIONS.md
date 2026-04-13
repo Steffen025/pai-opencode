@@ -221,7 +221,7 @@ The v3.0 release represents a fundamental shift in how PAI Core loads into conte
 
 **`pai-unified.ts` — What it does now:**
 
-```
+```text
 Before: Bootstrap loading + User identity context
 After:  User identity context only
 ```
@@ -271,7 +271,7 @@ This ensures the full 479-line PAI Core Skill (Algorithm, ISC, Capabilities) is 
 
 A new symlink `skills/PAI → ../PAI` enables the native OpenCode skill scanner to discover `PAI/SKILL.md`:
 
-```
+```text
 .opencode/
 ├── skills/
 │   ├── PAI -> ../PAI    ← symlink

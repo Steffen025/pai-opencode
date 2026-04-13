@@ -268,19 +268,29 @@ PAI-OpenCode ships with **Zen free as the default** — OpenCode Zen is pre-conn
 |----------|---------------|------|
 | **Zen free** (Default) | Works out of the box — no setup required | **FREE** |
 | **Zen paid** | Run `/connect` in OpenCode → select Zen AI Gateway | ~$1-75/1M tokens depending on tier |
-| **Anthropic** | Run `/connect` in OpenCode → select Anthropic | Per-token (Claude Max subscription or API) |
+| **Anthropic API** | Add `ANTHROPIC_API_KEY` to `~/.opencode/.env`, then `/connect` | Pay-per-token |
 | **OpenRouter** | Run `/connect` in OpenCode → select OpenRouter | Varies by model |
 | **Ollama (local)** | Run `/connect` in OpenCode → select Ollama | **FREE** (your hardware) |
 
+> **Anthropic Claude Max:** Using a Claude Max subscription (claude.ai) with OpenCode requires a community plugin not shipped with PAI-OpenCode due to Anthropic ToS concerns. See [INSTALL.md](INSTALL.md#️-anthropic-claude-max--important-note) for details.
+
 ### Connecting Providers After Install
 
-All provider configuration happens inside a running OpenCode session — no reinstall needed:
+Provider setup is a **two-step process** — no reinstall needed:
 
-```
+1. **Run `/connect`** inside OpenCode to store credentials:
+
+```text
 /connect
 ```
 
-Follow the prompts to authenticate. OpenCode stores credentials securely and your PAI skills and agents work with any provider you connect.
+2. **Update agent model assignments** in `opencode.json` to point at your new provider:
+
+```bash
+bun run .opencode/tools/switch-provider.ts anthropic   # or zen-paid, openai, etc.
+```
+
+See [INSTALL.md](INSTALL.md#connecting-premium-providers) for the full walkthrough.
 
 ### Why This Design?
 
