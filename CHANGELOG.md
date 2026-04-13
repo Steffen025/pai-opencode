@@ -144,6 +144,16 @@ Full guide: [UPGRADE.md](UPGRADE.md).
 
 ---
 
+### Contributors
+
+Special thanks to community members whose contributions are included in this release:
+
+* **[@eddovandenboom](https://github.com/eddovandenboom)** — PAI wrapper script, `--fix-symlink` flag ([PR #104](https://github.com/Steffen025/pai-opencode/pull/104))
+* **[@ktneely](https://github.com/ktneely)** — Model profile updates for provider-agnostic routing ([PR #103](https://github.com/Steffen025/pai-opencode/pull/103))
+* **[@step-security-bot](https://github.com/step-security-bot)** — CI security hardening, pinned Actions SHA hashes ([PR #106](https://github.com/Steffen025/pai-opencode/pull/106))
+
+---
+
 
 ## [2.0.0] - 2026-02-19
 
