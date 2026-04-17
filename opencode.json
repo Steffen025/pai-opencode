@@ -9,65 +9,46 @@
     "websearch": "allow",
     "codesearch": "allow",
     "webfetch": "allow",
+    "external_directory": "allow",
     "doom_loop": "ask",
-    "external_directory": "ask"
-  },
-  "mode": {
-    "build": {
-      "prompt": "You are a Personal AI assistant powered by PAI-OpenCode infrastructure."
+    "read": { "*": "allow", "~/*": "allow" },
+    "edit": { "*": "allow", "~/.opencode/*": "allow" },
+    "bash": {
+      "*": "allow",
+      "rm -rf /": "deny",
+      "rm -rf /*": "deny",
+      "rm -rf ~": "deny",
+      "rm -rf $HOME": "deny",
+      "sudo rm -rf /": "deny",
+      "sudo rm -rf /*": "deny",
+      "diskutil eraseDisk*": "deny",
+      "diskutil partitionDisk*": "deny",
+      "dd if=/dev/zero*": "deny",
+      "mkfs.*": "deny"
     },
-    "plan": {
-      "prompt": "You are a Personal AI assistant powered by PAI-OpenCode infrastructure."
-    }
+    "task": "allow",
+    "skill": "allow",
+    "todowrite": "allow",
+    "todoread": "allow",
+    "glob": "allow",
+    "grep": "allow"
   },
   "agent": {
-    "Algorithm": {
-      "model": "opencode/big-pickle"
-    },
-    "Architect": {
-      "model": "opencode/big-pickle"
-    },
-    "Engineer": {
-      "model": "opencode/big-pickle"
-    },
-    "general": {
-      "model": "opencode/big-pickle"
-    },
-    "explore": {
-      "model": "opencode/big-pickle"
-    },
-    "Intern": {
-      "model": "opencode/big-pickle"
-    },
-    "Writer": {
-      "model": "opencode/big-pickle"
-    },
-    "DeepResearcher": {
-      "model": "opencode/big-pickle"
-    },
-    "GeminiResearcher": {
-      "model": "opencode/big-pickle"
-    },
-    "GrokResearcher": {
-      "model": "opencode/big-pickle"
-    },
-    "PerplexityResearcher": {
-      "model": "opencode/big-pickle"
-    },
-    "CodexResearcher": {
-      "model": "opencode/big-pickle"
-    },
-    "QATester": {
-      "model": "opencode/big-pickle"
-    },
-    "Pentester": {
-      "model": "opencode/big-pickle"
-    },
-    "Designer": {
-      "model": "opencode/big-pickle"
-    },
-    "Artist": {
-      "model": "opencode/big-pickle"
-    }
+    "Algorithm": { "model": "opencode/big-pickle" },
+    "Architect": { "model": "opencode/big-pickle" },
+    "Engineer": { "model": "opencode/big-pickle" },
+    "general": { "model": "opencode/big-pickle" },
+    "explore": { "model": "opencode/big-pickle" },
+    "Intern": { "model": "opencode/big-pickle" },
+    "Writer": { "model": "opencode/big-pickle" },
+    "DeepResearcher": { "model": "opencode/big-pickle" },
+    "GeminiResearcher": { "model": "opencode/big-pickle" },
+    "GrokResearcher": { "model": "opencode/big-pickle" },
+    "PerplexityResearcher": { "model": "opencode/big-pickle" },
+    "CodexResearcher": { "model": "opencode/big-pickle" },
+    "QATester": { "model": "opencode/big-pickle" },
+    "Pentester": { "model": "opencode/big-pickle" },
+    "Designer": { "model": "opencode/big-pickle" },
+    "Artist": { "model": "opencode/big-pickle" }
   }
 }

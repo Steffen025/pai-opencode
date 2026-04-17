@@ -11,6 +11,7 @@ node_modules/
 # Runtime artifacts
 *.log
 .DS_Store
+.opencode/package-lock.json
 
 # Personal content (user customizes)
 .opencode/USER/*
