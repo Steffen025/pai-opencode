@@ -1,5 +1,5 @@
 {
-  "generated": "2026-04-17T12:31:19.438Z",
+  "generated": "2026-04-17T12:46:35.940Z",
   "totalSkills": 53,
   "categories": 8,
   "flatSkills": 13,
@@ -1127,7 +1127,7 @@
       "name": "Utilities",
       "path": "Utilities/SKILL.md",
       "category": null,
-      "fullDescription": "Utility and helper skills. USE WHEN aphorisms, quotes, browser automation, Cloudflare, create CLI, build CLI, create skill, process documents, PDF, Word, Excel, evaluations, evals, fabric patterns, PAI upgrade, parser, prompting, templates.",
+      "fullDescription": "Utility and helper skills. USE WHEN aphorisms, quotes, browser automation, Cloudflare, create CLI, build CLI, create skill, evaluations, evals, fabric patterns, PAI upgrade, parser, prompting, templates.",
       "triggers": [
         "aphorisms",
         "quotes",
@@ -1138,11 +1138,6 @@
         "cli",
         "build",
         "skill",
-        "process",
-        "documents",
-        "pdf",
-        "word",
-        "excel",
         "evaluations",
         "evals",
         "fabric",

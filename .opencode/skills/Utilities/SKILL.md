@@ -1,6 +1,6 @@
 ---
 name: Utilities
-description: Utility and helper skills. USE WHEN aphorisms, quotes, browser automation, Cloudflare, create CLI, build CLI, create skill, process documents, PDF, Word, Excel, evaluations, evals, fabric patterns, PAI upgrade, parser, prompting, templates.
+description: Utility and helper skills. USE WHEN aphorisms, quotes, browser automation, Cloudflare, create CLI, build CLI, create skill, evaluations, evals, fabric patterns, PAI upgrade, parser, prompting, templates.
 ---
 
 # Utilities - Utility and Helper Skills
@@ -18,7 +18,6 @@ description: Utility and helper skills. USE WHEN aphorisms, quotes, browser auto
 | **CreateCLI** | Build command-line tools | "create CLI", "build CLI", "command line" |
 | **CreateSkill** | Create new PAI skills | "create skill", "new skill", "build skill" |
 | **Delegation** | Task delegation and orchestration | "delegate", "orchestrate", "assign" |
-| **Documents** | Process documents (PDF, Word, Excel) | "process document", "PDF", "Word", "Excel" |
 | **Evals** | Evaluation and benchmarking system | "eval", "evaluate", "benchmark", "test" |
 | **Fabric** | 240+ Fabric patterns for content analysis | "fabric", "extract wisdom", "summarize" |
 | **PAIUpgrade** | Monitor and upgrade PAI system | "upgrade", "PAI upgrade", "check updates" |
@@ -27,13 +26,14 @@ description: Utility and helper skills. USE WHEN aphorisms, quotes, browser auto
 
 ## When to Use
 
-- Processing files and documents
 - Browser automation tasks
 - Cloud infrastructure (Cloudflare)
 - Building tools and skills
 - Running evaluations and tests
 - Content analysis with Fabric patterns
 - System maintenance and upgrades
+
+*For document processing (DOCX, PDF, PPTX, XLSX), see the dedicated `Documents` pack.*
 
 ## Category Philosophy
 
