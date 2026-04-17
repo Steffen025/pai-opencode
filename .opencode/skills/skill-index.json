@@ -1,9 +1,9 @@
 {
-  "generated": "2026-04-13T09:19:28.749Z",
+  "generated": "2026-04-17T12:46:35.940Z",
   "totalSkills": 53,
-  "categories": 7,
-  "flatSkills": 12,
-  "hierarchicalSkills": 41,
+  "categories": 8,
+  "flatSkills": 13,
+  "hierarchicalSkills": 40,
   "alwaysLoadedCount": 3,
   "deferredCount": 50,
   "skills": {
@@ -361,27 +361,43 @@
     },
     "documents": {
       "name": "Documents",
-      "path": "Utilities/Documents/SKILL.md",
-      "category": "Utilities",
-      "fullDescription": "Document processing. USE WHEN document, process file. SkillSearch('documents') for docs.",
+      "path": "Documents/SKILL.md",
+      "category": null,
+      "fullDescription": "Document processing skills for DOCX, PDF, PPTX, and XLSX. USE WHEN document, Word doc, PDF file, presentation, spreadsheet, tracked changes, form filling, financial model, slide deck, or any task that involves creating, editing, analyzing, or converting document files.",
       "triggers": [
         "document",
-        "process",
-        "file"
+        "word",
+        "doc",
+        "pdf",
+        "file",
+        "presentation",
+        "spreadsheet",
+        "tracked",
+        "changes",
+        "form",
+        "filling",
+        "financial",
+        "model",
+        "slide",
+        "deck",
+        "any",
+        "task",
+        "that",
+        "involves",
+        "creating",
+        "editing",
+        "analyzing",
+        "converting",
+        "files"
       ],
-      "workflows": [
-        "DOCX",
-        "PDF",
-        "PPTX",
-        "XLSX"
-      ],
+      "workflows": [],
       "tier": "deferred",
-      "isHierarchical": true
+      "isHierarchical": false
     },
     "docx": {
       "name": "Docx",
-      "path": "Utilities/Docx/SKILL.md",
-      "category": "Utilities",
+      "path": "Documents/Docx/SKILL.md",
+      "category": "Documents",
       "fullDescription": "Word document processing. USE WHEN docx, Word document. SkillSearch('docx') for docs.",
       "triggers": [
         "docx",
@@ -674,8 +690,8 @@
     },
     "pdf": {
       "name": "Pdf",
-      "path": "Utilities/Pdf/SKILL.md",
-      "category": "Utilities",
+      "path": "Documents/Pdf/SKILL.md",
+      "category": "Documents",
       "fullDescription": "PDF processing. USE WHEN pdf, PDF file. SkillSearch('pdf') for docs.",
       "triggers": [
         "pdf",
@@ -687,8 +703,8 @@
     },
     "pptx": {
       "name": "Pptx",
-      "path": "Utilities/Pptx/SKILL.md",
-      "category": "Utilities",
+      "path": "Documents/Pptx/SKILL.md",
+      "category": "Documents",
       "fullDescription": "PowerPoint processing. USE WHEN pptx, PowerPoint, slides. SkillSearch('pptx') for docs.",
       "triggers": [
         "pptx",
@@ -1111,7 +1127,7 @@
       "name": "Utilities",
       "path": "Utilities/SKILL.md",
       "category": null,
-      "fullDescription": "Utility and helper skills. USE WHEN aphorisms, quotes, browser automation, Cloudflare, create CLI, build CLI, create skill, process documents, PDF, Word, Excel, evaluations, evals, fabric patterns, PAI upgrade, parser, prompting, templates.",
+      "fullDescription": "Utility and helper skills. USE WHEN aphorisms, quotes, browser automation, Cloudflare, create CLI, build CLI, create skill, evaluations, evals, fabric patterns, PAI upgrade, parser, prompting, templates.",
       "triggers": [
         "aphorisms",
         "quotes",
@@ -1122,11 +1138,6 @@
         "cli",
         "build",
         "skill",
-        "process",
-        "documents",
-        "pdf",
-        "word",
-        "excel",
         "evaluations",
         "evals",
         "fabric",
@@ -1238,8 +1249,8 @@
     },
     "xlsx": {
       "name": "Xlsx",
-      "path": "Utilities/Xlsx/SKILL.md",
-      "category": "Utilities",
+      "path": "Documents/Xlsx/SKILL.md",
+      "category": "Documents",
       "fullDescription": "Excel file processing. USE WHEN xlsx, Excel, spreadsheet. SkillSearch('xlsx') for docs.",
       "triggers": [
         "xlsx",
@@ -1254,6 +1265,12 @@
   "categoryMap": {
     "ContentAnalysis": [
       "ExtractWisdom"
+    ],
+    "Documents": [
+      "Docx",
+      "Pdf",
+      "Pptx",
+      "Xlsx"
     ],
     "Investigation": [
       "OSINT",
@@ -1292,20 +1309,15 @@
       "CreateCLI",
       "CreateSkill",
       "Delegation",
-      "Documents",
-      "Docx",
       "Evals",
       "Fabric",
       "OpenCodeSystem",
       "PAIUpgrade",
       "Parser",
-      "Pdf",
-      "Pptx",
       "Prompting",
       "Sales",
       "System",
-      "WriteStory",
-      "Xlsx"
+      "WriteStory"
     ]
   }
 }
