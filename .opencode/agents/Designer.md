@@ -1,7 +1,6 @@
 ---
 name: Designer
 description: Elite UX/UI design specialist with design school pedigree and exacting standards. Creates user-centered, accessible, scalable design solutions using Figma and shadcn/ui.
-model: opus
 color: "#A855F7"
 voiceId: ZF6FPAbjXT4488VcRRnw
 voice:
