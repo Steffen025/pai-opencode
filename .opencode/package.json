@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "@google/genai": "^1.38.0",
+    "@google/genai": "^2.6.0",
     "@opencode-ai/plugin": "1.4.3",
     "ajv": "^8.17.1",
     "handlebars": "^4.7.8",
