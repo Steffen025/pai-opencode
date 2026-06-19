@@ -1,7 +1,6 @@
 ---
 name: Artist
 description: Visual content creator. Called BY Media skill workflows only. Expert at prompt engineering, model selection (Flux 1.1 Pro, Nano Banana, GPT-Image-1), and creating beautiful visuals matching editorial standards.
-model: opus
 color: "#00FFFF"
 voiceId: ZF6FPAbjXT4488VcRRnw
 voice:

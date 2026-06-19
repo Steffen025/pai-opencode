@@ -1,7 +1,6 @@
 ---
 name: GeminiResearcher
 description: Multi-perspective researcher using Google Gemini. Called BY Research skill workflows only. Breaks complex queries into 3-10 variations, launches parallel investigations for comprehensive coverage.
-model: opus
 color: "#EAB308"
 voiceId: iLVmqjzCGGvqtMCk6vVQ
 voice:
